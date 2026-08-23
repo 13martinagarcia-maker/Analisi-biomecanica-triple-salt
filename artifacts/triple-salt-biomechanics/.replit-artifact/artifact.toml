@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Triple Salt Biomechanics"
+description = "Aplicació web semiautomàtica per analitzar vídeos de triple salt amb MediaPipe Pose, calcular angles biomecànics i permetre revisar i corregir els resultats."
+version = "1.0.0"
+id = "artifacts/triple-salt-biomechanics"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21912
+
+[services.development]
+run = "pnpm --filter @workspace/triple-salt-biomechanics run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/triple-salt-biomechanics", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/triple-salt-biomechanics/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21912"
+BASE_PATH = "/"

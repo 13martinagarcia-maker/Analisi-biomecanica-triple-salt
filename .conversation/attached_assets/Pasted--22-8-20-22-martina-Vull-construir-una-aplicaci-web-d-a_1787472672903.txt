@@ -1,0 +1,479 @@
+[22/8 20:22] martina: Vull construir una aplicació web d'anàlisi biomecànica del triple salt.
+
+L'aplicació ha de combinar automatització amb control de l'usuari.
+
+L'usuari pujarà un vídeo d'un atleta fent triple salt. Després seleccionarà l'atleta i delimitarà manualment els trams del HOP, STEP i JUMP. A partir d'aquests trams, l'aplicació utilitzarà un sistema de pose estimation, concretament MediaPipe Pose o una tecnologia equivalent, per detectar les articulacions del cos i calcular automàticament els angles biomecànics.
+
+L'usuari sempre podrà revisar i corregir els resultats.
+
+==================================================
+
+1. REFERÈNCIA BIOMECÀNICA
+   ==================================================
+
+Utilitza la imatge de referència que proporcionaré juntament amb aquest prompt.
+
+La imatge mostra tres moments de batuda:
+
+- Batuda 1
+- Batuda 2
+- Batuda 3
+
+I mostra els angles de referència següents:
+
+BATUDA 1:
+
+- 69° ± 3°
+- 62° ± 3°
+- α = 142° ± 3°
+- angle de trajectòria/enlairament = 17° ± 1°
+
+BATUDA 2:
+
+- 68° ± 2°
+- 61° ± 3°
+- β = 138° ± 3°
+- angle de trajectòria/enlairament = 14° ± 1°
+
+BATUDA 3:
+
+- 66° ± 2°
+- 63° ± 3°
+- γ = 135° ± 3°
+- angle de trajectòria/enlairament = 18° ± 2°
+
+IMPORTANT:
+
+Aquests valors provenen de la imatge de referència i NO s'han d'inventar ni modificar.
+
+La imatge ha de servir com a referència visual per determinar exactament quines parts del cos i quines línies s'estan utilitzant per calcular cada angle.
+
+No assumeixis que tots aquests angles són angles anatòmics de tres articulacions.
+
+Alguns angles són angles entre segments corporals i l'horitzontal, i l'angle de trajectòria/enlairament és un angle respecte a l'horitzontal.
+
+Per això, abans d'implementar els càlculs, estructura el sistema perquè cada angle tingui definida la seva fórmula i els seus punts de referència.
+
+==================================================
+2. MEDIA​PIPE POSE
+
+Integra MediaPipe Pose o una solució de pose estimation equivalent.
+
+MediaPipe ha de detectar, com a mínim:
+
+- maluc esquerre;
+- maluc dret;
+- genoll esquerre;
+- genoll dret;
+- turmell esquerre;
+- turmell dret;
+- espatlla esquerra;
+- espatlla dreta;
+- colze esquerre;
+- colze dret;
+- canell esquerre;
+- canell dret.
+
+Si és possible, utilitza també el centre aproximat entre maluc esquerre i dret com a referència del centre de pelvis.
+
+No utilitzis un model de llenguatge per "endevinar" els angles.
+
+Els punts corporals han de provenir del sistema de pose estimation i els angles s'han de calcular matemàticament.
+
+==================================================
+3. IDENTIFICACIÓ DE L'ATLETA
+
+Quan l'usuari pugi el vídeo, preguntar:
+
+"Qui és l'atleta?"
+
+Permetre:
+
+- seleccionar un atleta existent;
+- crear un atleta nou.
+
+Si el vídeo conté diverses persones, permetre seleccionar quina és l'atleta que s'ha d'analitzar.
+
+Després seguir aquesta persona durant el vídeo.
+
+==================================================
+4. SELECCIÓ DELS TRAMS
+
+Després de seleccionar l'atleta, mostrar el vídeo i una línia de temps.
+
+L'usuari ha de poder marcar:
+
+HOP:
+[inici] ---------------- [final]
+
+STEP:
+[inici] ---------------- [final]
+
+JUMP:
+[inici] ---------------- [final]
+
+L'usuari només ha de seleccionar els trams aproximats.
+
+No ha de seleccionar manualment tots els fotogrames.
+
+L'aplicació farà l'anàlisi dins d'aquests trams.
+
+==================================================
+5. ANÀLISI AUTOMÀTICA
+
+Dins de cada tram:
+
+- analitzar fotograma a fotograma;
+- detectar les articulacions;
+- seguir les articulacions;
+- identificar les posicions biomecàniques necessàries;
+- calcular els angles;
+- seleccionar els fotogrames corresponents.
+
+L'aplicació ha de proposar automàticament els fotogrames importants.
+
+Però l'usuari ha de poder canviar qualsevol fotograma.
+
+==================================================
+6. ANGLES DE REFERÈNCIA
+
+Crear una estructura de dades configurable.
+
+Cada angle ha de tenir:
+
+- nom;
+- fase;
+- moment;
+- punts anatòmics necessaris;
+- tipus de càlcul;
+- referència;
+- tolerància.
+
+Per exemple:
+
+BATUDA 1:
+
+Angle A:
+referència = 69° ± 3°
+
+Angle B:
+referència = 62° ± 3°
+
+Angle α:
+referència = 142° ± 3°
+
+Angle de trajectòria:
+referència = 17° ± 1°
+
+BATUDA 2:
+
+68° ± 2°
+61° ± 3°
+138° ± 3°
+14° ± 1°
+
+BATUDA 3:
+
+66° ± 2°
+63° ± 3°
+135° ± 3°
+18° ± 2°
+
+NO codifiquis aquestes dades de manera rígida dins de la interfície.
+
+Han d'estar en una estructura configurable perquè posteriorment pugui afegir més angles i més referències.
+
+==================================================
+7. CÀLCUL DELS ANGLES ANATÒMICS
+
+Quan un angle sigui format per tres punts anatòmics, calcular-lo matemàticament.
+
+Per exemple:
+
+maluc → genoll → turmell
+
+El punt central és el genoll.
+
+Calcular l'angle entre:
+
+vector genoll → maluc
+
+i
+
+vector genoll → turmell.
+
+Mostrar el resultat en graus amb una decimal.
+
+Exemple:
+
+58,3°
+
+==================================================
+8. ANGLES RESPECTE A L'HORITZONTAL
+
+Per als angles que apareixen a la imatge com:
+
+69°
+62°
+68°
+61°
+66°
+63°
+
+i altres angles similars que estiguin definits com a angles respecte al terra/horitzontal:
+
+calcular l'angle entre el segment corporal corresponent i una línia horitzontal.
+
+No confondre aquests angles amb els angles interns de les articulacions.
+
+Per exemple, si la referència correspon a un segment de la cama respecte a l'horitzontal:
+
+- detectar els dos punts del segment;
+- crear el vector entre aquests punts;
+- comparar-lo amb el vector horitzontal;
+- calcular l'angle.
+
+La definició exacta de quin segment correspon a cada valor s'ha de basar en la imatge de referència.
+
+==================================================
+9. ANGLE α, β I γ
+
+Els angles α, β i γ mostrats a la imatge són angles interns formats per segments corporals.
+
+L'aplicació ha d'identificar els tres punts anatòmics corresponents i calcular l'angle intern.
+
+Referències:
+
+BATUDA 1:
+α = 142° ± 3°
+
+BATUDA 2:
+β = 138° ± 3°
+
+BATUDA 3:
+γ = 135° ± 3°
+
+No substituir aquests angles per altres angles de genoll, maluc o turmell sense comprovar la geometria de la imatge.
+
+La configuració dels punts anatòmics ha de poder-se modificar.
+
+==================================================
+10. ANGLE DE TRAJECTÒRIA / ENLAIRAMENT
+
+La imatge mostra també:
+
+Batuda 1 → 17° ± 1°
+Batuda 2 → 14° ± 1°
+Batuda 3 → 18° ± 2°
+
+Aquests valors corresponen a un angle respecte a l'horitzontal associat a la trajectòria/enlairament.
+
+Aquest angle NO s'ha de tractar com un angle intern de genoll.
+
+Calcular-lo mitjançant una línia de referència horitzontal i la direcció corresponent de la trajectòria o segment definit per la metodologia de referència.
+
+L'arquitectura ha de permetre definir exactament quins punts determinen aquesta línia.
+
+==================================================
+11. FOTOGRAMES
+
+Per cada angle seleccionat automàticament:
+
+mostrar:
+
+- vídeo;
+- fotograma exacte;
+- número de fotograma;
+- temps;
+- punts corporals;
+- línies;
+- angle calculat.
+
+Al costat mostrar la fotografia corresponent de referència.
+
+==================================================
+12. COMPARACIÓ
+
+Per cada angle mostrar:
+
+REFERÈNCIA
+
+Jonathan Edwards:
+XX° ± tolerància
+
+ATLETA:
+
+XX°
+
+DIFERÈNCIA:
+
+XX°
+
+ESTAT:
+
+DINS DEL RANG
+PER SOBRE
+PER SOTA
+
+==================================================
+13. CORRECCIÓ MANUAL
+
+L'usuari ha de poder corregir qualsevol resultat.
+
+Si MediaPipe col·loca malament un punt:
+
+- permetre arrossegar-lo;
+- recalcular automàticament l'angle.
+
+Si MediaPipe selecciona malament el fotograma:
+
+- permetre escollir un altre fotograma.
+
+També permetre introduir manualment un angle.
+
+Guardar:
+
+- valor automàtic;
+- valor corregit;
+- valor final.
+
+==================================================
+14. GUIES
+
+A la pantalla de correcció:
+
+mostrar una guia horitzontal i una guia vertical.
+
+Ambdues han de poder moure's.
+
+Afegir:
+
+- zoom;
+- zoom +;
+- zoom -;
+- restablir zoom;
+- desplaçar la imatge.
+
+Les guies només són eines visuals de precisió.
+
+==================================================
+15. REVISIÓ DE CONFIANÇA
+
+Per cada punt detectat, si MediaPipe proporciona informació de confiança, utilitzar-la.
+
+Mostrar:
+
+🟢 Alta confiança
+🟠 Revisar
+🔴 Baixa confiança
+
+Quan un punt tingui baixa confiança, marcar el resultat perquè l'usuari el revisi.
+
+No afirmar que una detecció és mèdicament precisa.
+
+==================================================
+16. RESULTATS
+
+Crear una taula final:
+
+FASE
+MOMENT
+ANGLE
+REFERÈNCIA
+ATLETA
+DIFERÈNCIA
+ESTAT
+FOTOGRAMA
+TEMPS
+CORREGIT
+
+Exemple:
+
+Batuda 1 | Angle 1 | 69° ± 3° | 67,4° | ... | ... | DINS | 152 | 00:05.04 | NO
+
+==================================================
+17. COMPARACIÓ VISUAL
+
+Per cada resultat mostrar dues imatges una al costat de l'altra:
+
+ESQUERRA:
+REFERÈNCIA JONATHAN EDWARDS
+
+DRETA:
+ATLETA
+
+Sobre les dues imatges mostrar, quan sigui possible:
+
+- els mateixos punts;
+- les mateixes línies;
+- el mateix angle.
+
+Això ha de permetre veure clarament si l'atleta està adoptant una posició semblant a la referència.
+
+==================================================
+18. CONTROL HUMÀ
+
+L'aplicació és SEMIAUTOMÀTICA.
+
+L'app fa automàticament:
+
+- detecció del cos;
+- seguiment;
+- càlcul dels angles;
+- proposta dels fotogrames;
+- comparació.
+
+L'usuari controla:
+
+- atleta;
+- trams;
+- revisió dels fotogrames;
+- posició dels punts;
+- correcció dels angles.
+
+==================================================
+19. IMPORTANT SOBRE LA IMATGE DE REFERÈNCIA
+
+La imatge que proporcionaré és la font visual principal per entendre la metodologia.
+
+No intentis inferir una metodologia diferent.
+
+No inventis angles.
+
+No inventis punts.
+
+No inventis dades.
+
+Quan una definició no sigui prou clara només a partir de la imatge, estructura l'aplicació perquè aquest angle pugui ser configurat manualment indicant:
+
+- punt 1;
+- punt 2;
+- punt 3;
+- o segment + horitzontal;
+- o línia de trajectòria + horitzontal.
+
+==================================================
+20. OBJECTIU FINAL
+
+Vull que l'usuari pugui fer:
+
+1. Pujar vídeo.
+2. Seleccionar atleta.
+3. Marcar inici/final del HOP.
+4. Marcar inici/final del STEP.
+5. Marcar inici/final del JUMP.
+6. Prémer "Analitzar".
+7. MediaPipe detecta el cos.
+8. L'app calcula els angles segons la metodologia de la imatge.
+9. L'app selecciona els fotogrames importants.
+10. L'app mostra els angles sobre els fotogrames.
+11. L'app mostra la referència de Jonathan Edwards.
+12. L'usuari revisa.
+13. L'usuari pot moure punts o canviar fotogrames.
+14. Els angles es recalculen automàticament.
+15. L'app mostra la comparació final.
+
+Construir primer aquesta funcionalitat bàsica i després ampliar-la.
+
+No facis una aplicació que només mostri una maqueta visual. Necessito que el càlcul dels angles sigui funcional i matemàticament real.
+[22/8 20:24] martina: “Integra MediaPipe Pose directament en aquest projecte i fes que analitzi els fotogrames del vídeo. No vull una simulació ni dades fictícies. Vull detecció real de les articulacions i càlcul matemàtic dels angles.”
