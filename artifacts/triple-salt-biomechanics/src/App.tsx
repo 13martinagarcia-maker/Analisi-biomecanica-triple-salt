@@ -184,6 +184,25 @@ const calculateSegmentAngle = (
   return Math.acos(Math.min(1, Math.max(-1, numerator / denominator))) * (180 / Math.PI);
 };
 
+const angleArcPath = (
+  first: { x: number; y: number },
+  vertex: { x: number; y: number },
+  last: { x: number; y: number },
+) => {
+  const firstAngle = Math.atan2(first.y - vertex.y, first.x - vertex.x);
+  const lastAngle = Math.atan2(last.y - vertex.y, last.x - vertex.x);
+  let delta = lastAngle - firstAngle;
+  while (delta > Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+  const radius = .07;
+  const steps = 12;
+  const points = Array.from({ length: steps + 1 }, (_, index) => {
+    const angle = firstAngle + (delta * index) / steps;
+    return `${vertex.x + Math.cos(angle) * radius},${vertex.y + Math.sin(angle) * radius}`;
+  });
+  return `M ${points.join(' L ')}`;
+};
+
 const parseReferenceRange = (value: string) => {
   const match = value.match(/(\d+(?:\.\d+)?)±(\d+(?:\.\d+)?)/);
   return match ? { target: Number(match[1]), tolerance: Number(match[2]) } : null;
@@ -248,6 +267,11 @@ function App() {
   const [activeClipPhase, setActiveClipPhase] = useState<PhaseKey>('HOP');
   const [activeFrameSlot, setActiveFrameSlot] = useState(0);
   const [frameSlots, setFrameSlots] = useState<Record<PhaseKey, FrameSlot[]>>(createEmptyFrameSlots);
+  const [frameImages, setFrameImages] = useState<Record<PhaseKey, Array<string | null>>>({
+    HOP: [null, null, null],
+    STEP: [null, null, null],
+    JUMP: [null, null, null],
+  });
   const [landmarkCache, setLandmarkCache] = useState<Record<number, Landmark[]>>({});
   const [angleDefinition, setAngleDefinition] = useState<'internal' | 'segment-horizontal' | 'trajectory-horizontal'>('internal');
   const [measurements, setMeasurements] = useState<Record<PhaseKey, Measurement>>(INITIAL_MEASUREMENTS);
@@ -263,6 +287,9 @@ function App() {
   const activeClipEnd = activeClipMark.end ? Number(activeClipMark.end) / fps : duration;
   const allFramesSelected = (['HOP', 'STEP', 'JUMP'] as PhaseKey[])
     .every((phase) => frameSlots[phase].every((slot) => slot.frame !== null));
+  const phaseTitle = (phase: PhaseKey) => `Batuda ${phase === 'HOP' ? 1 : phase === 'STEP' ? 2 : 3}`;
+  const slotTitle = (phase: PhaseKey, slot: FrameSlot, index: number) =>
+    slot.label.trim() || `${phaseTitle(phase)} — Angle ${index + 1}`;
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -650,6 +677,7 @@ function App() {
     setFrameCorrections({});
     setLandmarkCache({});
     setFrameSlots(createEmptyFrameSlots());
+    setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] });
     setAnalysisStarted(false);
     setAngleSelectionMode(false);
     setConfidence(null);
@@ -744,6 +772,7 @@ function App() {
       return;
     }
     setFrameSlots(createEmptyFrameSlots());
+    setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] });
     setActiveClipPhase('HOP');
     setActiveFrameSlot(0);
     setAnalysisStarted(true);
@@ -756,6 +785,7 @@ function App() {
   const clearPhase = (phase: PhaseKey) => {
     setPhases((previous) => ({ ...previous, [phase]: { start: '', end: '' } }));
     setFrameSlots((previous) => ({ ...previous, [phase]: createEmptyFrameSlots()[phase] }));
+    setFrameImages((previous) => ({ ...previous, [phase]: [null, null, null] }));
     if (activeClipPhase === phase) setAnalysisStarted(false);
     showToast(`${phase}: selecció esborrada. Torna a marcar l’inici i el final.`);
   };
@@ -779,6 +809,18 @@ function App() {
     }));
   };
 
+  const captureCurrentVideoFrame = () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return null;
+    const capture = document.createElement('canvas');
+    capture.width = video.videoWidth;
+    capture.height = video.videoHeight;
+    const context = capture.getContext('2d');
+    if (!context) return null;
+    context.drawImage(video, 0, 0, capture.width, capture.height);
+    return capture.toDataURL('image/jpeg', .9);
+  };
+
   const selectCurrentFrameForSlot = () => {
     if (!analysisStarted || !videoSrc) return;
     if (currentTime < activeClipStart || currentTime > activeClipEnd) {
@@ -787,6 +829,13 @@ function App() {
     }
     updateActiveFrameSlot({ frame: currentFrame, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
     setLandmarkCache((previous) => landmarks ? { ...previous, [currentFrame]: landmarks } : previous);
+    const image = captureCurrentVideoFrame();
+    if (image) {
+      setFrameImages((previous) => ({
+        ...previous,
+        [activeClipPhase]: previous[activeClipPhase].map((currentImage, index) => index === activeFrameSlot ? image : currentImage),
+      }));
+    }
     const nextSlot = frameSlots[activeClipPhase].findIndex((slot, index) => index > activeFrameSlot && slot.frame === null);
     if (nextSlot >= 0) {
       window.setTimeout(() => selectFrameSlot(activeClipPhase, nextSlot), 0);
@@ -797,6 +846,10 @@ function App() {
   const clearActiveFrameSlot = () => {
     updateActiveFrameSlot({ frame: null, points: [], label: '', referenceId: '' });
     setAngleSelectionMode(false);
+    setFrameImages((previous) => ({
+      ...previous,
+      [activeClipPhase]: previous[activeClipPhase].map((image, index) => index === activeFrameSlot ? null : image),
+    }));
     showToast(`${activeClipPhase} — Fotograma ${activeFrameSlot + 1} esborrat.`);
   };
 
@@ -1078,6 +1131,45 @@ function App() {
     anchor.click();
     URL.revokeObjectURL(url);
     showToast('Report exported with measured fields left traceable.');
+  };
+
+  const confidenceForSlot = (slot: FrameSlot) => {
+    if (slot.frame === null) return null;
+    const source = landmarkCache[slot.frame];
+    if (!source?.length) return null;
+    const selectedLandmarks = slot.points
+      .filter((point) => point.source === 'landmark' && point.landmarkIndex !== undefined)
+      .map((point) => source[point.landmarkIndex!])
+      .filter(Boolean);
+    const landmarksForConfidence = selectedLandmarks.length ? selectedLandmarks : source;
+    const values = landmarksForConfidence.map((landmark) => landmark.visibility ?? 0).filter((value) => value > 0);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  };
+
+  const focusAnalysisCard = (phase: PhaseKey, index: number, correctPoints = false) => {
+    selectFrameSlot(phase, index);
+    window.setTimeout(() => {
+      if (correctPoints) {
+        setManualPointMode(false);
+        setAngleSelectionMode(true);
+      }
+      document.getElementById('analysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
+  const changeAnalysisCardFrame = (phase: PhaseKey, index: number) => {
+    selectFrameSlot(phase, index);
+    setFrameSlots((previous) => ({
+      ...previous,
+      [phase]: previous[phase].map((slot, slotIndex) => slotIndex === index ? { ...slot, frame: null, points: [] } : slot),
+    }));
+    setFrameImages((previous) => ({
+      ...previous,
+      [phase]: previous[phase].map((image, imageIndex) => imageIndex === index ? null : image),
+    }));
+    setAngleSelectionMode(false);
+    showToast(`${phaseTitle(phase)} — Angle ${index + 1}: selecciona un nou fotograma al clip.`);
+    window.setTimeout(() => document.getElementById('analysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
 
   const poseLabel = poseStatus === 'ready'
@@ -1454,22 +1546,88 @@ function App() {
             </div>
             <div className="panel-body">
               <div className="section-caption">
-                <div><h2>Comparació per fotograma</h2><div className="small-note">Els resultats provenen dels tres landmarks seleccionats. La referència només s’aplica quan tu l’assignes a l’angle.</div></div>
-                <button className="button-quiet" onClick={() => setFrameSlots(createEmptyFrameSlots())} data-testid="button-clear-measurements"><X size={14} /> Restablir anàlisi</button>
+                <div><h2>Targetes d’anàlisi per batuda</h2><div className="small-note">Cada fotograma triat manualment es compara visualment amb la secció corresponent de Jonathan Edwards.</div></div>
+                <button className="button-quiet" onClick={() => { setFrameSlots(createEmptyFrameSlots()); setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }); }} data-testid="button-clear-measurements"><X size={14} /> Restablir anàlisi</button>
               </div>
-              <div className="comparison-strip">
-                <figure>
-                  <img src={referenceImage} alt="Referència de Jonathan Edwards" />
-                  <figcaption>REFERÈNCIA · JONATHAN EDWARDS</figcaption>
-                </figure>
-                <div className="comparison-athlete">
-                  <span className="eyebrow">ATLETA · {activeClipPhase} · FOTOGRAMA {activeFrameSlot + 1}</span>
-                  <strong>{activeSlot.label || 'Angle sense nom'}</strong>
-                  <span>{activeComputedAngle === null ? 'Selecciona tres punts per veure el valor.' : `${activeComputedAngle.toFixed(1)}° · ${referenceTextForSlot(activeClipPhase, activeSlot)}`}</span>
-                  <small>{activeSlot.points.length === requiredAnglePointCount ? activeSlot.points.map((point) => point.source === 'landmark' ? LANDMARK_NAMES[point.landmarkIndex ?? -1] ?? 'Landmark' : 'Punt manual').join(' · ') : 'Els punts i les línies es mostren sobre el vídeo de l’atleta.'}</small>
+              {allFramesSelected ? (
+                <div className="analysis-card-groups" data-testid="analysis-card-groups">
+                  {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => (
+                    <section className="analysis-phase-group" key={phase}>
+                      <div className="analysis-phase-heading">
+                        <div><span className="eyebrow">{phase}</span><h3>{phaseTitle(phase)}</h3></div>
+                        <span>{phaseBounds(phase)}</span>
+                      </div>
+                      <div className="analysis-card-grid">
+                        {frameSlots[phase].map((slot, index) => {
+                          const value = slot.angleMode === 'segments'
+                            ? slot.points.length === 4 ? calculateSegmentAngle(slot.points[0], slot.points[1], slot.points[2], slot.points[3]) : null
+                            : slot.points.length === 3 ? calculateAngle(slot.points[0], slot.points[1], slot.points[2]) : null;
+                          const referenceText = referenceTextForSlot(phase, slot);
+                          const referenceRange = slot.referenceId ? parseReferenceRange(referenceText) : null;
+                          const difference = value !== null && referenceRange ? value - referenceRange.target : null;
+                          const status = difference === null || !referenceRange
+                            ? 'Pendent de referència'
+                            : Math.abs(difference) <= referenceRange.tolerance
+                              ? 'DINS DEL RANG'
+                              : Math.abs(difference) <= referenceRange.tolerance + 2
+                                ? 'REVISAR'
+                                : 'FORA DEL RANG';
+                          const source = slot.frame === null ? null : landmarkCache[slot.frame];
+                          const slotConfidence = confidenceForSlot(slot);
+                          const confidenceLabel = slotConfidence === null
+                            ? 'Sense landmarks de confiança'
+                            : slotConfidence >= .7 ? 'Alta confiança' : slotConfidence >= .45 ? 'Revisar' : 'Baixa confiança';
+                          return (
+                            <article className="analysis-result-card" key={`${phase}-${index}`} data-testid={`analysis-card-${phase.toLowerCase()}-${index + 1}`}>
+                              <header className="analysis-card-header">
+                                <div><span className="eyebrow">{phaseTitle(phase)} · Fotograma {index + 1}</span><h4>{slotTitle(phase, slot, index)}</h4></div>
+                                <span className={`analysis-status ${status === 'DINS DEL RANG' ? 'ok' : status === 'REVISAR' ? 'review' : 'pending'}`}>{status === 'DINS DEL RANG' && <Check size={12} />}{status}</span>
+                              </header>
+                              <div className="analysis-visual-pair">
+                                <figure className={`analysis-reference-visual reference-crop-${phase.toLowerCase()}`}>
+                                  <img src={referenceImage} alt={`${phaseTitle(phase)} de Jonathan Edwards`} />
+                                  <figcaption>REFERÈNCIA · JONATHAN EDWARDS</figcaption>
+                                </figure>
+                                <figure className="analysis-athlete-visual">
+                                  {frameImages[phase][index] ? <img src={frameImages[phase][index] ?? undefined} alt={`${athlete}, ${phase} fotograma ${index + 1}`} /> : <div className="analysis-image-empty">Fotograma no disponible</div>}
+                                  {frameImages[phase][index] && (
+                                    <svg className="analysis-athlete-overlay" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-label="Esquelet, punts i línies de l’angle">
+                                      {source && CONNECTIONS.map(([start, end]) => source[start] && source[end] && (
+                                        <line key={`${start}-${end}`} x1={source[start].x} y1={source[start].y} x2={source[end].x} y2={source[end].y} className="overlay-skeleton-line" />
+                                      ))}
+                                      {slot.points.slice(0, -1).map((point, pointIndex) => <line key={`${point.id}-line`} x1={point.x} y1={point.y} x2={slot.points[pointIndex + 1].x} y2={slot.points[pointIndex + 1].y} className="overlay-angle-line" />)}
+                                      {slot.angleMode === 'vertex' && slot.points.length === 3 && <path d={angleArcPath(slot.points[0], slot.points[1], slot.points[2])} className="overlay-angle-arc" />}
+                                      {slot.points.map((point, pointIndex) => <g key={point.id}><circle cx={point.x} cy={point.y} r=".017" className={point.source === 'landmark' ? 'overlay-point-landmark' : 'overlay-point-manual'} /><text x={point.x + .023} y={point.y - .018} fontSize=".07">{pointIndex + 1}</text></g>)}
+                                    </svg>
+                                  )}
+                                  <div className="analysis-angle-badge">{value === null ? 'Angle pendent' : `${value.toFixed(1)}°`}</div>
+                                  <figcaption>ATLETA · F {slot.frame ?? '—'}</figcaption>
+                                </figure>
+                              </div>
+                              <div className="analysis-metrics">
+                                <div><span>Referència</span><strong>{referenceText}</strong></div>
+                                <div><span>Atleta</span><strong>{value === null ? '—' : `${value.toFixed(1)}°`}</strong></div>
+                                <div><span>Diferència</span><strong>{difference === null ? '—' : `${difference >= 0 ? '+' : ''}${difference.toFixed(1)}°`}</strong></div>
+                                <div><span>Confiança</span><strong className={slotConfidence === null ? 'muted' : slotConfidence >= .7 ? 'confidence-high' : slotConfidence >= .45 ? 'confidence-review' : 'confidence-low'}>{slotConfidence === null ? confidenceLabel : `${confidenceLabel} · ${Math.round(slotConfidence * 100)}%`}</strong></div>
+                              </div>
+                              <div className="analysis-card-actions">
+                                <button className="button-outline" onClick={() => focusAnalysisCard(phase, index)}><Settings2 size={13} /> Editar</button>
+                                <button className="button-outline" onClick={() => changeAnalysisCardFrame(phase, index)}><Video size={13} /> Canviar fotograma</button>
+                                <button className="button-outline" onClick={() => focusAnalysisCard(phase, index, true)}><Crosshair size={13} /> Corregir punts</button>
+                                <button className="button-outline" onClick={() => showToast(value === null ? 'Completa els punts per recalcular l’angle.' : 'Angle recalculat amb les coordenades actuals.')}><RotateCcw size={13} /> Recalcular</button>
+                                <button className="button-primary" onClick={() => showToast(value === null ? 'No es pot confirmar: falten punts per calcular l’angle.' : `${slotTitle(phase, slot, index)} confirmat.`)} disabled={value === null}><Check size={13} /> Confirmar</button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
                 </div>
-              </div>
-              <div className="report-table-wrap">
+              ) : <div className="empty-inline" data-testid="analysis-cards-waiting">Selecciona manualment els nou fotogrames i configura els punts per veure les targetes comparatives.</div>}
+              <details className="analysis-table-details">
+                <summary>Veure també la taula de resultats</summary>
+                <div className="report-table-wrap">
                 <table className="report-table">
                   <thead><tr><th>Salt</th><th>Fotograma</th><th>Angle</th><th>Jonathan Edwards</th><th>Atleta</th><th>Diferència</th><th>Estat</th></tr></thead>
                   <tbody>
@@ -1488,7 +1646,7 @@ function App() {
                         <tr key={`${row.phase}-${row.index}`}>
                           <td>{row.phase}</td>
                           <td>{row.slot.frame === null ? '—' : `F ${row.slot.frame}`}</td>
-                          <td>{row.slot.label || 'Angle sense nom'}</td>
+                          <td>{slotTitle(row.phase, row.slot, row.index)}</td>
                           <td>{referenceText}</td>
                           <td>{row.value === null ? '—' : `${row.value.toFixed(1)}°`}</td>
                           <td>{difference === null ? '—' : `${difference >= 0 ? '+' : ''}${difference.toFixed(1)}°`}</td>
@@ -1499,6 +1657,7 @@ function App() {
                   </tbody>
                 </table>
               </div>
+              </details>
               <div className="disclosure"><Info size={15} /><span>Eina d’anàlisi esportiva, no de precisió mèdica. La confiança dels landmarks, l’angle de càmera, la velocitat de fotogrames i les correccions manuals afecten la interpretació.</span></div>
             </div>
           </section>

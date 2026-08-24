@@ -1,0 +1,374 @@
+IMPORTANT — VULL QUE LA PANTALLA D'ANÀLISI SIGUI VISUALMENT COM LA REFERÈNCIA QUE T'ADJUNTO
+
+Mira la captura de pantalla que t'he proporcionat.
+
+Vull que la pantalla d'anàlisi de la meva aplicació segueixi AQUESTA ESTRUCTURA VISUAL I ORGANITZACIÓ.
+
+No vull que facis simplement una taula més bonica.
+
+Vull que cada angle/fotograma sigui una TARGETA D'ANÀLISI independent, visual i fàcil d'entendre, com en la referència.
+
+==================================================
+1. ESTRUCTURA DE CADA TARGETA
+==================================================
+
+Cada anàlisi ha de tenir una targeta pròpia.
+
+Dins de la targeta:
+
+ESQUERRA:
+→ imatge de referència de Jonathan Edwards corresponent a aquella batuda/angle.
+
+DRETA:
+→ fotograma exacte de l'atleta seleccionat.
+
+Les dues imatges han d'estar visibles SIMULTÀNIAMENT.
+
+Això és molt important perquè l'usuari pugui comparar visualment la postura de l'atleta amb la referència.
+
+==================================================
+2. SOBRE LA IMATGE DE L'ATLETA
+==================================================
+
+Sobre el fotograma de l'atleta mostrar:
+
+- esquelet de MediaPipe;
+- punts anatòmics;
+- punts manuals si n'hi ha;
+- línies utilitzades per calcular l'angle;
+- arc de l'angle quan sigui possible;
+- valor de l'angle calculat.
+
+Per tant, no vull només una fotografia de l'atleta.
+
+Vull veure visualment COM s'ha calculat l'angle.
+
+==================================================
+3. LA REFERÈNCIA DE JONATHAN EDWARDS
+==================================================
+
+A l'esquerra de cada targeta mostrar la imatge de referència corresponent.
+
+No mostrar sempre una mateixa imatge genèrica.
+
+La referència ha de correspondre a:
+
+BATUDA 1
+→ referència de la Batuda 1
+
+BATUDA 2
+→ referència de la Batuda 2
+
+BATUDA 3
+→ referència de la Batuda 3
+
+La imatge ha de servir com a guia visual per saber exactament quin angle s'ha de seleccionar.
+
+==================================================
+4. NOM DE L'ANGLE
+==================================================
+
+Cada targeta ha de tenir un títol clar.
+
+Per exemple:
+
+BATUDA 1 — ANGLE 1
+
+o el nom concret de l'angle quan ja estigui definit.
+
+NO mostrar mai:
+
+"Angle sense nom"
+
+Elimina completament aquesta etiqueta.
+
+Si encara no s'ha definit el nom, permetre seleccionar/configurar el nom abans de guardar l'anàlisi.
+
+==================================================
+5. VALORS COMPARATS
+==================================================
+
+A la part inferior de la targeta mostrar clarament:
+
+REFERÈNCIA
+69° ± 3°
+
+ATLETA
+67,4°
+
+DIFERÈNCIA
+-1,6°
+
+ESTAT
+DINS DEL RANG
+
+Aquests valors han de ser molt fàcils de veure.
+
+No amagar-los en una taula complicada.
+
+==================================================
+6. ESTAT DE CONFIANÇA
+==================================================
+
+Mantenir també la informació de confiança de MediaPipe.
+
+Per exemple:
+
+🟢 Alta confiança
+🟠 Revisar
+🔴 Baixa confiança
+
+Si algun landmark necessari per a l'angle té baixa confiança, indicar-ho clarament.
+
+Però no impedir que l'usuari continuï.
+
+L'usuari ha de poder corregir manualment el punt.
+
+==================================================
+7. CADA TARGETA HA DE SER EDITABLE
+==================================================
+
+A cada targeta incloure opcions com:
+
+[EDITAR]
+
+[CANVIAR FOTOGRAMA]
+
+[CORREGIR PUNTS]
+
+[RECALCULAR]
+
+[CONFIRMAR]
+
+Si l'usuari modifica un punt:
+
+→ recalcular angle
+
+→ actualitzar valor de l'atleta
+
+→ actualitzar diferència
+
+→ actualitzar estat.
+
+==================================================
+8. SELECCIÓ DELS PUNTS
+==================================================
+
+Quan l'usuari entri a "CORREGIR PUNTS", ha de poder seleccionar:
+
+A) landmarks de MediaPipe
+
+O
+
+B) qualsevol punt de la imatge manualment.
+
+Això és molt important.
+
+NO limitar la selecció als punts de MediaPipe.
+
+Per exemple, si l'angle necessita:
+
+GENOLL → TURMELL → TERRA
+
+l'usuari ha de poder seleccionar el genoll i turmell de MediaPipe i després clicar manualment un punt sobre el terra.
+
+Els tres punts poden ser una combinació de punts automàtics i manuals.
+
+==================================================
+9. CÀLCUL MATEMÀTIC
+==================================================
+
+Una vegada seleccionats els punts:
+
+calcular l'angle matemàticament a partir de les coordenades reals.
+
+No estimar visualment.
+
+No inventar el resultat.
+
+Quan l'usuari mogui un punt:
+
+recalcular immediatament.
+
+Mostrar el valor amb una decimal.
+
+==================================================
+10. ORGANITZACIÓ PER BATUDES
+==================================================
+
+No vull que tots els angles apareguin barrejats.
+
+Organitzar la pantalla així:
+
+━━━━━━━━━━━━━━━━━━━━━━
+BATUDA 1
+━━━━━━━━━━━━━━━━━━━━━━
+
+[ TARGETA ANGLE 1 ]
+
+[ TARGETA ANGLE 2 ]
+
+[ TARGETA ANGLE α ]
+
+[ TARGETA ANGLE TRAJECTÒRIA ]
+
+━━━━━━━━━━━━━━━━━━━━━━
+BATUDA 2
+━━━━━━━━━━━━━━━━━━━━━━
+
+[ TARGETA ANGLE 1 ]
+
+[ TARGETA ANGLE 2 ]
+
+[ TARGETA ANGLE β ]
+
+[ TARGETA ANGLE TRAJECTÒRIA ]
+
+━━━━━━━━━━━━━━━━━━━━━━
+BATUDA 3
+━━━━━━━━━━━━━━━━━━━━━━
+
+[ TARGETA ANGLE 1 ]
+
+[ TARGETA ANGLE 2 ]
+
+[ TARGETA ANGLE γ ]
+
+[ TARGETA ANGLE TRAJECTÒRIA ]
+
+Això ha de permetre entendre fàcilment a quina batuda correspon cada resultat.
+
+==================================================
+11. ELS FOTOGRAMES SÓN ELS QUE HA SELECCIONAT L'USUARI
+==================================================
+
+NO seleccionis automàticament els fotogrames.
+
+L'usuari selecciona manualment els 3 fotogrames de:
+
+HOP
+STEP
+JUMP
+
+I després aquests fotogrames són els que apareixen a les targetes d'anàlisi.
+
+Per exemple:
+
+HOP
+→ Fotograma 1
+→ Fotograma 2
+→ Fotograma 3
+
+STEP
+→ Fotograma 1
+→ Fotograma 2
+→ Fotograma 3
+
+JUMP
+→ Fotograma 1
+→ Fotograma 2
+→ Fotograma 3
+
+==================================================
+12. NO BARREJAR ELS TRES SALTS
+==================================================
+
+Cada salt ha de tenir el seu propi clip.
+
+Primer:
+
+HOP
+→ clip HOP
+→ seleccionar 3 fotogrames
+→ analitzar
+
+Després:
+
+STEP
+→ clip STEP
+→ seleccionar 3 fotogrames
+→ analitzar
+
+Després:
+
+JUMP
+→ clip JUMP
+→ seleccionar 3 fotogrames
+→ analitzar
+
+No vull els tres clips barrejats en una mateixa interfície de selecció.
+
+==================================================
+13. DISSENY GENERAL
+==================================================
+
+Vull que visualment s'aproximi molt a la captura que t'he proporcionat:
+
+- targetes individuals;
+- dues imatges comparatives;
+- informació de l'angle sota les imatges;
+- estat visual;
+- confiança;
+- botons d'edició;
+- colors suaus però diferenciats;
+- molt espai visual;
+- informació ben agrupada.
+
+L'usuari ha de poder entendre cada resultat sense haver de llegir una gran quantitat de text.
+
+==================================================
+14. NO CANVIAR LA PART TÈCNICA QUE JA FUNCIONA
+==================================================
+
+Aquesta modificació és sobretot per millorar:
+
+- la presentació;
+- l'organització;
+- la comparació visual;
+- la selecció dels punts;
+- el flux d'anàlisi.
+
+NO eliminis MediaPipe.
+
+NO substitueixis els càlculs reals.
+
+NO utilitzis dades fictícies.
+
+NO eliminis la possibilitat de corregir els landmarks.
+
+NO limitis els punts als landmarks de MediaPipe.
+
+==================================================
+RESULTAT QUE VULL
+==================================================
+
+Quan l'usuari arribi a l'anàlisi final, vull que visualment s'assembli a això:
+
+┌─────────────────────────────────────────────────────────┐
+│ BATUDA 1 — ANGLE 1                                     │
+│                                                         │
+│  REFERÈNCIA              ATLETA                         │
+│  ┌──────────────┐        ┌──────────────┐               │
+│  │              │        │  ESQUELET    │               │
+│  │ J. EDWARDS   │        │  + ANGLE     │               │
+│  │              │        │              │               │
+│  └──────────────┘        └──────────────┘               │
+│                                                         │
+│  REFERÈNCIA: 69° ± 3°      ATLETA: 67,4°               │
+│                                                         │
+│  DIFERÈNCIA: -1,6°         🟢 DINS DEL RANG             │
+│                                                         │
+│  Confiança: 🟢 Alta                                     │
+│                                                         │
+│  [EDITAR] [CANVIAR FOTOGRAMA] [CORREGIR PUNTS]         │
+└─────────────────────────────────────────────────────────┘
+
+I repetir aquesta estructura per a tots els angles de les tres batudes.
+
+La captura que t'he proporcionat és la REFERÈNCIA VISUAL de com vull que s'organitzi aquesta pantalla.
+
+No facis una còpia exacta del disseny si això perjudica la usabilitat, però sí que vull mantenir aquesta idea de:
+
+REFERÈNCIA + FOTOGRAMA ATLETA + ANGLE + COMPARACIÓ + CONFIANÇA + EDICIÓ
+
+en una targeta visual independent per cada anàlisi.
