@@ -1,0 +1,565 @@
+## OBJECTIU
+
+Continua desenvolupant l'aplicació d'anàlisi biomecànica del triple salt que ja has construït.
+
+**No eliminis les funcionalitats que ja funcionen correctament.** Modifica i amplia l'aplicació existent segons les especificacions següents.
+
+L'objectiu és aconseguir una eina visual, fàcil d'utilitzar i fiable per analitzar els tres salts del triple salt a partir d'un vídeo.
+
+---
+
+# 1. SELECCIÓ DE L'ATLETA DURANT EL VÍDEO
+
+Actualment no em permet seleccionar correctament l'atleta durant la reproducció del vídeo. Això s'ha de corregir.
+
+L'usuari ha de poder seleccionar manualment l'atleta **en qualsevol moment del vídeo**.
+
+Quan l'usuari faci clic sobre una persona detectada:
+
+* aquesta persona passa a ser l'atleta que s'està analitzant;
+* els seus landmarks de MediaPipe passen a ser els landmarks utilitzats per als càlculs;
+* el sistema ha de mantenir aquesta selecció durant els fotogrames següents;
+* les altres persones no s'han d'utilitzar per calcular els angles.
+
+També ha d'existir la possibilitat de seleccionar l'atleta al principi del vídeo.
+
+Per tant, hi ha d'haver dues opcions:
+
+### Selecció inicial
+
+L'usuari selecciona l'atleta abans de començar l'anàlisi.
+
+### Selecció/correcció durant el vídeo
+
+Si el tracking s'equivoca, l'usuari pot pausar el vídeo, seleccionar la persona correcta i continuar l'anàlisi.
+
+La selecció manual de l'usuari sempre ha de tenir prioritat sobre la detecció automàtica.
+
+---
+
+# 2. MILLORAR EL TRACKING DE L'ATLETA
+
+El tracking actual és massa sensible a altres persones i objectes.
+
+Quan hi ha:
+
+* altres atletes;
+* persones al fons;
+* objectes;
+* obstacles;
+* estructures;
+* càmeres;
+* zones amb molta informació visual;
+* o l'atleta apareix molt lluny,
+
+el sistema pot desviar els landmarks cap a una altra persona.
+
+Això s'ha de reduir considerablement.
+
+## REQUISIT IMPORTANT
+
+El sistema **NO ha de seleccionar simplement la persona amb millor detecció en cada fotograma**.
+
+Ha de mantenir la identitat de l'atleta seleccionat.
+
+Utilitzar la informació disponible de fotogrames anteriors per mantenir la continuïtat del tracking.
+
+Sempre que sigui possible, tenir en compte:
+
+* posició anterior;
+* centre de pelvis;
+* posició relativa dels landmarks;
+* mida del cos;
+* moviment;
+* trajectòria;
+* confiança dels landmarks;
+* continuïtat temporal.
+
+Si hi ha dubtes sobre quina persona és l'atleta, **no canviar automàticament a una altra persona**.
+
+És preferible mostrar:
+
+**"Revisar detecció"**
+
+que analitzar una persona incorrecta.
+
+---
+
+# 3. CORRECCIÓ MANUAL DEL TRACKING
+
+Si l'usuari detecta que els punts s'han desviat cap a una altra persona:
+
+1. Pausar el vídeo.
+2. Mostrar les persones detectades.
+3. Permetre seleccionar l'atleta correcte.
+4. Assignar aquesta persona com a atleta.
+5. Continuar el tracking a partir d'aquest punt.
+
+La correcció manual ha de tenir prioritat sobre qualsevol decisió automàtica.
+
+---
+
+# 4. SELECCIÓ DELS SALTS DIRECTAMENT SOBRE EL VÍDEO
+
+Eliminar el sistema actual en què l'usuari ha d'escriure manualment quan comença i acaba cada tram.
+
+**No vull haver d'introduir temps manualment.**
+
+La selecció s'ha de fer directament sobre el vídeo.
+
+L'usuari ha de poder reproduir el vídeo i marcar els moments amb botons.
+
+Per exemple:
+
+### HOP
+
+L'usuari arriba al moment en què comença el HOP i prem:
+
+**[ INICI HOP ]**
+
+Continua el vídeo fins al final del HOP i prem:
+
+**[ FINAL HOP ]**
+
+El sistema guarda automàticament aquests dos fotogrames/temps.
+
+---
+
+### STEP
+
+El mateix:
+
+**[ INICI STEP ]**
+
+→ reproducció
+
+**[ FINAL STEP ]**
+
+---
+
+### JUMP
+
+El mateix:
+
+**[ INICI JUMP ]**
+
+→ reproducció
+
+**[ FINAL JUMP ]**
+
+---
+
+La interfície ha de mostrar visualment els trams seleccionats sobre la timeline.
+
+Per exemple:
+
+```text
+VIDEO
+
+|--------- HOP ---------|------ STEP ------|------- JUMP -------|
+▲                       ▲                  ▲                   ▲
+Inici                    Final              Final              Final
+```
+
+Els punts d'inici i final han de poder-se modificar posteriorment.
+
+---
+
+# 5. CÀMERA LENTA I CONTROL DE FOTOGRAMES
+
+Mantenir el selector de velocitat del vídeo:
+
+* 0.25×
+* 0.5×
+* 0.75×
+* 1×
+* 1.25×
+* 1.5×
+* 1.75×
+* 2×
+
+La velocitat només modifica la reproducció.
+
+No modifica els fotogrames reals ni els càlculs.
+
+Afegir també:
+
+* fotograma anterior;
+* fotograma següent;
+* pausa;
+* reproducció.
+
+Això és necessari perquè l'usuari pugui seleccionar amb precisió els moments biomecànics.
+
+---
+
+# 6. ANÀLISI DE CADA SALT
+
+Un cop l'usuari ha definit:
+
+* inici/final HOP;
+* inici/final STEP;
+* inici/final JUMP;
+
+l'aplicació ha de crear tres clips d'anàlisi:
+
+**HOP**
+
+**STEP**
+
+**JUMP**
+
+Aquests clips han de servir com a unitats independents d'anàlisi.
+
+---
+
+# 7. SELECCIÓ DELS TRES FOTOGRAMES
+
+Per cada salt, l'usuari ha de poder seleccionar **tres fotogrames biomecànics importants**.
+
+Inicialment, el sistema pot proposar tres fotogrames automàticament.
+
+Però l'usuari ha de poder modificar-los.
+
+Els tres fotogrames s'han de presentar com:
+
+### FOTOGRAMA 1
+
+Moment anterior
+
+### FOTOGRAMA 2
+
+Moment principal
+
+### FOTOGRAMA 3
+
+Moment posterior
+
+**No assumeixis encara quins són exactament els moments biomecànics ni quins angles corresponen a cada fotograma.**
+
+Aquesta metodologia la proporcionaré posteriorment.
+
+Per tant, en aquesta fase només cal crear el sistema perquè jo pugui definir-ho després.
+
+---
+
+# 8. CONFIGURACIÓ DELS ANGLES
+
+No vull que inventis cap metodologia biomecànica.
+
+No inventis:
+
+* punts;
+* angles;
+* fórmules;
+* moments;
+* interpretacions;
+* criteris tècnics.
+
+La metodologia exacta la proporcionaré posteriorment.
+
+L'aplicació ha de preparar una estructura flexible perquè jo pugui indicar:
+
+* quin fotograma s'ha d'utilitzar;
+* quins punts de MediaPipe intervenen;
+* quin tipus d'angle és;
+* quina fórmula s'ha d'utilitzar;
+* quina referència correspon;
+* quina tolerància té.
+
+---
+
+# 9. MEDIAPIPE COM A FONT DELS PUNTS
+
+Els punts utilitzats per calcular els angles han de provenir de la detecció real de MediaPipe Pose o equivalent.
+
+No utilitzar IA generativa per inventar els angles.
+
+Els angles s'han de calcular matemàticament a partir de les coordenades dels landmarks.
+
+Si l'usuari corregeix manualment un landmark:
+
+**recalcular automàticament l'angle.**
+
+---
+
+# 10. COMPARACIÓ AMB JONATHAN EDWARDS
+
+Vull una secció específica de comparació amb la referència de Jonathan Edwards.
+
+Utilitza la **imatge de referència que he proporcionat anteriorment** dins del projecte.
+
+La imatge ha d'aparèixer visualment a la secció de referència biomecànica.
+
+No la substitueixis per una il·lustració inventada.
+
+La comparació ha de permetre veure:
+
+**REFERÈNCIA**
+
+vs.
+
+**ATLETA**
+
+I els valors calculats.
+
+---
+
+# 11. TAULA DE RESULTATS — REDISSENY COMPLET
+
+No m'agrada la taula actual.
+
+Redissenya-la perquè sigui molt més visual i fàcil d'interpretar.
+
+No vull una taula excessivament tècnica ni plena de camps difícils d'entendre.
+
+Prioritzar:
+
+| Salt | Moment | Angle | Referència | Atleta | Diferència | Resultat |
+| ---- | ------ | ----- | ---------- | ------ | ---------- | -------- |
+
+El resultat ha de ser visual:
+
+🟢 DINS DEL RANG
+
+🟠 REVISAR
+
+🔴 FORA DEL RANG
+
+Cada fila ha de permetre accedir al fotograma corresponent.
+
+---
+
+# 12. COMPARACIÓ VISUAL
+
+Per cada resultat important, mostrar:
+
+**REFERÈNCIA JONATHAN EDWARDS**
+
+i
+
+**ATLETA**
+
+de manera visual.
+
+Sobre la imatge de l'atleta mostrar:
+
+* landmarks;
+* segments utilitzats;
+* línies de referència;
+* angle calculat.
+
+Sobre la referència mostrar la metodologia visual corresponent quan sigui possible.
+
+L'objectiu és que l'usuari pugui comparar visualment les dues posicions.
+
+---
+
+# 13. ELIMINAR "ANGLE DEFINITIONS" DE LA INTERFÍCIE PRINCIPAL
+
+Actualment hi ha una secció anomenada:
+
+**"Angle Definitions"**
+
+No m'agrada perquè és massa tècnica i no queda clara per a l'usuari.
+
+No la mostris com una secció principal de la interfície.
+
+Si és necessària internament per configurar els càlculs, mantén-la com una estructura interna de configuració.
+
+L'usuari final ha de veure noms senzills i comprensibles.
+
+Per exemple:
+
+* Anàlisi HOP
+* Anàlisi STEP
+* Anàlisi JUMP
+* Fotogrames
+* Angles
+* Comparació
+* Resultats
+* Revisió
+
+No mostrar informació interna de programació si no és necessària.
+
+---
+
+# 14. IDIOMA DE L'APLICACIÓ
+
+Canviar tota la interfície a **català**.
+
+No vull que apareguin explicacions o botons en anglès.
+
+Traduir:
+
+* botons;
+* menús;
+* avisos;
+* instruccions;
+* etiquetes;
+* missatges d'error;
+* resultats;
+* estats;
+* controls del vídeo;
+* pantalles de configuració.
+
+Utilitzar un català natural i clar.
+
+Exemple:
+
+No:
+
+**Select Athlete**
+
+Sí:
+
+**Selecciona l'atleta**
+
+No:
+
+**Frame**
+
+Sí:
+
+**Fotograma**
+
+No:
+
+**Review**
+
+Sí:
+
+**Revisar**
+
+---
+
+# 15. DISSENY VISUAL
+
+Vull que l'aplicació sigui més visual i atractiva.
+
+No vull una interfície excessivament grisa ni purament tècnica.
+
+Utilitzar:
+
+* targetes visuals;
+* colors suaus;
+* icones;
+* jerarquia visual clara;
+* botons fàcils de trobar;
+* indicadors de progrés;
+* seccions ben diferenciades.
+
+Els colors han de servir també per comunicar informació:
+
+🟢 correcte / dins del rang
+
+🟠 revisar
+
+🔴 fora del rang / problema
+
+No abusar dels colors.
+
+La interfície ha de continuar sent professional i adequada per a una eina d'anàlisi esportiva.
+
+---
+
+# 16. FLUX FINAL DE L'APLICACIÓ
+
+El flux d'usuari hauria de ser:
+
+```text
+1. Pujar vídeo
+        ↓
+2. Seleccionar atleta
+        ↓
+3. Reproduir vídeo
+        ↓
+4. Marcar INICI HOP
+        ↓
+5. Marcar FINAL HOP
+        ↓
+6. Marcar INICI STEP
+        ↓
+7. Marcar FINAL STEP
+        ↓
+8. Marcar INICI JUMP
+        ↓
+9. Marcar FINAL JUMP
+        ↓
+10. Analitzar
+        ↓
+11. Crear els tres clips
+        ↓
+12. Seleccionar/revisar fotogrames
+        ↓
+13. Detectar landmarks amb MediaPipe
+        ↓
+14. Aplicar la metodologia biomecànica configurada
+        ↓
+15. Calcular angles matemàticament
+        ↓
+16. Comparar amb Jonathan Edwards
+        ↓
+17. Revisar/corregir landmarks
+        ↓
+18. Recalcular
+        ↓
+19. Mostrar resultats finals
+```
+
+---
+
+# 17. PRINCIPI FONAMENTAL
+
+L'aplicació ha de combinar:
+
+**AUTOMATITZACIÓ + CONTROL HUMÀ**
+
+L'aplicació ha de fer automàticament:
+
+* detecció dels landmarks;
+* seguiment;
+* càlcul matemàtic;
+* proposta de fotogrames;
+* comparació;
+* classificació dels resultats.
+
+Però l'usuari sempre ha de poder:
+
+* seleccionar l'atleta;
+* canviar l'atleta durant el vídeo;
+* corregir el tracking;
+* marcar els inicis i finals dels salts;
+* seleccionar els fotogrames;
+* moure landmarks;
+* revisar els resultats.
+
+---
+
+# 18. IMPORTANT — NO INVENTAR LA METODOLOGIA
+
+En aquesta fase **NO implementis ni inventis nous criteris biomecànics**.
+
+La metodologia exacta dels angles, els tres fotogrames i els punts anatòmics serà proporcionada posteriorment.
+
+Prepara l'arquitectura perquè aquestes dades es puguin configurar fàcilment.
+
+No modifiquis els valors de referència que ja s'han proporcionat.
+
+No inventis noves dades.
+
+No substitueixis la metodologia de la imatge de referència per una metodologia pròpia.
+
+---
+
+# 19. RESULTAT ESPERAT
+
+Vull que la nova versió sigui una eina d'anàlisi real, no una maqueta.
+
+Ha de permetre:
+
+**seleccionar l'atleta → seguir-lo correctament → seleccionar els tres salts directament sobre el vídeo → revisar els fotogrames → aplicar la metodologia → calcular els angles → comparar-los amb Jonathan Edwards → corregir errors → obtenir els resultats finals.**
+
+Mantén la detecció real de MediaPipe i els càlculs matemàtics existents.
+
+Fes aquestes modificacions sobre l'aplicació actual sense trencar les funcionalitats que ja funcionen correctament.

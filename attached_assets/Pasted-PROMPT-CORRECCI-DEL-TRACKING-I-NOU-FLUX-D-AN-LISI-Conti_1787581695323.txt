@@ -1,0 +1,407 @@
+PROMPT — CORRECCIÓ DEL TRACKING I NOU FLUX D'ANÀLISI
+
+Continua treballant sobre l'aplicació actual. NO facis una aplicació nova ni eliminis les funcionalitats que ja funcionen. Necessito corregir alguns problemes importants del flux d'anàlisi.
+
+1. PROBLEMA PRINCIPAL: SELECCIÓ INCORRECTA DE L'ATLETA
+
+El problema principal encara no està solucionat.
+
+Quan hi ha altres persones, objectes o elements visuals al vídeo, MediaPipe continua desviant els punts cap a una altra persona o objecte en comptes de mantenir l'atleta que vull analitzar.
+
+A més, quan clico manualment sobre l'atleta correcte, actualment no sembla que aquesta selecció canviï realment la persona que s'està analitzant.
+
+Això s'ha de solucionar.
+
+Quan l'usuari clica sobre una persona detectada, AQUELLA persona passa a ser l'atleta que s'analitzarà.
+
+A partir d'aquell moment:
+- els seus landmarks són els que s'han d'utilitzar;
+- els seus punts són els que s'han de seguir;
+- els angles s'han de calcular a partir d'aquesta persona;
+- les altres persones no s'han d'utilitzar per als càlculs.
+
+No vull que el sistema simplement esculli automàticament la persona més fàcil de detectar a cada fotograma.
+
+2. NO CAL QUE EL TRACKING PERFECTE FUNCIONI A TOT EL VÍDEO
+
+Si el tracking general de tot el vídeo és difícil de resoldre, prioritza que funcioni correctament dins dels tres fragments que realment s'analitzaran:
+
+- HOP
+- STEP
+- JUMP
+
+Aquests són els fragments importants.
+
+Per tant, és acceptable que el sistema no tingui un tracking perfecte durant tot el vídeo, però dins dels fragments seleccionats ha de prioritzar l'atleta que l'usuari ha indicat manualment.
+
+3. SELECCIÓ DELS FRAGMENTS HOP / STEP / JUMP
+
+Mantén el sistema actual en què l'usuari selecciona directament sobre el vídeo:
+
+INICI HOP → FINAL HOP
+INICI STEP → FINAL STEP
+INICI JUMP → FINAL JUMP
+
+Però afegeix una funcionalitat molt important:
+
+BOTÓ "ESBORRAR"
+
+Cada selecció ha de tenir una opció per eliminar-la i tornar-la a seleccionar.
+
+Exemple:
+
+HOP
+Inici: 00:04.32
+Final: 00:05.18
+
+[ESBORRAR HOP]
+
+Si l'usuari s'ha equivocat i ha marcat l'inici o el final massa aviat o massa tard, ha de poder:
+
+ESBORRAR → tornar al vídeo → tornar a seleccionar.
+
+Fer el mateix amb:
+- HOP
+- STEP
+- JUMP
+
+També seria útil permetre modificar directament l'inici o final si és possible.
+
+4. NO BLOQUEJAR L'ACCÉS A L'ANÀLISI
+
+Actualment, si l'atleta no està "bloquejat" correctament, l'aplicació no em deixa avançar per veure què hi ha després d'analitzar els tres salts.
+
+Això no hauria de passar.
+
+El sistema NO ha de bloquejar tota l'aplicació simplement perquè el tracking no sigui perfecte.
+
+Si l'usuari ha seleccionat:
+- HOP
+- STEP
+- JUMP
+
+ha de poder prémer:
+
+ANALITZAR
+
+i entrar a la pantalla següent.
+
+Si existeix algun problema amb el tracking, mostrar-lo com una alerta o com una revisió pendent, però no impedir l'accés a la resta de l'anàlisi.
+
+Exemple:
+
+"Alguns fotogrames tenen una detecció de baixa confiança. Pots revisar-los abans de finalitzar l'anàlisi."
+
+I permetre continuar.
+
+5. DESPRÉS D'ANALITZAR ELS TRES SALTS
+
+Quan l'usuari ha seleccionat HOP + STEP + JUMP i prem ANALITZAR, l'aplicació ha de crear automàticament tres fragments curts:
+
+FRAGMENT 1 — HOP
+FRAGMENT 2 — STEP
+FRAGMENT 3 — JUMP
+
+Aquests fragments han de servir com a unitats independents d'anàlisi.
+
+6. ANÀLISI DELS FOTOGRAMES
+
+Dins de cada fragment, l'aplicació ha de permetre seleccionar 3 fotogrames importants.
+
+HOP:
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+STEP:
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+JUMP:
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+Inicialment el sistema pot proposar els fotogrames, però l'usuari ha de poder canviar-los.
+
+7. SELECCIÓ DELS ANGLES SOBRE CADA FOTOGRAMA
+
+Aquesta és una de les parts més importants.
+
+Un cop seleccionat un fotograma, l'usuari ha de poder indicar visualment quin angle s'ha de calcular.
+
+No vull haver d'escriure manualment una fórmula.
+
+Vull una interfície visual.
+
+Per exemple:
+
+[FOTOGRAMA HOP]
+
+[ + SELECCIONAR ANGLE ]
+
+L'usuari prem "Seleccionar angle" i després pot clicar els punts de l'esquelet corresponents.
+
+8. EXEMPLE DE SELECCIÓ D'ANGLE
+
+Per exemple:
+
+Fotograma 1 del HOP
+
+L'usuari selecciona:
+punt 1 → punt 2 → punt 3
+
+i indica:
+
+"Angle del bessó respecte al terra"
+
+L'aplicació utilitza els landmarks de MediaPipe i calcula matemàticament l'angle.
+
+Fotograma 2 del HOP
+
+L'usuari selecciona els punts corresponents i indica:
+
+"Angle del genoll"
+
+L'aplicació calcula aquest angle.
+
+Fotograma 3
+
+L'usuari pot seleccionar un altre angle.
+
+IMPORTANT:
+
+No inventis quins són aquests angles.
+
+No assumeixis encara quins punts corresponen a cada angle.
+
+Jo proporcionaré la metodologia exacta i la imatge de referència.
+
+El sistema ha de ser prou flexible perquè jo pugui definir-ho.
+
+9. UTILITZAR L'ESQUELET DE MEDIAPIPE
+
+Els punts que l'usuari seleccioni han de correspondre als landmarks reals detectats per MediaPipe.
+
+Per exemple:
+- maluc;
+- genoll;
+- turmell;
+- espatlla;
+- colze;
+- canell;
+- etc.
+
+Quan l'usuari seleccioni els punts, mostrar visualment:
+- els punts;
+- les línies;
+- el nom del landmark;
+- l'angle calculat.
+
+10. CORRECCIÓ MANUAL
+
+Aquesta part és imprescindible.
+
+Si MediaPipe col·loca malament un punt, l'usuari ha de poder arrossegar-lo manualment.
+
+Quan el punt es mou, l'angle s'ha de recalcular automàticament.
+
+No vull haver de tornar a analitzar tot el vídeo.
+
+11. CANVIAR EL FOTOGRAMA
+
+L'usuari també ha de poder canviar el fotograma seleccionat.
+
+Per exemple:
+
+HOP — Fotograma 1
+Fotograma actual: 153
+
+[Fotograma anterior]
+[Fotograma següent]
+[Canviar fotograma]
+
+Si canvio de fotograma:
+- carregar els landmarks d'aquell fotograma;
+- mostrar-los;
+- recalcular l'angle;
+- permetre corregir-los.
+
+12. RESULTAT DE CADA ANGLE
+
+Cada angle analitzat ha de generar un resultat.
+
+Per exemple:
+
+HOP
+Fotograma 1
+Angle: 67,4°
+
+Referència:
+69° ± 3°
+
+Diferència:
+-1,6°
+
+Estat:
+DINS DEL RANG
+
+Aquesta informació ha d'anar automàticament a la taula final.
+
+13. TAULA COMPARATIVA AMB JONATHAN EDWARDS
+
+Els resultats finals de cada fotograma i angle han d'anar directament a la taula de comparació.
+
+La taula ha de ser clara i visual.
+
+Columnes:
+
+Salt | Fotograma | Angle | Jonathan Edwards | Atleta | Diferència | Estat
+
+Exemple:
+
+HOP | 1 | Angle 1 | XX° ± X° | XX,X° | X,X° | DINS
+HOP | 2 | Angle 2 | XX° ± X° | XX,X° | X,X° | REVISAR
+HOP | 3 | Angle 3 | XX° ± X° | XX,X° | X,X° | FORA
+STEP | 1 | Angle 1 | XX° ± X° | XX,X° | X,X° | DINS
+JUMP | 1 | Angle 1 | XX° ± X° | XX,X° | X,X° | DINS
+
+Els valors de Jonathan Edwards han de provenir de les dades/metodologia que ja he proporcionat.
+
+No inventis cap valor nou.
+
+14. IMATGE DE REFERÈNCIA
+
+Inclou la imatge de referència de Jonathan Edwards que he proporcionat anteriorment.
+
+Ha de ser visible a la pantalla de comparació.
+
+La comparació ha de permetre veure:
+
+REFERÈNCIA
+
+vs.
+
+ATLETA
+
+i mostrar:
+- mateixa zona corporal;
+- mateix angle;
+- punts;
+- línies;
+- valor de referència;
+- valor de l'atleta.
+
+15. NO INVENTAR LA TÈCNICA BIOMECÀNICA
+
+Aquesta part és molt important.
+
+NO inventis cap definició biomecànica.
+
+No decideixis pel teu compte:
+- quins punts corresponen a cada angle;
+- quins fotogrames són biomecànicament correctes;
+- quina fórmula correspon a un angle;
+- quina part del cos representa cada valor;
+- quina metodologia s'ha d'utilitzar.
+
+Jo proporcionaré aquestes definicions posteriorment.
+
+Ara només necessito que l'aplicació tingui una estructura visual i funcional que permeti seleccionar:
+
+fotograma → punts → tipus d'angle → càlcul → comparació
+
+16. FLUX COMPLET QUE VULL
+
+PUJAR VÍDEO
+↓
+SELECCIONAR ATLETA
+↓
+REPRODUIR VÍDEO
+↓
+MARCAR INICI HOP
+↓
+MARCAR FINAL HOP
+↓
+MARCAR INICI STEP
+↓
+MARCAR FINAL STEP
+↓
+MARCAR INICI JUMP
+↓
+MARCAR FINAL JUMP
+↓
+ANALITZAR
+↓
+CREAR 3 CLIPS CURTS
+↓
+HOP / STEP / JUMP
+↓
+SELECCIONAR 3 FOTOGRAMES DE CADA SALT
+↓
+SELECCIONAR ELS ANGLES A CADA FOTOGRAMA
+↓
+MEDIAPIPE PROPORCIONA ELS LANDMARKS
+↓
+CÀLCUL MATEMÀTIC DE L'ANGLE
+↓
+CORRECCIÓ MANUAL SI ÉS NECESSARI
+↓
+RECALCULAR
+↓
+COMPARAR AMB JONATHAN EDWARDS
+↓
+TAULA FINAL DE RESULTATS
+
+17. PRIORITATS
+
+Ordena el desenvolupament en aquest ordre:
+
+PRIORITAT 1:
+Fer que la selecció manual de l'atleta funcioni realment.
+
+PRIORITAT 2:
+Evitar que els landmarks saltin a altres persones o objectes.
+
+PRIORITAT 3:
+Permetre seleccionar i esborrar/refer els fragments HOP, STEP i JUMP.
+
+PRIORITAT 4:
+Permetre entrar a l'anàlisi encara que el tracking tingui alguna incidència.
+
+PRIORITAT 5:
+Crear els tres clips.
+
+PRIORITAT 6:
+Permetre seleccionar els 3 fotogrames de cada salt.
+
+PRIORITAT 7:
+Permetre seleccionar visualment els punts/angles.
+
+PRIORITAT 8:
+Permetre corregir els landmarks.
+
+PRIORITAT 9:
+Calcular matemàticament els angles.
+
+PRIORITAT 10:
+Enviar automàticament els resultats a la taula comparativa amb Jonathan Edwards.
+
+REQUISIT FINAL
+
+No facis una maqueta.
+
+Totes aquestes funcions han de ser funcionals.
+
+La detecció de l'atleta ha de ser real.
+
+Els landmarks han de provenir de MediaPipe.
+
+Els angles s'han de calcular matemàticament.
+
+Les correccions manuals han de modificar realment el càlcul.
+
+I els resultats finals han d'arribar automàticament a la taula de comparació.
+
+No inventis cap metodologia biomecànica que encara no t'hagi proporcionat. La part de la tècnica i la definició exacta de cada angle la configurarem posteriorment.
