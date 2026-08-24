@@ -1299,6 +1299,61 @@ button {
   font-family: var(--app-font-mono);
 }
 
+.angle-point-list {
+  display: grid;
+  gap: .35rem;
+  grid-column: 1 / -1;
+  padding-top: .15rem;
+}
+
+.angle-point-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .5rem;
+  padding: .38rem .5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .3rem;
+  background: hsl(var(--background) / .65);
+  font-size: .66rem;
+}
+
+.angle-point-row > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.angle-point-row button {
+  border: 0;
+  padding: .15rem .2rem;
+  background: transparent;
+  color: hsl(4 69% 42%);
+  font-family: var(--app-font-mono);
+  font-size: .57rem;
+  text-transform: uppercase;
+}
+
+.angle-point-kind {
+  padding: .16rem .3rem;
+  border-radius: 999px;
+  font-family: var(--app-font-mono);
+  font-size: .55rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.angle-point-kind.landmark {
+  background: hsl(38 89% 61% / .2);
+  color: hsl(28 65% 34%);
+}
+
+.angle-point-kind.manual {
+  border: 1px solid hsl(4 69% 47% / .45);
+  color: hsl(4 69% 38%);
+}
+
 .active-button {
   border-color: hsl(var(--primary));
   background: hsl(24 76% 48% / .08);

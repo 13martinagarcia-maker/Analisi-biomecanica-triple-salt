@@ -1,0 +1,408 @@
+CORRECCIÓ DEL TRACKING I SELECCIÓ LLIURE DE PUNTS PER ALS ANGLES
+
+Continua treballant sobre l'aplicació actual. NO facis una aplicació nova i NO eliminis les funcionalitats que ja funcionen.
+
+Hi ha dos problemes importants que s'han de solucionar.
+
+==================================================
+1. PROBLEMA AMB LA SELECCIÓ DE L'ATLETA I LES PERSONES DEL FONS
+==================================================
+
+Actualment MediaPipe o el sistema de pose estimation continua seleccionant persones que no són l'atleta que vull analitzar.
+
+A la pantalla es pot veure que els punts/esquelet poden acabar associats a una altra persona del vídeo, especialment quan:
+
+- hi ha altres atletes;
+- hi ha persones al fons;
+- hi ha objectes;
+- hi ha tanques;
+- hi ha mobiliari;
+- el vídeo està gravat des de lluny;
+- l'atleta ocupa una part petita de la imatge.
+
+Això s'ha de solucionar tant com sigui possible.
+
+Si tècnicament és possible, el sistema ha d'ignorar les persones i objectes del fons i centrar el tracking en l'atleta seleccionat.
+
+PERÒ, si no és possible eliminar completament les interferències del fons, és imprescindible que l'usuari pugui CORREGIR MANUALMENT la persona que s'està analitzant.
+
+==================================================
+2. L'USUARI HA DE PODER CANVIAR L'ATLETA ANALITZAT
+==================================================
+
+Aquest punt és obligatori.
+
+Si MediaPipe s'ha equivocat i està analitzant una altra persona, l'usuari ha de poder seleccionar l'atleta correcte.
+
+Vull una opció clara com:
+
+"CANVIAR ATLETA"
+
+o
+
+"SELECCIONAR ATLETA"
+
+Quan es prem aquesta opció:
+
+- tornar a mostrar el vídeo;
+- mostrar les persones detectades si és possible;
+- permetre clicar sobre l'atleta correcte;
+- assignar aquesta persona com a atleta principal;
+- actualitzar el tracking;
+- utilitzar aquesta persona per als fotogrames i càlculs posteriors.
+
+No vull que l'usuari es quedi atrapat amb una persona incorrecta.
+
+Si MediaPipe canvia accidentalment a una altra persona durant el vídeo, també ha de ser possible tornar a seleccionar l'atleta correcte.
+
+==================================================
+3. FER EL TRACKING EL MÉS ROBUST POSSIBLE
+==================================================
+
+Una vegada l'usuari ha seleccionat l'atleta:
+
+- prioritzar aquesta persona;
+- mantenir la seva identitat entre fotogrames;
+- no canviar automàticament a una altra persona simplement perquè MediaPipe la detecta millor;
+- no utilitzar objectes del fons com si fossin parts de l'atleta;
+- si la confiança baixa, marcar el fotograma per revisar-lo.
+
+Quan el sistema no estigui segur de quina persona és l'atleta, és millor mostrar:
+
+"REVISIÓ NECESSÀRIA"
+
+que canviar automàticament a una altra persona.
+
+==================================================
+4. NO ÉS NECESSARI QUE ELIMINI FÍSICAMENT LES PERSONES DEL VÍDEO
+==================================================
+
+No cal que facis una edició del vídeo per eliminar físicament les persones del fons.
+
+El més important és que:
+
+- no siguin utilitzades per als càlculs;
+- no siguin seleccionades com a atleta;
+- no facin canviar el tracking;
+- l'usuari pugui corregir manualment la selecció.
+
+Si tècnicament és millor ignorar les persones del fons en lloc d'eliminar-les visualment, fes-ho així.
+
+==================================================
+5. NOU SISTEMA DE SELECCIÓ DELS ANGLES
+==================================================
+
+El segon problema és molt important.
+
+Actualment, quan arribo a l'anàlisi dels angles després d'haver seleccionat els tres fotogrames, sembla que només puc seleccionar punts que formen part de l'esquelet de MediaPipe.
+
+AIXÒ NO ÉS CORRECTE.
+
+No tots els punts necessaris per calcular els angles són punts anatòmics o landmarks de MediaPipe.
+
+Per exemple, alguns angles poden estar formats entre:
+
+- una part del cos;
+- una línia horitzontal del terra;
+- un punt de la pista;
+- una línia de referència;
+- un altre punt visual de la imatge.
+
+Per tant, no vull que el sistema limiti la selecció als punts de MediaPipe.
+
+==================================================
+6. PODER SELECCIONAR QUALSEVOL PUNT DE LA IMATGE
+==================================================
+
+Quan l'usuari arribi a la pantalla:
+
+"ANÀLISI DELS ANGLES"
+
+ha de poder clicar SOBRE QUALSEVOL PUNT DEL FOTOGRAMA.
+
+No importa si el punt és:
+
+- un landmark de MediaPipe;
+- el terra;
+- una línia de la pista;
+- un punt de l'espai;
+- un punt del cos que MediaPipe no ha detectat;
+- una referència visual;
+- qualsevol altre punt visible.
+
+L'aplicació ha de registrar les coordenades exactes del clic dins de la imatge.
+
+Per exemple:
+
+PUNT 1 → coordenada X,Y
+PUNT 2 → coordenada X,Y
+PUNT 3 → coordenada X,Y
+
+I a partir d'aquestes coordenades calcular matemàticament l'angle.
+
+==================================================
+7. ELS PUNTS DE MEDIAPIPE HAN DE CONTINUAR EXISTINT
+==================================================
+
+Això NO significa eliminar MediaPipe.
+
+Vull les dues opcions:
+
+A) seleccionar un landmark de MediaPipe;
+
+B) seleccionar manualment qualsevol punt de la imatge.
+
+Per tant, els punts poden ser:
+
+- automàtics;
+- manuals;
+- o una combinació dels dos.
+
+Exemple:
+
+Punt 1 = genoll detectat per MediaPipe
+
+Punt 2 = turmell detectat per MediaPipe
+
+Punt 3 = punt manual seleccionat sobre el terra
+
+I l'aplicació calcula l'angle utilitzant aquests tres punts.
+
+==================================================
+8. EXEMPLE: ANGLE RESPECTE AL TERRA
+==================================================
+
+Si necessito calcular un angle entre un segment del cos i el terra, no vull que l'aplicació obligui el terra a ser un landmark de MediaPipe.
+
+Per exemple:
+
+PUNT A = turmell
+PUNT B = genoll
+PUNT C = punt seleccionat manualment sobre el terra
+
+L'usuari ha de poder clicar aquest punt del terra.
+
+Després l'aplicació calcula matemàticament l'angle corresponent.
+
+També ha de ser possible seleccionar dos punts manualment per crear una línia horitzontal o una línia de referència.
+
+==================================================
+9. CÀLCUL MATEMÀTIC REAL
+==================================================
+
+Els angles no s'han d'estimar visualment.
+
+Han de calcular-se matemàticament a partir de les coordenades dels punts seleccionats.
+
+Si tenim tres punts:
+
+A = (x1, y1)
+B = (x2, y2)
+C = (x3, y3)
+
+i B és el vèrtex de l'angle, calcular l'angle entre:
+
+vector B → A
+
+i
+
+vector B → C
+
+utilitzant trigonometria/vectorització.
+
+Mostrar el resultat en graus amb una decimal.
+
+Exemple:
+
+58,3°
+
+==================================================
+10. ANGLES RESPECTE A UNA LÍNIA
+==================================================
+
+També vull poder definir angles entre un segment i una línia de referència.
+
+Per exemple:
+
+PUNT A → PUNT B = segment corporal
+
+PUNT C → PUNT D = línia del terra
+
+L'aplicació ha de poder calcular l'angle entre aquests dos segments.
+
+Això és important perquè alguns angles de la metodologia no són angles anatòmics de tres articulacions.
+
+==================================================
+11. INTERFÍCIE DE SELECCIÓ
+==================================================
+
+Quan arribi el moment de seleccionar un angle, mostrar una interfície clara.
+
+Per exemple:
+
+"Selecciona els punts de l'angle"
+
+1. Clica el primer punt
+2. Clica el segon punt
+3. Clica el tercer punt
+
+Després:
+
+ANGLE CALCULAT: XX,X°
+
+[CONFIRMAR ANGLE]
+
+[REPETIR]
+
+Els punts seleccionats han de quedar visibles sobre la imatge.
+
+També mostrar les línies entre els punts.
+
+==================================================
+12. PODER CORREGIR ELS PUNTS
+==================================================
+
+Després de seleccionar els punts, l'usuari ha de poder:
+
+- arrossegar un punt;
+- eliminar-lo;
+- tornar-lo a seleccionar;
+- moure'l amb precisió.
+
+Quan es mou un punt:
+
+EL RESULTAT DE L'ANGLE S'HA DE RECALCULAR AUTOMÀTICAMENT.
+
+Això ha de funcionar tant per als punts de MediaPipe com per als punts seleccionats manualment.
+
+==================================================
+13. DIFERENCIAR PUNTS AUTOMÀTICS I MANUALS
+==================================================
+
+Visualment estaria bé diferenciar:
+
+Punt detectat per MediaPipe
+
+i
+
+Punt seleccionat manualment.
+
+Per exemple:
+
+● Landmark automàtic
+
+○ Punt manual
+
+No és imprescindible utilitzar exactament aquests símbols, però l'usuari ha de poder entendre quins punts provenen de MediaPipe i quins ha seleccionat manualment.
+
+==================================================
+14. ELS TRES FOTOGRAMES CONTINUEN SENT MANUALS
+==================================================
+
+Recorda que els tres fotogrames de cada salt els selecciona L'USUARI.
+
+No els seleccionis automàticament.
+
+El flux és:
+
+HOP
+→ usuari selecciona fotograma 1
+→ usuari selecciona fotograma 2
+→ usuari selecciona fotograma 3
+
+STEP
+→ usuari selecciona fotograma 1
+→ usuari selecciona fotograma 2
+→ usuari selecciona fotograma 3
+
+JUMP
+→ usuari selecciona fotograma 1
+→ usuari selecciona fotograma 2
+→ usuari selecciona fotograma 3
+
+Després, dins de cada fotograma, l'usuari selecciona els punts necessaris per calcular cada angle.
+
+==================================================
+15. NO INVENTAR LA METODOLOGIA
+==================================================
+
+No decideixis automàticament quins punts corresponen als angles biomecànics.
+
+No inventis fórmules diferents de les que proporcionaré.
+
+No assumeixis que tots els angles són angles anatòmics.
+
+La funció que necessito ara és simplement que el sistema permeti:
+
+FOTOGRAMA
+↓
+SELECCIONAR PUNTS LLIUREMENT
+↓
+CALCULAR ANGLE MATEMÀTICAMENT
+↓
+CORREGIR PUNTS SI CAL
+↓
+GUARDAR RESULTAT
+
+La metodologia exacta de cada angle la definiré jo posteriorment a partir de la imatge de referència.
+
+==================================================
+16. RESULTAT FINAL
+==================================================
+
+Quan l'usuari hagi definit els punts i l'angle, aquest resultat ha d'anar a la taula comparativa amb Jonathan Edwards.
+
+Per exemple:
+
+HOP | Fotograma 1 | Angle 1 | Referència | Atleta | Diferència | Estat
+
+El valor de l'atleta ha de provenir del càlcul matemàtic real dels punts seleccionats.
+
+Si l'usuari modifica un punt:
+
+→ recalcular angle
+→ actualitzar resultat
+→ actualitzar diferència
+→ actualitzar estat de la taula.
+
+==================================================
+17. RESUM DEL QUE HAS DE MODIFICAR
+==================================================
+
+1. Fer que l'usuari pugui seleccionar o canviar l'atleta que MediaPipe està seguint.
+
+2. Evitar que el tracking canviï a altres persones o objectes.
+
+3. Si no és possible eliminar les interferències del fons, com a mínim permetre sempre corregir manualment l'atleta.
+
+4. Mantenir MediaPipe funcionant durant el vídeo i en els fotogrames seleccionats.
+
+5. Els tres fotogrames de HOP, STEP i JUMP els selecciona manualment l'usuari.
+
+6. Després de seleccionar els fotogrames, permetre seleccionar els angles.
+
+7. Els angles NO han d'estar limitats als landmarks de MediaPipe.
+
+8. Permetre clicar QUALSEVOL PUNT DE LA IMATGE.
+
+9. Permetre combinar punts de MediaPipe amb punts manuals.
+
+10. Calcular els angles matemàticament a partir de les coordenades.
+
+11. Permetre moure/corregir qualsevol punt.
+
+12. Recalcular automàticament l'angle quan es modifica un punt.
+
+13. Guardar el resultat final i enviar-lo a la taula comparativa.
+
+IMPORTANT:
+
+NO FACIS UNA MAQUETA.
+
+Aquest sistema ha de funcionar realment amb les coordenades dels punts i els càlculs matemàtics.
+
+No substitueixis MediaPipe per dades fictícies.
+
+No eliminis la detecció real de l'esquelet.
+
+Simplement amplia el sistema perquè, a més dels landmarks de MediaPipe, l'usuari pugui seleccionar qualsevol punt de la imatge quan necessiti calcular un angle que no estigui definit únicament per punts anatòmics.

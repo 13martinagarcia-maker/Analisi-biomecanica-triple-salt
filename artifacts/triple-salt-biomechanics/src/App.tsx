@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import referenceImage from '@assets/IMG-20260708-WA0000_1787472726299.jpg';
 import {
   Activity,
@@ -32,9 +32,19 @@ import {
 type PhaseKey = 'HOP' | 'STEP' | 'JUMP';
 type PointKey = 'hip' | 'knee' | 'ankle';
 type GuideKey = 'horizontal' | 'vertical' | 'grid';
+type AngleMode = 'vertex' | 'segments';
+type AnglePoint = {
+  id: string;
+  x: number;
+  y: number;
+  source: 'landmark' | 'manual';
+  landmarkIndex?: number;
+  corrected?: boolean;
+};
 type FrameSlot = {
   frame: number | null;
-  points: number[];
+  points: AnglePoint[];
+  angleMode: AngleMode;
   label: string;
   referenceId: '' | 'lead' | 'trail' | 'internal' | 'trajectory';
 };
@@ -89,6 +99,8 @@ type ManualPoint = {
   y: number;
 };
 
+const makePointId = () => `angle-point-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const REFERENCE_ROWS: Array<{
   phase: PhaseKey;
   lead: string;
@@ -131,9 +143,9 @@ const INITIAL_MEASUREMENTS: Record<PhaseKey, Measurement> = {
 };
 
 const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
-  HOP: [0, 1, 2].map(() => ({ frame: null, points: [], label: '', referenceId: '' })),
-  STEP: [0, 1, 2].map(() => ({ frame: null, points: [], label: '', referenceId: '' })),
-  JUMP: [0, 1, 2].map(() => ({ frame: null, points: [], label: '', referenceId: '' })),
+  HOP: [0, 1, 2].map(() => ({ frame: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
+  STEP: [0, 1, 2].map(() => ({ frame: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
+  JUMP: [0, 1, 2].map(() => ({ frame: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
 });
 
 const formatTime = (seconds: number) => {
@@ -155,6 +167,20 @@ const calculateAngle = (
   const numerator = firstVector.x * lastVector.x + firstVector.y * lastVector.y;
   const denominator = Math.hypot(firstVector.x, firstVector.y) * Math.hypot(lastVector.x, lastVector.y);
   if (!denominator) return null;
+  return Math.acos(Math.min(1, Math.max(-1, numerator / denominator))) * (180 / Math.PI);
+};
+
+const calculateSegmentAngle = (
+  firstStart: { x: number; y: number },
+  firstEnd: { x: number; y: number },
+  secondStart: { x: number; y: number },
+  secondEnd: { x: number; y: number },
+) => {
+  const firstVector = { x: firstEnd.x - firstStart.x, y: firstEnd.y - firstStart.y };
+  const secondVector = { x: secondEnd.x - secondStart.x, y: secondEnd.y - secondStart.y };
+  const denominator = Math.hypot(firstVector.x, firstVector.y) * Math.hypot(secondVector.x, secondVector.y);
+  if (!denominator) return null;
+  const numerator = firstVector.x * secondVector.x + firstVector.y * secondVector.y;
   return Math.acos(Math.min(1, Math.max(-1, numerator / denominator))) * (180 / Math.PI);
 };
 
@@ -181,6 +207,7 @@ function App() {
   const lastInferenceAtRef = useRef(0);
   const playbackLoopRef = useRef<number | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const suppressCanvasClickRef = useRef(false);
   const [athletes, setAthletes] = useState(['Maya Carter', 'Noah Williams', 'Inez Bell']);
   const [athlete, setAthlete] = useState('Maya Carter');
   const [createAthleteOpen, setCreateAthleteOpen] = useState(false);
@@ -217,6 +244,7 @@ function App() {
   const [selectedPoint, setSelectedPoint] = useState<PointKey>('knee');
   const [manualPoints, setManualPoints] = useState<Partial<Record<PointKey, ManualPoint>>>({});
   const [angleSelectionMode, setAngleSelectionMode] = useState(false);
+  const [draggingAnglePointId, setDraggingAnglePointId] = useState<string | null>(null);
   const [activeClipPhase, setActiveClipPhase] = useState<PhaseKey>('HOP');
   const [activeFrameSlot, setActiveFrameSlot] = useState(0);
   const [frameSlots, setFrameSlots] = useState<Record<PhaseKey, FrameSlot[]>>(createEmptyFrameSlots);
@@ -229,6 +257,7 @@ function App() {
   const activeReference = REFERENCE_ROWS.find((row) => row.phase === activePhase)!;
   const activeMeasurement = measurements[activePhase];
   const activeSlot = frameSlots[activeClipPhase][activeFrameSlot];
+  const requiredAnglePointCount = activeSlot.angleMode === 'segments' ? 4 : 3;
   const activeClipMark = phases[activeClipPhase];
   const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) / fps : 0;
   const activeClipEnd = activeClipMark.end ? Number(activeClipMark.end) / fps : duration;
@@ -325,29 +354,36 @@ function App() {
     else if (poseLandmarks && poseLandmarks.length > 32) drawPose(poseLandmarks, true);
 
     const selectedAnglePoints = frameSlots[activeClipPhase][activeFrameSlot]?.points ?? [];
-    if (poseLandmarks && selectedAnglePoints.length) {
+    if (selectedAnglePoints.length) {
       context.strokeStyle = '#df5b31';
       context.lineWidth = 3;
-      selectedAnglePoints.slice(0, -1).forEach((index, pointIndex) => {
-        const from = poseLandmarks[index];
-        const to = poseLandmarks[selectedAnglePoints[pointIndex + 1]];
-        if (!from || !to) return;
+      selectedAnglePoints.slice(0, -1).forEach((anglePoint, pointIndex) => {
+        const from = point(anglePoint);
+        const to = point(selectedAnglePoints[pointIndex + 1]);
         context.beginPath();
-        context.moveTo(point(from).x, point(from).y);
-        context.lineTo(point(to).x, point(to).y);
+        context.moveTo(from.x, from.y);
+        context.lineTo(to.x, to.y);
         context.stroke();
       });
-      selectedAnglePoints.forEach((index, pointIndex) => {
-        const landmark = poseLandmarks[index];
-        if (!landmark) return;
-        const position = point(landmark);
-        context.fillStyle = '#df5b31';
+      selectedAnglePoints.forEach((anglePoint, pointIndex) => {
+        const position = point(anglePoint);
+        context.fillStyle = anglePoint.source === 'landmark' ? '#ffd365' : '#df5b31';
+        context.strokeStyle = anglePoint.source === 'landmark' ? '#172234' : '#f9f0dd';
+        context.lineWidth = 2;
         context.beginPath();
         context.arc(position.x, position.y, 6, 0, Math.PI * 2);
-        context.fill();
+        if (anglePoint.source === 'manual') {
+          context.stroke();
+        } else {
+          context.fill();
+          context.stroke();
+        }
         context.fillStyle = '#f9f0dd';
         context.font = '600 10px "DM Mono", monospace';
-        context.fillText(`${pointIndex + 1} ${LANDMARK_NAMES[index] ?? `Punt ${index}`}`, position.x + 9, position.y + 3);
+        const sourceLabel = anglePoint.source === 'landmark'
+          ? LANDMARK_NAMES[anglePoint.landmarkIndex ?? -1] ?? 'Landmark'
+          : 'Manual';
+        context.fillText(`${pointIndex + 1} ${sourceLabel}`, position.x + 9, position.y + 3);
       });
     }
 
@@ -786,6 +822,7 @@ function App() {
   };
 
   const handleCanvasClick = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (suppressCanvasClickRef.current) return;
     const stage = stageRef.current;
     const video = videoRef.current;
     if (!stage || !video) return;
@@ -801,51 +838,70 @@ function App() {
     const transformedY = (event.clientY - stageBounds.top) * (height / stageBounds.height);
     const clickX = width / 2 + (transformedX - width / 2 - panX) / zoom;
     const clickY = height / 2 + (transformedY - height / 2 - panY) / zoom;
-    const x = Math.min(1, Math.max(0, (clickX - offsetX) / (videoWidth * scale)));
-    const y = Math.min(1, Math.max(0, (clickY - offsetY) / (videoHeight * scale)));
+    const rawX = (clickX - offsetX) / (videoWidth * scale);
+    const rawY = (clickY - offsetY) / (videoHeight * scale);
+    if (rawX < 0 || rawX > 1 || rawY < 0 || rawY > 1) {
+      showToast('Selecciona un punt dins de la imatge del vídeo.');
+      return;
+    }
+    const x = Math.min(1, Math.max(0, rawX));
+    const y = Math.min(1, Math.max(0, rawY));
     const toStage = (landmark: Landmark) => ({
       x: offsetX + landmark.x * videoWidth * scale,
       y: offsetY + landmark.y * videoHeight * scale,
     });
     if (athleteSelectionMode && poseCandidates.length) {
-      const candidateIndex = poseCandidates.reduce((best, candidate, index) => {
-        const point = candidate[23] && candidate[24]
-          ? { x: (candidate[23].x + candidate[24].x) / 2, y: (candidate[23].y + candidate[24].y) / 2 }
-          : candidate[0];
-        const bestPoint = poseCandidates[best]?.[23] && poseCandidates[best]?.[24]
-          ? { x: (poseCandidates[best][23].x + poseCandidates[best][24].x) / 2, y: (poseCandidates[best][23].y + poseCandidates[best][24].y) / 2 }
-          : poseCandidates[best]?.[0];
-        if (!point || !bestPoint) return best;
-        const displayedPoint = toStage(point);
-        const displayedBestPoint = toStage(bestPoint);
-        return Math.hypot(displayedPoint.x - clickX, displayedPoint.y - clickY) < Math.hypot(displayedBestPoint.x - clickX, displayedBestPoint.y - clickY) ? index : best;
-      }, 0);
+      const candidateDistance = (candidate: Landmark[]) => Math.min(...candidate
+        .filter((landmark) => (landmark.visibility ?? 1) >= .35)
+        .map((landmark) => {
+          const displayed = toStage(landmark);
+          return Math.hypot(displayed.x - clickX, displayed.y - clickY);
+        }));
+      const distances = poseCandidates.map(candidateDistance);
+      const candidateIndex = distances.reduce((best, distance, index) => distance < distances[best] ? index : best, 0);
+      if (!Number.isFinite(distances[candidateIndex]) || distances[candidateIndex] > 70) {
+        showToast('Fes clic directament sobre l’esquelet de la persona que vols analitzar.');
+        return;
+      }
       lockSelectedAthlete(candidateIndex);
       return;
     }
-    if (angleSelectionMode && landmarks) {
+    if (angleSelectionMode) {
       if (activeSlot.frame !== currentFrame) {
-        showToast('Espera que es carreguin els landmarks del fotograma seleccionat.');
+        showToast('Torna al fotograma seleccionat abans de definir l’angle.');
         return;
       }
-      const nearest = landmarks.reduce((best, landmark, index) => {
+      if (activeSlot.points.length >= requiredAnglePointCount) {
+        showToast(`Ja hi ha ${requiredAnglePointCount} punts. Arrossega’ls, elimina’n un o prem Repetir.`);
+        return;
+      }
+      const nearest = (landmarks ?? []).reduce((best, landmark, index) => {
         if ((landmark.visibility ?? 1) < .35) return best;
         const distance = Math.hypot(toStage(landmark).x - clickX, toStage(landmark).y - clickY);
         return distance < best.distance ? { index, distance } : best;
       }, { index: -1, distance: Number.POSITIVE_INFINITY });
-      if (nearest.index < 0 || nearest.distance > 26) {
-        showToast('Fes clic directament sobre un landmark visible.');
-        return;
-      }
-      const nextPoints = activeSlot.points.includes(nearest.index)
-        ? activeSlot.points.filter((index) => index !== nearest.index)
-        : [...activeSlot.points, nearest.index].slice(0, 3);
+      const landmarkCorrectionKeys: Partial<Record<number, PointKey>> = { 23: 'hip', 25: 'knee', 27: 'ankle' };
+      const correctionKey = nearest.index >= 0 ? landmarkCorrectionKeys[nearest.index] : undefined;
+      const landmarkCorrection = correctionKey ? manualPoints[correctionKey] : undefined;
+      const nextPoint: AnglePoint = nearest.index >= 0 && nearest.distance <= 26
+        ? {
+          id: makePointId(),
+          x: landmarkCorrection?.x ?? landmarks![nearest.index].x,
+          y: landmarkCorrection?.y ?? landmarks![nearest.index].y,
+          source: 'landmark',
+          landmarkIndex: nearest.index,
+          corrected: Boolean(landmarkCorrection),
+        }
+        : { id: makePointId(), x, y, source: 'manual' };
+      const nextPoints = [...activeSlot.points, nextPoint];
       updateActiveFrameSlot({ points: nextPoints });
-      if (nextPoints.length === 3) {
+      if (nextPoints.length === requiredAnglePointCount) {
         setAngleSelectionMode(false);
-        showToast('Tres punts seleccionats. L’angle s’ha calculat amb els landmarks reals.');
+        showToast('Punts seleccionats. L’angle s’ha calculat amb les coordenades reals.');
       } else {
-        showToast(`Punt ${nextPoints.length} seleccionat: ${LANDMARK_NAMES[nearest.index] ?? `Landmark ${nearest.index}`}.`);
+        showToast(nextPoint.source === 'landmark'
+          ? `Punt ${nextPoints.length}: ${LANDMARK_NAMES[nextPoint.landmarkIndex ?? -1] ?? 'landmark MediaPipe'}.`
+          : `Punt ${nextPoints.length}: punt manual de la imatge.`);
       }
       return;
     }
@@ -864,7 +920,71 @@ function App() {
         [selectedPoint]: { x: Math.min(1, Math.max(0, x)), y: Math.min(1, Math.max(0, y)) },
       },
     }));
+    const correctionIndex: Record<PointKey, number> = { hip: 23, knee: 25, ankle: 27 };
+    if (activeSlot.frame === currentFrame) {
+      updateActiveFrameSlot({
+        points: activeSlot.points.map((point) => point.source === 'landmark' && point.landmarkIndex === correctionIndex[selectedPoint]
+          ? { ...point, x, y, corrected: true }
+          : point),
+      });
+    }
     showToast(`Punt ${selectedPoint} corregit al fotograma actual.`);
+  };
+
+  const getCanvasPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const stage = stageRef.current;
+    const video = videoRef.current;
+    if (!stage || !video) return null;
+    const stageBounds = stage.getBoundingClientRect();
+    const width = stage.clientWidth;
+    const height = stage.clientHeight;
+    const videoWidth = video.videoWidth || 16;
+    const videoHeight = video.videoHeight || 9;
+    const scale = Math.min(width / videoWidth, height / videoHeight);
+    const offsetX = (width - videoWidth * scale) / 2;
+    const offsetY = (height - videoHeight * scale) / 2;
+    const transformedX = (event.clientX - stageBounds.left) * (width / stageBounds.width);
+    const transformedY = (event.clientY - stageBounds.top) * (height / stageBounds.height);
+    const clickX = width / 2 + (transformedX - width / 2 - panX) / zoom;
+    const clickY = height / 2 + (transformedY - height / 2 - panY) / zoom;
+    const x = (clickX - offsetX) / (videoWidth * scale);
+    const y = (clickY - offsetY) / (videoHeight * scale);
+    return x < 0 || x > 1 || y < 0 || y > 1 ? null : { x, y, stageX: clickX, stageY: clickY, scale, videoWidth, videoHeight };
+  };
+
+  const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (activeSlot.frame !== currentFrame || !activeSlot.points.length) return;
+    const click = getCanvasPoint(event);
+    if (!click) return;
+    const nearest = activeSlot.points.reduce((best, point, index) => {
+      const pointX = (stageRef.current!.clientWidth - click.videoWidth * click.scale) / 2 + point.x * click.videoWidth * click.scale;
+      const pointY = (stageRef.current!.clientHeight - click.videoHeight * click.scale) / 2 + point.y * click.videoHeight * click.scale;
+      const distance = Math.hypot(pointX - click.stageX, pointY - click.stageY);
+      return distance < best.distance ? { index, distance } : best;
+    }, { index: -1, distance: Number.POSITIVE_INFINITY });
+    if (nearest.index < 0 || nearest.distance > 14) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDraggingAnglePointId(activeSlot.points[nearest.index].id);
+    event.preventDefault();
+  };
+
+  const handleCanvasPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!draggingAnglePointId) return;
+    const click = getCanvasPoint(event);
+    if (!click) return;
+    suppressCanvasClickRef.current = true;
+    updateActiveFrameSlot({
+      points: activeSlot.points.map((point) => point.id === draggingAnglePointId
+        ? { ...point, x: click.x, y: click.y, corrected: true }
+        : point),
+    });
+  };
+
+  const handleCanvasPointerUp = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!draggingAnglePointId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    setDraggingAnglePointId(null);
+    window.setTimeout(() => { suppressCanvasClickRef.current = false; }, 0);
   };
 
   const resetView = () => {
@@ -891,19 +1011,14 @@ function App() {
   }, [angleDefinition, landmarks, manualPoints]);
 
   const activeComputedAngle = useMemo(() => {
-    if (activeSlot.frame === null || activeSlot.points.length !== 3) return null;
-    const source = activeSlot.frame === currentFrame ? landmarks : landmarkCache[activeSlot.frame];
-    if (!source) return null;
-    const corrections = frameCorrections[activeSlot.frame] ?? {};
-    const correctionIndex: Record<PointKey, number> = { hip: 23, knee: 25, ankle: 27 };
-    const corrected = (index: number) => {
-      const correction = (Object.entries(correctionIndex) as Array<[PointKey, number]>)
-        .find(([, landmarkIndex]) => landmarkIndex === index)?.[0];
-      return correction && corrections[correction] ? corrections[correction] : source[index];
-    };
-    const [first, vertex, last] = activeSlot.points.map(corrected);
-    return first && vertex && last ? calculateAngle(first, vertex, last) : null;
-  }, [activeSlot, currentFrame, frameCorrections, landmarkCache, landmarks]);
+    if (activeSlot.frame === null || activeSlot.points.length !== requiredAnglePointCount) return null;
+    if (activeSlot.angleMode === 'segments') {
+      const [firstStart, firstEnd, secondStart, secondEnd] = activeSlot.points;
+      return calculateSegmentAngle(firstStart, firstEnd, secondStart, secondEnd);
+    }
+    const [first, vertex, last] = activeSlot.points;
+    return calculateAngle(first, vertex, last);
+  }, [activeSlot, requiredAnglePointCount]);
 
   const referenceTextForSlot = (phase: PhaseKey, slot: FrameSlot) => {
     const reference = REFERENCE_ROWS.find((row) => row.phase === phase)!;
@@ -912,19 +1027,12 @@ function App() {
 
   const resultRows = useMemo(() => (
     (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).flatMap((phase) => frameSlots[phase].map((slot, index) => {
-      const source = slot.frame === currentFrame ? landmarks : slot.frame === null ? null : landmarkCache[slot.frame];
-      const corrections = slot.frame === null ? {} : frameCorrections[slot.frame] ?? {};
-      const correctionIndex: Record<PointKey, number> = { hip: 23, knee: 25, ankle: 27 };
-      const corrected = (landmarkIndex: number) => {
-        const correction = (Object.entries(correctionIndex) as Array<[PointKey, number]>)
-          .find(([, indexValue]) => indexValue === landmarkIndex)?.[0];
-        return correction && corrections[correction] ? corrections[correction] : source?.[landmarkIndex];
-      };
-      const [first, vertex, last] = slot.points.map(corrected);
-      const value = first && vertex && last ? calculateAngle(first, vertex, last) : null;
+      const value = slot.angleMode === 'segments'
+        ? slot.points.length === 4 ? calculateSegmentAngle(slot.points[0], slot.points[1], slot.points[2], slot.points[3]) : null
+        : slot.points.length === 3 ? calculateAngle(slot.points[0], slot.points[1], slot.points[2]) : null;
       return { phase, slot, index, value };
     }))
-  ), [currentFrame, frameCorrections, frameSlots, landmarkCache, landmarks]);
+  ), [frameSlots]);
 
   const updateMeasurement = (phase: PhaseKey, key: keyof Measurement, value: string) => {
     setMeasurements((previous) => ({
@@ -1078,10 +1186,14 @@ function App() {
                       <canvas
                         ref={canvasRef}
                         onClick={handleCanvasClick}
+                        onPointerDown={handleCanvasPointerDown}
+                        onPointerMove={handleCanvasPointerMove}
+                        onPointerUp={handleCanvasPointerUp}
+                        onPointerCancel={handleCanvasPointerUp}
                         style={{
                           transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-                           pointerEvents: athleteSelectionMode || manualPointMode || angleSelectionMode ? 'auto' : 'none',
-                           cursor: athleteSelectionMode || manualPointMode || angleSelectionMode ? 'crosshair' : 'default',
+                           pointerEvents: athleteSelectionMode || manualPointMode || angleSelectionMode || (activeSlot.frame === currentFrame && activeSlot.points.length > 0) ? 'auto' : 'none',
+                           cursor: draggingAnglePointId ? 'grabbing' : athleteSelectionMode || manualPointMode || angleSelectionMode ? 'crosshair' : activeSlot.points.length ? 'grab' : 'default',
                         }}
                         data-testid="canvas-pose-overlay"
                       />
@@ -1211,9 +1323,18 @@ function App() {
                               <div className="eyebrow">Fotograma actiu</div>
                               <strong>{`F ${activeSlot.frame} · ${formatTime((activeSlot.frame ?? 0) / fps)}`}</strong>
                             </div>
-                            <button className={`button-outline ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={!landmarks || activeSlot.frame !== currentFrame} data-testid="button-select-angle">
+                            <select className="select-field" value={activeSlot.angleMode} onChange={(event) => {
+                              const angleMode = event.target.value as AngleMode;
+                              updateActiveFrameSlot({ angleMode, points: [] });
+                              setAngleSelectionMode(true);
+                            }} data-testid="select-angle-mode">
+                              <option value="vertex">3 punts · angle amb vèrtex</option>
+                              <option value="segments">4 punts · entre dos segments</option>
+                            </select>
+                            <button className={`button-outline ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={activeSlot.frame !== currentFrame || activeSlot.points.length >= requiredAnglePointCount} data-testid="button-select-angle">
                               <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció' : 'Seleccionar angle'}
                             </button>
+                            <button className="button-outline" onClick={() => { updateActiveFrameSlot({ points: [] }); setAngleSelectionMode(true); }} disabled={!activeSlot.points.length} data-testid="button-reset-angle-points"><RotateCcw size={14} /> Repetir</button>
                             <input className="text-field" value={activeSlot.label} onChange={(event) => updateActiveFrameSlot({ label: event.target.value })} placeholder="Nom de l’angle (opcional)" data-testid="input-angle-label" />
                             <select className="select-field" value={activeSlot.referenceId} onChange={(event) => updateActiveFrameSlot({ referenceId: event.target.value as FrameSlot['referenceId'] })} data-testid="select-angle-reference">
                               <option value="">Sense referència assignada</option>
@@ -1222,7 +1343,25 @@ function App() {
                               <option value="internal">Referència 3: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.internal}</option>
                               <option value="trajectory">Referència 4: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.trajectory}</option>
                             </select>
-                            <div className="angle-result"><span>Angle calculat</span><strong data-testid="text-active-angle">{activeComputedAngle === null ? '—' : `${activeComputedAngle.toFixed(1)}°`}</strong><small>{activeSlot.points.length === 3 ? activeSlot.points.map((index) => LANDMARK_NAMES[index] ?? `Punt ${index}`).join(' · ') : 'Selecciona tres landmarks visibles sobre l’esquelet.'}</small></div>
+                            <div className="angle-result">
+                              <span>Angle calculat</span>
+                              <strong data-testid="text-active-angle">{activeComputedAngle === null ? '—' : `${activeComputedAngle.toFixed(1)}°`}</strong>
+                              <small>{activeSlot.points.length === requiredAnglePointCount
+                                ? 'Calculat matemàticament amb les coordenades seleccionades.'
+                                : activeSlot.angleMode === 'segments'
+                                  ? 'Clica A i B per al primer segment; C i D per a la línia o el segon segment.'
+                                  : 'Clica el punt 1, el vèrtex (punt 2) i el punt 3. Pots clicar qualsevol punt del fotograma.'}</small>
+                            </div>
+                            <div className="angle-point-list" aria-label="Punts seleccionats per a l’angle">
+                              {activeSlot.points.map((point, index) => (
+                                <div className="angle-point-row" key={point.id}>
+                                  <span className={`angle-point-kind ${point.source}`}>{point.source === 'landmark' ? 'MediaPipe' : 'Manual'}</span>
+                                  <span>Punt {index + 1}{point.source === 'landmark' ? ` · ${LANDMARK_NAMES[point.landmarkIndex ?? -1] ?? 'Landmark'}` : ` · X ${point.x.toFixed(3)}, Y ${point.y.toFixed(3)}`}</span>
+                                  <button onClick={() => updateActiveFrameSlot({ points: activeSlot.points.filter((currentPoint) => currentPoint.id !== point.id) })} aria-label={`Eliminar punt ${index + 1}`} data-testid={`button-remove-angle-point-${index + 1}`}>Eliminar</button>
+                                </div>
+                              ))}
+                            </div>
+                            <button className="button-primary" onClick={() => showToast('Angle confirmat. El resultat s’ha actualitzat a la taula comparativa.')} disabled={activeComputedAngle === null} data-testid="button-confirm-angle"><Check size={14} /> Confirmar angle</button>
                           </div>
                         ) : <div className="empty-inline" data-testid="analysis-waiting-frames">Selecciona manualment els 3 fotogrames de HOP, STEP i JUMP abans de començar l’anàlisi d’angles.</div>}
                       </div>
@@ -1326,8 +1465,8 @@ function App() {
                 <div className="comparison-athlete">
                   <span className="eyebrow">ATLETA · {activeClipPhase} · FOTOGRAMA {activeFrameSlot + 1}</span>
                   <strong>{activeSlot.label || 'Angle sense nom'}</strong>
-                  <span>{activeComputedAngle === null ? 'Selecciona tres landmarks per veure el valor.' : `${activeComputedAngle.toFixed(1)}° · ${referenceTextForSlot(activeClipPhase, activeSlot)}`}</span>
-                  <small>{activeSlot.points.length === 3 ? activeSlot.points.map((index) => LANDMARK_NAMES[index] ?? `Punt ${index}`).join(' · ') : 'Els punts i les línies es mostren sobre el vídeo de l’atleta.'}</small>
+                  <span>{activeComputedAngle === null ? 'Selecciona tres punts per veure el valor.' : `${activeComputedAngle.toFixed(1)}° · ${referenceTextForSlot(activeClipPhase, activeSlot)}`}</span>
+                  <small>{activeSlot.points.length === requiredAnglePointCount ? activeSlot.points.map((point) => point.source === 'landmark' ? LANDMARK_NAMES[point.landmarkIndex ?? -1] ?? 'Landmark' : 'Punt manual').join(' · ') : 'Els punts i les línies es mostren sobre el vídeo de l’atleta.'}</small>
                 </div>
               </div>
               <div className="report-table-wrap">
