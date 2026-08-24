@@ -178,6 +178,8 @@ function App() {
   const poseEngineLoadingRef = useRef(false);
   const poseLoadingRef = useRef(false);
   const poseBusyRef = useRef(false);
+  const lastInferenceAtRef = useRef(0);
+  const playbackLoopRef = useRef<number | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const [athletes, setAthletes] = useState(['Maya Carter', 'Noah Williams', 'Inez Bell']);
   const [athlete, setAthlete] = useState('Maya Carter');
@@ -227,6 +229,11 @@ function App() {
   const activeReference = REFERENCE_ROWS.find((row) => row.phase === activePhase)!;
   const activeMeasurement = measurements[activePhase];
   const activeSlot = frameSlots[activeClipPhase][activeFrameSlot];
+  const activeClipMark = phases[activeClipPhase];
+  const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) / fps : 0;
+  const activeClipEnd = activeClipMark.end ? Number(activeClipMark.end) / fps : duration;
+  const allFramesSelected = (['HOP', 'STEP', 'JUMP'] as PhaseKey[])
+    .every((phase) => frameSlots[phase].every((slot) => slot.frame !== null));
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -370,6 +377,8 @@ function App() {
   const handlePoseResults = useCallback((results: PoseResult) => {
     const nextLandmarks = results.poseLandmarks ?? null;
     setLandmarks(nextLandmarks);
+    setPoseCandidates(nextLandmarks ? [nextLandmarks] : []);
+    if (nextLandmarks) setLandmarkCache((previous) => ({ ...previous, [frameForTime(videoRef.current?.currentTime ?? 0, fps)]: nextLandmarks }));
     if (nextLandmarks?.length) {
       const visible = nextLandmarks
         .map((landmark) => landmark.visibility ?? 0)
@@ -378,11 +387,14 @@ function App() {
     } else {
       setConfidence(null);
     }
-  }, []);
+  }, [fps]);
 
-  const sendFrameToPose = useCallback(() => {
+  const sendFrameToPose = useCallback((force = false) => {
     const video = videoRef.current;
     if ((!poseRef.current && !multiPoseRef.current) || !video || video.readyState < 2 || poseBusyRef.current) return;
+    const now = performance.now();
+    if (!force && now - lastInferenceAtRef.current < 66) return;
+    lastInferenceAtRef.current = now;
     poseBusyRef.current = true;
     try {
       if (multiPoseRef.current) {
@@ -497,7 +509,7 @@ function App() {
         const landmarker = await vision.PoseLandmarker.createFromOptions(fileset, {
           baseOptions: {
             modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-            delegate: 'GPU',
+            delegate: 'CPU',
           },
           runningMode: 'VIDEO',
           numPoses: 5,
@@ -511,10 +523,21 @@ function App() {
         setPoseStatus('ready');
         window.setTimeout(sendFrameToPose, 120);
       } catch {
-        poseLoadingRef.current = false;
-        poseEngineLoadingRef.current = false;
-        setPoseStatus('error');
-        setTrackingWarning('La detecció multipersona de MediaPipe no està disponible. Torna a carregar abans d’analitzar.');
+        setTrackingWarning('La detecció multipersona no està disponible. S’activa MediaPipe Pose com a detecció real de reserva.');
+        if (window.Pose) setupFallback();
+        else {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';
+          script.async = true;
+          script.addEventListener('load', setupFallback, { once: true });
+          script.addEventListener('error', () => {
+            poseLoadingRef.current = false;
+            poseEngineLoadingRef.current = false;
+            setPoseStatus('error');
+            setTrackingWarning('MediaPipe no s’ha pogut carregar. Comprova la connexió i torna-ho a provar.');
+          }, { once: true });
+          document.head.appendChild(script);
+        }
       }
     };
     void loadMultiPose();
@@ -531,6 +554,19 @@ function App() {
   }, [playbackRate, videoSrc]);
 
   useEffect(() => {
+    if (!isPlaying || !videoSrc || poseStatus !== 'ready') return;
+    const detectWhilePlaying = () => {
+      sendFrameToPose();
+      playbackLoopRef.current = window.requestAnimationFrame(detectWhilePlaying);
+    };
+    playbackLoopRef.current = window.requestAnimationFrame(detectWhilePlaying);
+    return () => {
+      if (playbackLoopRef.current !== null) window.cancelAnimationFrame(playbackLoopRef.current);
+      playbackLoopRef.current = null;
+    };
+  }, [isPlaying, poseStatus, sendFrameToPose, videoSrc]);
+
+  useEffect(() => {
     setManualPoints(frameCorrections[currentFrame] ?? {});
   }, [currentFrame, frameCorrections]);
 
@@ -540,13 +576,19 @@ function App() {
     setDuration(video.duration || 0);
     setCurrentTime(0);
     initializePose();
-    window.setTimeout(sendFrameToPose, 350);
+    window.setTimeout(() => sendFrameToPose(true), 350);
   };
 
   const onVideoTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
     setCurrentTime(video.currentTime);
+    if (analysisStarted && activeClipMark.end && video.currentTime >= activeClipEnd) {
+      video.pause();
+      setIsPlaying(false);
+      seekTo(activeClipEnd);
+      return;
+    }
     sendFrameToPose();
   };
 
@@ -575,7 +617,7 @@ function App() {
     setAnalysisStarted(false);
     setAngleSelectionMode(false);
     setConfidence(null);
-    setPoseStatus('idle');
+    setPoseStatus(multiPoseRef.current || poseRef.current ? 'ready' : 'idle');
     setProposals([]);
     showToast('Video loaded locally. Pose will run in your browser.');
   };
@@ -586,7 +628,7 @@ function App() {
     const nextTime = Math.min(duration, Math.max(0, time));
     video.currentTime = nextTime;
     setCurrentTime(nextTime);
-    window.setTimeout(sendFrameToPose, 60);
+    window.setTimeout(() => sendFrameToPose(true), 60);
   };
 
   const stepFrame = (direction: number) => {
@@ -665,27 +707,14 @@ function App() {
       showToast('Marca l’inici i el final dels tres salts abans d’analitzar.');
       return;
     }
-    setFrameSlots((previous) => {
-      const next = { ...previous };
-      (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).forEach((phase) => {
-        const start = Number(phases[phase].start);
-        const end = Number(phases[phase].end);
-        const middle = Math.round((start + end) / 2);
-        next[phase] = [start, middle, end].map((frame) => ({
-          frame,
-          points: [],
-          label: '',
-          referenceId: '',
-        }));
-      });
-      return next;
-    });
+    setFrameSlots(createEmptyFrameSlots());
     setActiveClipPhase('HOP');
     setActiveFrameSlot(0);
     setAnalysisStarted(true);
+    seekTo(Number(phases.HOP.start) / fps);
     showToast(athleteLocked
-      ? 'Anàlisi iniciada amb l’atleta bloquejat.'
-      : 'Anàlisi iniciada. Selecciona l’atleta quan la detecció estigui disponible.');
+      ? 'Clip HOP obert. Selecciona manualment el primer fotograma.'
+      : 'Clip HOP obert. Revisa la detecció i selecciona manualment el primer fotograma.');
   };
 
   const clearPhase = (phase: PhaseKey) => {
@@ -712,6 +741,27 @@ function App() {
       ...previous,
       [activeClipPhase]: previous[activeClipPhase].map((slot, index) => index === activeFrameSlot ? { ...slot, ...update } : slot),
     }));
+  };
+
+  const selectCurrentFrameForSlot = () => {
+    if (!analysisStarted || !videoSrc) return;
+    if (currentTime < activeClipStart || currentTime > activeClipEnd) {
+      showToast(`Mou-te dins del fragment ${activeClipPhase} abans de seleccionar el fotograma.`);
+      return;
+    }
+    updateActiveFrameSlot({ frame: currentFrame, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
+    setLandmarkCache((previous) => landmarks ? { ...previous, [currentFrame]: landmarks } : previous);
+    const nextSlot = frameSlots[activeClipPhase].findIndex((slot, index) => index > activeFrameSlot && slot.frame === null);
+    if (nextSlot >= 0) {
+      window.setTimeout(() => selectFrameSlot(activeClipPhase, nextSlot), 0);
+    }
+    showToast(`${activeClipPhase} — Fotograma ${activeFrameSlot + 1} seleccionat: F ${currentFrame}.`);
+  };
+
+  const clearActiveFrameSlot = () => {
+    updateActiveFrameSlot({ frame: null, points: [], label: '', referenceId: '' });
+    setAngleSelectionMode(false);
+    showToast(`${activeClipPhase} — Fotograma ${activeFrameSlot + 1} esborrat.`);
   };
 
   const proposeCurrentFrame = () => {
@@ -1017,7 +1067,7 @@ function App() {
                           const video = videoRef.current;
                           if (!video) return;
                           setCurrentTime(video.currentTime);
-                          sendFrameToPose();
+                          sendFrameToPose(true);
                         }}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
@@ -1129,7 +1179,7 @@ function App() {
                     {analysisStarted && (
                       <div className="clip-workspace" data-testid="analysis-clips">
                         <div className="section-caption">
-                          <div><h2>Unitats d’anàlisi</h2><div className="small-note">Cada salt és un clip independent. Selecciona els tres fotogrames i configura un angle a cada un.</div></div>
+                          <div><h2>Unitats d’anàlisi</h2><div className="small-note">Cada salt és un clip independent. Els tres fotogrames només els selecciona manualment l’usuari.</div></div>
                           {!athleteLocked && <span className="status-badge pending">Revisar detecció</span>}
                         </div>
                         <div className="clip-tabs">
@@ -1137,32 +1187,44 @@ function App() {
                         </div>
                         <div className="frame-slots">
                           {frameSlots[activeClipPhase].map((slot, index) => (
-                            <button key={`${activeClipPhase}-${index}`} className={`frame-slot ${activeFrameSlot === index ? 'active' : ''}`} onClick={() => selectFrameSlot(activeClipPhase, index)} data-testid={`button-${activeClipPhase.toLowerCase()}-frame-${index + 1}`}>
-                              <strong>Fotograma {index + 1}</strong>
-                              <span>{slot.frame === null ? 'No seleccionat' : `F ${slot.frame} · ${formatTime(slot.frame / fps)}`}</span>
-                              <small>{slot.points.length}/3 punts</small>
-                            </button>
+                            <div key={`${activeClipPhase}-${index}`} className={`frame-slot ${activeFrameSlot === index ? 'active' : ''}`}>
+                              <button className="frame-slot-select" onClick={() => selectFrameSlot(activeClipPhase, index)} data-testid={`button-${activeClipPhase.toLowerCase()}-frame-${index + 1}`}>
+                                <strong>Fotograma {index + 1}</strong>
+                                <span>{slot.frame === null ? 'Pendent de selecció' : `F ${slot.frame} · ${formatTime(slot.frame / fps)}`}</span>
+                                <small>{slot.points.length}/3 punts</small>
+                              </button>
+                              {slot.frame !== null && <button className="frame-slot-clear" onClick={() => { selectFrameSlot(activeClipPhase, index); window.setTimeout(clearActiveFrameSlot, 0); }} data-testid={`button-clear-${activeClipPhase.toLowerCase()}-frame-${index + 1}`}>Esborrar</button>}
+                            </div>
                           ))}
                         </div>
-                        <div className="angle-editor">
+                        <div className="clip-picker">
                           <div>
-                            <div className="eyebrow">Fotograma actiu</div>
-                            <strong>{activeSlot.frame === null ? 'No seleccionat' : `F ${activeSlot.frame} · ${formatTime(activeSlot.frame / fps)}`}</strong>
+                            <div className="eyebrow">Clip {activeClipPhase}</div>
+                            <strong>{formatTime(activeClipStart)} — {formatTime(activeClipEnd)} · Fotograma actual: F {currentFrame}</strong>
+                            <span>MediaPipe ha de detectar l’esquelet abans de permetre la selecció.</span>
                           </div>
-                          <button className={`button-outline ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={!landmarks || activeSlot.frame !== currentFrame} data-testid="button-select-angle">
-                            <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció' : 'Seleccionar angle'}
-                          </button>
-                          <button className="button-outline" onClick={() => updateActiveFrameSlot({ frame: currentFrame, points: [] })} disabled={!videoSrc} data-testid="button-change-analysis-frame">Usar fotograma actual</button>
-                          <input className="text-field" value={activeSlot.label} onChange={(event) => updateActiveFrameSlot({ label: event.target.value })} placeholder="Nom de l’angle (opcional)" data-testid="input-angle-label" />
-                          <select className="select-field" value={activeSlot.referenceId} onChange={(event) => updateActiveFrameSlot({ referenceId: event.target.value as FrameSlot['referenceId'] })} data-testid="select-angle-reference">
-                            <option value="">Sense referència assignada</option>
-                            <option value="lead">Referència 1: {activeReference.lead}</option>
-                            <option value="trail">Referència 2: {activeReference.trail}</option>
-                            <option value="internal">Referència 3: {activeReference.internal}</option>
-                            <option value="trajectory">Referència 4: {activeReference.trajectory}</option>
-                          </select>
-                          <div className="angle-result"><span>Angle calculat</span><strong data-testid="text-active-angle">{activeComputedAngle === null ? '—' : `${activeComputedAngle.toFixed(1)}°`}</strong><small>{activeSlot.points.length === 3 ? activeSlot.points.map((index) => LANDMARK_NAMES[index] ?? `Punt ${index}`).join(' · ') : 'Selecciona tres landmarks visibles sobre l’esquelet.'}</small></div>
+                          <button className="button-primary" onClick={selectCurrentFrameForSlot} disabled={!landmarks || currentTime < activeClipStart || currentTime > activeClipEnd} data-testid="button-select-analysis-frame"><Check size={14} /> Seleccionar fotograma</button>
                         </div>
+                        {allFramesSelected ? (
+                          <div className="angle-editor">
+                            <div>
+                              <div className="eyebrow">Fotograma actiu</div>
+                              <strong>{`F ${activeSlot.frame} · ${formatTime((activeSlot.frame ?? 0) / fps)}`}</strong>
+                            </div>
+                            <button className={`button-outline ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={!landmarks || activeSlot.frame !== currentFrame} data-testid="button-select-angle">
+                              <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció' : 'Seleccionar angle'}
+                            </button>
+                            <input className="text-field" value={activeSlot.label} onChange={(event) => updateActiveFrameSlot({ label: event.target.value })} placeholder="Nom de l’angle (opcional)" data-testid="input-angle-label" />
+                            <select className="select-field" value={activeSlot.referenceId} onChange={(event) => updateActiveFrameSlot({ referenceId: event.target.value as FrameSlot['referenceId'] })} data-testid="select-angle-reference">
+                              <option value="">Sense referència assignada</option>
+                              <option value="lead">Referència 1: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.lead}</option>
+                              <option value="trail">Referència 2: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.trail}</option>
+                              <option value="internal">Referència 3: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.internal}</option>
+                              <option value="trajectory">Referència 4: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.trajectory}</option>
+                            </select>
+                            <div className="angle-result"><span>Angle calculat</span><strong data-testid="text-active-angle">{activeComputedAngle === null ? '—' : `${activeComputedAngle.toFixed(1)}°`}</strong><small>{activeSlot.points.length === 3 ? activeSlot.points.map((index) => LANDMARK_NAMES[index] ?? `Punt ${index}`).join(' · ') : 'Selecciona tres landmarks visibles sobre l’esquelet.'}</small></div>
+                          </div>
+                        ) : <div className="empty-inline" data-testid="analysis-waiting-frames">Selecciona manualment els 3 fotogrames de HOP, STEP i JUMP abans de començar l’anàlisi d’angles.</div>}
                       </div>
                     )}
                 </div>

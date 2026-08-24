@@ -1,0 +1,332 @@
+CORRECCIÓ IMPORTANT — RECUPERAR MEDIAPIPE I SELECCIÓ MANUAL DELS FOTOGRAMES
+
+Continua treballant sobre l'aplicació actual. NO facis una aplicació nova i NO eliminis les funcionalitats que ja funcionaven.
+
+Hi ha dues coses que s'han de corregir urgentment:
+
+1. MEDIA​PIPE JA NO ESTÀ ANALITZANT EL VÍDEO CORRECTAMENT
+2. ELS FOTOGRAMES DELS TRES SALTS HAN DE SER SELECCIONATS MANUALMENT PER L'USUARI
+
+==================================================
+1. RECUPERAR L'ANÀLISI REAL DE MEDIAPIPE
+==================================================
+
+Anteriorment, durant la reproducció del vídeo, l'aplicació mostrava l'esquelet de MediaPipe sobre l'atleta:
+
+- punts de les articulacions;
+- línies entre les articulacions;
+- malucs;
+- genolls;
+- turmells;
+- espatlles;
+- colzes;
+- canells;
+- etc.
+
+Aquesta funcionalitat ara ha deixat de funcionar.
+
+Vull que la recuperis.
+
+Quan l'usuari reprodueixi el vídeo, MediaPipe ha de tornar a analitzar els fotogrames en temps real o fotograma a fotograma i mostrar els landmarks de l'atleta sobre el vídeo.
+
+NO utilitzis dades fictícies.
+
+NO simulis l'esquelet.
+
+Els punts han de provenir realment de MediaPipe Pose o del sistema de pose estimation que ja està integrat al projecte.
+
+==================================================
+2. MEDIAPIPE TAMBÉ HA DE FUNCIONAR EN ELS FOTOGRAMES
+==================================================
+
+Quan l'usuari seleccioni un fotograma concret per analitzar-lo, també s'ha de poder executar/mostrar la detecció real de MediaPipe en aquell fotograma.
+
+Per tant, MediaPipe ha de funcionar en:
+
+A) el vídeo mentre es reprodueix;
+
+B) els fotogrames que l'usuari seleccioni manualment;
+
+C) la pantalla de correcció dels punts.
+
+En cada fotograma seleccionat s'han de mostrar els landmarks detectats.
+
+==================================================
+3. IMPORTANT: NO PERDRE EL TRACKING DE L'ATLETA
+==================================================
+
+La recuperació de MediaPipe no ha de fer tornar el problema anterior de seleccionar persones equivocades.
+
+L'usuari ha de poder seleccionar manualment l'atleta que vol analitzar.
+
+Una vegada seleccionat l'atleta, el sistema ha d'intentar mantenir el tracking d'aquesta persona i no canviar automàticament a:
+
+- una altra persona;
+- un objecte;
+- una persona del públic;
+- un corredor diferent;
+- qualsevol altre element del vídeo.
+
+Si hi ha diverses persones, l'atleta seleccionat per l'usuari té prioritat.
+
+Si MediaPipe perd temporalment el tracking, indicar que el punt necessita revisió en comptes de canviar automàticament a una altra persona.
+
+==================================================
+4. NO FER AUTOMÀTICAMENT ELS FOTOGRAMES
+==================================================
+
+Aquesta part és molt important.
+
+Quan l'usuari seleccioni:
+
+HOP
+STEP
+JUMP
+
+NO vull que l'aplicació seleccioni automàticament els tres fotogrames importants.
+
+Els fotogrames els ha de seleccionar MANUALMENT LA PERSONA.
+
+Això és necessari perquè els fotogrames que s'han d'analitzar corresponen a moments biomecànics concrets i l'aplicació no els ha d'escollir pel seu compte.
+
+==================================================
+5. FLUX CORRECTE DESPRÉS DE SELECCIONAR ELS TRES SALTS
+==================================================
+
+L'usuari farà:
+
+1. Pujar el vídeo.
+2. Seleccionar l'atleta.
+3. Marcar inici i final del HOP.
+4. Marcar inici i final del STEP.
+5. Marcar inici i final del JUMP.
+6. Prémer ANALITZAR.
+
+L'aplicació crearà/mostrarà els tres fragments seleccionats:
+
+HOP
+STEP
+JUMP
+
+PERÒ NO seleccionarà els fotogrames importants automàticament.
+
+==================================================
+6. SELECCIÓ MANUAL DELS FOTOGRAMES
+==================================================
+
+Dins de cada fragment, l'usuari ha de poder reproduir el vídeo i avançar fotograma a fotograma.
+
+Ha de poder:
+
+- reproduir;
+- pausar;
+- anar al fotograma anterior;
+- anar al fotograma següent;
+- moure's per la línia de temps;
+- utilitzar les velocitats de reproducció ja implementades;
+- seleccionar exactament el fotograma que vol.
+
+Quan arribi al moment que considera correcte, ha de poder prémer:
+
+"SELECCIONAR FOTOGRAMA"
+
+Per exemple:
+
+HOP
+
+[Vídeo]
+
+Fotograma actual: 152
+
+[SELECCIONAR FOTOGRAMA]
+
+Després:
+
+HOP — FOTOGRAMA 1 ✓
+
+I continuar buscant el següent.
+
+==================================================
+7. TRES FOTOGRAMES PER CADA SALT
+==================================================
+
+Per cada salt l'usuari ha de seleccionar 3 fotogrames.
+
+HOP:
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+STEP:
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+JUMP:
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+L'aplicació NO ha d'escollir aquests fotogrames.
+
+Els ha d'escollir l'usuari.
+
+==================================================
+8. PODER CANVIAR UN FOTOGRAMA
+==================================================
+
+Si l'usuari s'equivoca, ha de poder eliminar o substituir qualsevol dels fotogrames seleccionats.
+
+Exemple:
+
+HOP
+
+Fotograma 1 — 152
+[CANVIAR]
+
+Fotograma 2 — 164
+[CANVIAR]
+
+Fotograma 3 — 177
+[CANVIAR]
+
+En prémer CANVIAR, tornar a la reproducció del fragment i permetre seleccionar un altre fotograma.
+
+També ha d'existir una opció:
+
+[ESBORRAR FOTOGRAMA]
+
+==================================================
+9. MEDIAPIPE EN EL MOMENT DE SELECCIONAR
+==================================================
+
+Quan l'usuari estigui buscant el fotograma perfecte, l'esquelet de MediaPipe ha de continuar visible sobre el vídeo.
+
+Això és important perquè l'usuari pugui veure la posició de:
+
+- maluc;
+- genoll;
+- turmell;
+- espatlla;
+- colze;
+- canell;
+- etc.
+
+Quan l'usuari pausa el vídeo en un fotograma, ha de veure immediatament els landmarks corresponents a aquell fotograma.
+
+Això permetrà seleccionar el moment biomecànic correcte amb precisió.
+
+==================================================
+10. DESPRÉS DE SELECCIONAR ELS FOTOGRAMES
+==================================================
+
+Només DESPRÉS que l'usuari hagi seleccionat manualment els 3 fotogrames de cada salt, començarà la fase d'anàlisi dels angles.
+
+Flux:
+
+HOP
+→ usuari selecciona 3 fotogrames
+
+STEP
+→ usuari selecciona 3 fotogrames
+
+JUMP
+→ usuari selecciona 3 fotogrames
+
+↓
+
+ANÀLISI DELS ANGLES
+
+↓
+
+CORRECCIÓ MANUAL DELS LANDMARKS
+
+↓
+
+CÀLCUL MATEMÀTIC
+
+↓
+
+COMPARACIÓ AMB LA REFERÈNCIA
+
+↓
+
+TAULA FINAL
+
+==================================================
+11. NO CANVIAR LA METODOLOGIA BIOMECÀNICA
+==================================================
+
+No inventis quins fotogrames són correctes.
+
+No intentis decidir automàticament quin és el moment de batuda.
+
+No decideixis automàticament quins són els tres moments importants.
+
+Això ho farà l'usuari.
+
+Tampoc inventis les fórmules dels angles que encara no t'he definit.
+
+La metodologia biomecànica exacta la proporcionaré jo.
+
+==================================================
+12. RESUM DEL COMPORTAMENT FINAL
+==================================================
+
+Vull que l'aplicació funcioni així:
+
+PUJAR VÍDEO
+↓
+SELECCIONAR ATLETA
+↓
+REPRODUIR VÍDEO AMB MEDIAPIPE VISIBLE
+↓
+SELECCIONAR HOP
+↓
+SELECCIONAR STEP
+↓
+SELECCIONAR JUMP
+↓
+ANALITZAR
+↓
+MOSTRAR EL CLIP HOP
+↓
+L'USUARI BUSCA EL MOMENT EXACTE
+↓
+SELECCIONA FOTOGRAMA 1
+↓
+SELECCIONA FOTOGRAMA 2
+↓
+SELECCIONA FOTOGRAMA 3
+↓
+MOSTRAR CLIP STEP
+↓
+L'USUARIÓ SELECCIONA 3 FOTOGRAMES
+↓
+MOSTRAR CLIP JUMP
+↓
+L'USUARIÓ SELECCIONA 3 FOTOGRAMES
+↓
+ANÀLISI DELS LANDMARKS
+↓
+SELECCIÓ DELS ANGLES
+↓
+CÀLCUL MATEMÀTIC
+↓
+CORRECCIÓ MANUAL SI CAL
+↓
+COMPARACIÓ AMB JONATHAN EDWARDS
+↓
+TAULA FINAL
+
+REQUISIT IMPORTANT:
+
+NO eliminis la detecció de MediaPipe que ja existia.
+
+NO substitueixis MediaPipe per una simulació.
+
+NO facis que l'aplicació esculli automàticament els fotogrames.
+
+La detecció de l'esquelet ha de tornar a funcionar durant el vídeo i també en els fotogrames seleccionats.
+
+L'usuari ha de tenir sempre el control sobre quin atleta, quin fragment i quin fotograma s'analitza.

@@ -1198,6 +1198,55 @@ button {
   text-align: left;
 }
 
+.frame-slot-select {
+  display: grid;
+  gap: .2rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.frame-slot-clear {
+  justify-self: start;
+  margin-top: .3rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: hsl(4 69% 42%);
+  font-family: var(--app-font-mono);
+  font-size: .58rem;
+  text-transform: uppercase;
+}
+
+.clip-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-top: .85rem;
+  padding: .8rem;
+  border: 1px solid hsl(38 89% 61% / .28);
+  border-radius: .45rem;
+  background: hsl(38 89% 61% / .08);
+}
+
+.clip-picker > div {
+  display: grid;
+  gap: .2rem;
+}
+
+.clip-picker strong {
+  font-family: var(--app-font-mono);
+  font-size: .7rem;
+}
+
+.clip-picker span {
+  color: hsl(var(--muted-foreground));
+  font-size: .68rem;
+}
+
 .frame-slot strong {
   font-family: var(--app-font-mono);
   font-size: .68rem;
