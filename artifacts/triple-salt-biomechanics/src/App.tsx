@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import referenceImage from '@assets/IMG-20260708-WA0000_1787472726299.jpg';
+import ProductHub from './ProductHub';
 import {
   Activity,
   ArrowDownToLine,
@@ -211,7 +212,7 @@ const parseReferenceRange = (value: string) => {
 const initials = (name: string) =>
   name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
-function App() {
+export function AnalysisWorkspace() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -1683,6 +1684,10 @@ function App() {
       {toast && <div className="toast" role="status" data-testid="status-toast">{toast}</div>}
     </div>
   );
+}
+
+function App() {
+  return <ProductHub analysisWorkspace={<AnalysisWorkspace />} />;
 }
 
 export default App;
