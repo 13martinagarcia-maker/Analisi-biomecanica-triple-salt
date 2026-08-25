@@ -1,0 +1,699 @@
+Vull continuar desenvolupant l'aplicació, però en aquesta fase NO vull que modifiquis ni refacis la part d'anàlisi biomecànica del vídeo que ja existeix.
+
+La funcionalitat d'anàlisi de vídeo, MediaPipe, selecció de fotogrames, angles, landmarks, comparació amb Jonathan Edwards, etc. ja està desenvolupada i la retocaré posteriorment.
+
+ARA VULL QUE ET CENTRIS EXCLUSIVAMENT EN CREAR L'ESTRUCTURA GENERAL DE L'APLICACIÓ, EL SISTEMA D'USUARIS, LES PESTANYES I LES SECCIONS PRINCIPALS.
+
+L'objectiu és que l'aplicació tingui una estructura clara, visual, moderna i fàcil d'utilitzar tant per atletes com per entrenadors i pares.
+
+==================================================
+1. REGISTRE I INICI DE SESSIÓ
+==================================================
+
+Quan una persona entra a l'aplicació per primera vegada, ha de poder registrar-se.
+
+El registre ha de demanar:
+
+- Nom
+- Cognom
+- Correu electrònic
+- Contrasenya
+
+També ha d'existir una pantalla d'inici de sessió per als usuaris que ja tenen compte.
+
+NO cal crear ara un sistema complex de rols.
+
+La prioritat és que el sistema de registre i accés funcioni correctament i que cada usuari pugui tenir les seves dades guardades.
+
+==================================================
+2. PANTALLA PRINCIPAL / INICI
+==================================================
+
+Una vegada l'usuari ha iniciat sessió, ha d'arribar a una pantalla principal visual.
+
+Vull una interfície moderna, neta i esportiva.
+
+No vull que sembli una pàgina web plena de text.
+
+Ha de funcionar principalment mitjançant:
+
+- targetes
+- botons grans
+- icones
+- menús
+- gràfics quan siguin necessaris
+- informació resumida
+
+La pantalla principal ha de permetre accedir fàcilment a les diferents funcions de l'aplicació.
+
+Crear una navegació clara amb les seccions principals.
+
+==================================================
+3. PESTANYA: HISTORIAL
+==================================================
+
+Crear una secció anomenada:
+
+"HISTORIAL"
+
+La finalitat és poder guardar i consultar l'evolució dels atletes al llarg de la temporada.
+
+Aquesta secció ha de permetre consultar:
+
+- Atletes
+- Competicions
+- Marques
+- Resultats
+- Evolució durant la temporada
+- Dades de les diferents competicions
+- Informació tècnica disponible
+
+L'objectiu és que en el futur es pugui veure l'evolució de l'atleta des de la pretemporada fins al final de temporada.
+
+Per exemple:
+
+PRETEMPORADA
+↓
+COMPETICIÓ 1
+↓
+COMPETICIÓ 2
+↓
+COMPETICIÓ 3
+↓
+FINAL DE TEMPORADA
+
+La interfície hauria de permetre veure l'evolució de manera visual.
+
+Per exemple:
+
+- gràfica d'evolució de la marca
+- millor marca
+- mitjana
+- últimes competicions
+- progressió
+
+NO inventis dades.
+
+Si encara no hi ha dades, mostrar un estat buit del tipus:
+
+"Encara no hi ha dades registrades."
+
+==================================================
+4. HISTORIAL DE CADA ATLETA
+==================================================
+
+Dins de l'historial, l'usuari ha de poder seleccionar un atleta.
+
+Quan selecciona un atleta, mostrar una fitxa amb:
+
+- Nom
+- Cognom
+- Millor marca
+- Últimes competicions
+- Evolució de marques
+- Objectius
+- Informació tècnica
+- Historial d'anàlisis
+
+Aquesta pantalla ha de quedar preparada perquè posteriorment s'hi puguin afegir les dades de l'anàlisi biomecànica.
+
+IMPORTANT:
+
+No desenvolupis ara aquesta part biomecànica.
+
+Només deixa preparada l'estructura perquè posteriorment les dades de l'anàlisi es puguin incorporar a l'historial.
+
+==================================================
+5. PESTANYA: TÈCNICA
+==================================================
+
+Crear una secció anomenada:
+
+"TÈCNICA"
+
+Aquesta secció servirà per explicar com es realitza correctament el triple salt.
+
+Ha de tenir dues formes de contingut:
+
+1. EXPLICACIÓ ESCRITA
+2. VÍDEO EXPLICATIU
+
+L'estructura pot dividir-se en:
+
+- Cursa d'aproximació
+- Entrada a la taula
+- Hop
+- Step
+- Jump
+- Caiguda
+- Errors habituals
+- Correccions
+
+Però IMPORTANT:
+
+NO inventis ara el contingut tècnic definitiu.
+
+Deixa la secció preparada perquè posteriorment jo pugui introduir:
+
+- textos
+- vídeos
+- imatges
+- explicacions
+- errors
+- correccions
+- exercicis
+
+Vull que sigui un sistema fàcil d'editar i ampliar.
+
+==================================================
+6. PESTANYA: ESCALFAMENT
+==================================================
+
+Crear una secció:
+
+"ESCALFAMENT"
+
+Aquesta secció servirà per mostrar un escalfament previ a una competició.
+
+Ha de permetre tenir:
+
+- explicació escrita
+- vídeos
+- exercicis
+- ordre dels exercicis
+- temps o repeticions
+- instruccions
+
+De moment NO inventis l'escalfament definitiu.
+
+Crea simplement l'estructura visual i funcional perquè posteriorment pugui afegir el contingut.
+
+Per exemple:
+
+ESCALFAMENT PREVI A COMPETICIÓ
+
+01 — Exercici
+Vídeo
+Explicació
+Temps/repeticions
+
+02 — Exercici
+Vídeo
+Explicació
+Temps/repeticions
+
+03 — Exercici
+Vídeo
+Explicació
+Temps/repeticions
+
+etc.
+
+==================================================
+7. PESTANYA: NOVA COMPETICIÓ
+==================================================
+
+Crear un botó/secció:
+
+"NOVA COMPETICIÓ"
+
+Quan l'usuari hi entri, ha de poder crear una nova competició.
+
+Demanar:
+
+- Lloc
+- Data
+- Atleta
+- Objectiu de la competició
+- Millor marca personal
+- Objectiu per al final de temporada
+
+Després crear la fitxa de la competició.
+
+==================================================
+8. REGISTRE DELS 6 SALTS
+==================================================
+
+Cada competició ha de permetre registrar fins a 6 salts.
+
+Mostrar visualment:
+
+SALT 1
+SALT 2
+SALT 3
+SALT 4
+SALT 5
+SALT 6
+
+Per cada salt poder introduir la marca.
+
+Exemple:
+
+1r salt → 11,00 m
+2n salt → 11,10 m
+3r salt → 10,90 m
+4t salt → 11,25 m
+5è salt → 11,35 m
+6è salt → X
+
+La X significa nul.
+
+NO posis aquestes marques com a dades fixes de l'aplicació.
+
+Són només un exemple visual.
+
+L'usuari ha de poder introduir les seves pròpies dades.
+
+==================================================
+9. RESULTAT DE LA COMPETICIÓ
+==================================================
+
+Al final de la competició, preguntar:
+
+"Has assolit l'objectiu de la competició?"
+
+Opcions:
+
+- Sí
+- No
+
+També ha de quedar guardat l'objectiu que havia definit abans de competir.
+
+D'aquesta manera, posteriorment es podrà comparar:
+
+OBJECTIU
+vs.
+RESULTAT REAL
+
+==================================================
+10. SECCIÓ "ESTIC A PISTA"
+==================================================
+
+Crear una secció separada anomenada:
+
+"ESTIC A PISTA"
+
+Aquesta secció NO és l'anàlisi biomecànica del vídeo.
+
+És una eina de valoració general que l'atleta pot utilitzar després de realitzar el triple salt.
+
+La finalitat és obtenir una valoració senzilla i fàcil d'entendre.
+
+Ha de poder respondre les preguntes següents.
+
+------------------------------------------
+A. LA CURSA I L'ENTRADA
+------------------------------------------
+
+Títol:
+
+"La Cursa i l'Entrada"
+
+Subtítol:
+
+"Velocitat"
+
+Pregunta:
+
+"Com has entrat a la taula?"
+
+Opció 1:
+
+"Amb molta velocitat, controlat i clavant la taula."
+
+Valoració:
+
+"Molt bé"
+
+Puntuació:
+
+10–8,5
+
+Opció 2:
+
+"He hagut de frenar els últims passos per no fer nul (he entrat 'clavat')."
+
+Valoració:
+
+"Normal"
+
+Puntuació:
+
+8,5–6
+
+Opció 3:
+
+"He arribat cansat/sense forces al final de la cursa."
+
+Valoració:
+
+"Fatal"
+
+Puntuació:
+
+6–0
+
+------------------------------------------
+B. EL RITME DEL SALT
+------------------------------------------
+
+Títol:
+
+"El Ritme del Salt"
+
+Subtítol:
+
+"L'acústica i la inèrcia"
+
+Explicar breument que el triple salt té un ritme característic:
+
+"ta-ta---ta"
+
+Pregunta:
+
+"Com has sentit el ritme del salt global?"
+
+Opció 1:
+
+"Fluid. He anat rebotant i avançant cap endavant fàcilment."
+
+Valoració:
+
+"Molt bé"
+
+Puntuació:
+
+10–8,5
+
+Opció 2:
+
+"Tallat. El primer salt ha anat molt bé, però de cop m'he quedat clavat a terra."
+
+Valoració:
+
+"Normal"
+
+Puntuació:
+
+8,5–6
+
+Opció 3:
+
+"Precipitat. He anat molt ràpid però descontrolat, com si en lloc de saltar estigués corrent."
+
+Valoració:
+
+"Fatal"
+
+Puntuació:
+
+6–0
+
+------------------------------------------
+C. LA CAIGUDA I EL RESULTAT
+------------------------------------------
+
+Títol:
+
+"La Caiguda i el Resultat"
+
+Subtítol:
+
+"Eficiència"
+
+Pregunta:
+
+"Com has arribat a la sorra?"
+
+Opció 1:
+
+"Amb energia, llançant els peus endavant i caient bé."
+
+Valoració:
+
+"Molt bé"
+
+Puntuació:
+
+10–8,5
+
+Opció 2:
+
+"Mort/Sense velocitat. He caigut gairebé en vertical de seguida que he entrat a la sorra."
+
+Valoració:
+
+"Normal"
+
+Puntuació:
+
+8,5–6
+
+Opció 3:
+
+"Desequilibrat/Cap a un costat."
+
+Valoració:
+
+"Fatal"
+
+Puntuació:
+
+6–0
+
+==================================================
+11. RESULTAT DE "ESTIC A PISTA"
+==================================================
+
+Una vegada contestades les preguntes, mostrar un resum visual.
+
+Per exemple:
+
+VALORACIÓ GENERAL
+
+🏃 Cursa i entrada
+8,8 / 10
+
+🔄 Ritme
+7,5 / 10
+
+🏖️ Caiguda
+9,0 / 10
+
+Puntuació general:
+
+8,4 / 10
+
+IMPORTANT:
+
+Aquesta puntuació és una valoració general i NO substitueix l'anàlisi biomecànica.
+
+Posteriorment s'hi afegiran les correccions específiques associades a aquestes puntuacions.
+
+NO inventis encara aquestes correccions.
+
+Deixa preparada l'estructura perquè més endavant jo pugui afegir-les.
+
+==================================================
+12. "ESTIC A CASA"
+==================================================
+
+IMPORTANTÍSSIM:
+
+NO MODIFIQUIS ARA LA SECCIÓ "ESTIC A CASA".
+
+Aquesta secció correspon a l'anàlisi del vídeo i la biomecànica que ja he desenvolupat.
+
+Inclou:
+
+- vídeo
+- MediaPipe
+- seguiment de l'atleta
+- landmarks
+- selecció de HOP / STEP / JUMP
+- fotogrames
+- selecció manual de fotogrames
+- selecció d'angles
+- càlcul matemàtic
+- comparació amb Jonathan Edwards
+- correcció dels punts
+- taules biomecàniques
+
+AQUESTA PART NO LA TOQUIS EN AQUESTA FASE.
+
+Només assegura't que existeix com una secció accessible des de l'aplicació.
+
+Posteriorment jo et donaré instruccions específiques per modificar-la.
+
+==================================================
+13. ESTRUCTURA GENERAL DE LA NAVEGACIÓ
+==================================================
+
+La navegació principal podria tenir:
+
+INICI
+
+HISTORIAL
+
+NOVA COMPETICIÓ
+
+ESTIC A PISTA
+
+ESTIC A CASA
+
+TÈCNICA
+
+ESCALFAMENT
+
+Cada secció ha de tenir un disseny coherent.
+
+==================================================
+14. DISSENY VISUAL
+==================================================
+
+Vull que l'aplicació sigui molt més visual i moderna.
+
+Evitar:
+
+- grans blocs de text
+- pantalles avorrides
+- formularis excessivament llargs
+- taules complicades sense necessitat
+
+Utilitzar:
+
+- targetes
+- icones
+- botons grans
+- indicadors de progrés
+- gràfiques
+- seccions diferenciades
+- colors esportius
+- jerarquia visual clara
+
+L'aplicació ha de transmetre que és una eina esportiva professional però fàcil d'utilitzar.
+
+Ha de ser especialment fàcil per a:
+
+- atletes
+- entrenadors
+- pares
+
+==================================================
+15. IDIOMA
+==================================================
+
+TOTA LA INTERFÍCIE HA D'ESTAR EN CATALÀ.
+
+No vull textos de la interfície en anglès.
+
+Traduir:
+
+- botons
+- menús
+- títols
+- missatges
+- formularis
+- errors
+- instruccions
+- estats buits
+
+Si internament el codi utilitza noms en anglès, això no importa.
+
+El que veu l'usuari ha d'estar en català.
+
+==================================================
+16. DADES I ARQUITECTURA
+==================================================
+
+L'estructura de dades ha de quedar preparada per relacionar:
+
+USUARI
+↓
+ATLETES
+↓
+COMPETICIONS
+↓
+SALTS
+↓
+RESULTATS
+↓
+ANÀLISI
+
+També:
+
+ATLETA
+↓
+HISTORIAL
+↓
+EVOLUCIÓ
+
+I:
+
+ATLETA
+↓
+ESTIC A PISTA
+↓
+VALORACIONS
+
+I en el futur:
+
+ATLETA
+↓
+ESTIC A CASA
+↓
+ANÀLISI BIOMECÀNICA
+
+No cal implementar ara totes les funcions futures, però l'arquitectura ha de permetre afegir-les sense haver de reconstruir tota l'aplicació.
+
+==================================================
+17. IMPORTANT: NO INVENTAR CONTINGUT
+==================================================
+
+No inventis:
+
+- dades d'atletes
+- resultats
+- marques
+- correccions tècniques
+- informació biomecànica
+- plans de millora
+- contingut d'escalfament
+
+Quan encara no hi hagi contingut, utilitza espais preparats o estats buits.
+
+Exemple:
+
+"Aquí apareixerà el contingut tècnic."
+
+Però no inventis informació que posteriorment pugui ser incorrecta.
+
+==================================================
+18. OBJECTIU D'AQUESTA FASE
+==================================================
+
+En aquesta fase NO vull que intentis completar tota l'aplicació.
+
+Vull que construeixis correctament:
+
+1. Registre
+2. Inici de sessió
+3. Pantalla principal
+4. Navegació
+5. Historial
+6. Fitxa de l'atleta
+7. Nova competició
+8. Registre dels 6 salts
+9. Objectius de competició
+10. Estic a pista
+11. Resultat de la valoració
+12. Tècnica
+13. Escalfament
+14. Estructura preparada per al futur
+15. Integració visual amb la secció "Estic a casa" existent
+
+NO TOQUIS NI MODIFIQUIS L'ANÀLISI BIOMECÀNICA EXISTENT.
+
+Prioritza que la navegació sigui funcional, visual, clara i fàcil d'utilitzar.
+
+Abans de crear funcionalitats noves, comprova que no trenques cap de les funcionalitats de l'anàlisi de vídeo que ja funciona.

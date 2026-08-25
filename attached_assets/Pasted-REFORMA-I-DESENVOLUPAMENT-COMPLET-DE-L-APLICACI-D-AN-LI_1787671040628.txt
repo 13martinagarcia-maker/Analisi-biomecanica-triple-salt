@@ -1,0 +1,1334 @@
+REFORMA I DESENVOLUPAMENT COMPLET DE L'APLICACIÓ D'ANÀLISI DEL TRIPLE SALT
+
+IMPORTANT:
+
+Continua treballant sobre l'aplicació actual.
+
+NO creïs una aplicació nova des de zero.
+
+NO eliminis les funcionalitats que ja funcionen, especialment:
+
+- MediaPipe Pose real;
+- detecció de landmarks;
+- esquelet sobre el vídeo;
+- càlcul matemàtic dels angles;
+- selecció de l'atleta;
+- selecció dels trams HOP, STEP i JUMP;
+- reproducció del vídeo;
+- càmera lenta;
+- correcció manual dels punts;
+- selecció manual dels fotogrames.
+
+L'objectiu és convertir l'aplicació actual en una eina completa de seguiment, anàlisi i millora del triple salt.
+
+La interfície ha de ser moderna, visual, clara i professional.
+
+L'idioma principal de tota l'aplicació ha de ser el CATALÀ.
+
+==================================================
+1. OBJECTIU GENERAL DE L'APLICACIÓ
+==================================================
+
+L'aplicació ha de permetre fer el seguiment d'un atleta durant tota la temporada i combinar dues grans vies d'anàlisi:
+
+A) ESTIC A CASA
+→ anàlisi tècnica i biomecànica del vídeo.
+
+B) ESTIC A PISTA
+→ valoració general de l'execució mitjançant preguntes i puntuacions.
+
+Aquestes dues vies són diferents però, en el futur, podran combinar els seus resultats per generar un pla de millora.
+
+Les correccions concretes encara NO estan definides.
+
+NO inventis les correccions.
+
+L'estructura ha de quedar preparada perquè les correccions es puguin afegir posteriorment.
+
+==================================================
+2. REGISTRE I INICI DE SESSIÓ
+==================================================
+
+Abans d'entrar a l'aplicació, crear un sistema de registre.
+
+El registre ha de demanar:
+
+- Nom
+- Cognom
+- Correu electrònic
+- Contrasenya
+
+Permetre:
+
+- registrar-se;
+- iniciar sessió;
+- tancar sessió.
+
+Les dades de cada usuari han d'estar separades.
+
+Les contrasenyes s'han de guardar mitjançant un sistema d'autenticació segur.
+
+No guardar mai contrasenyes en text pla.
+
+==================================================
+3. PANTALLA PRINCIPAL
+==================================================
+
+Després d'iniciar sessió, mostrar un menú principal molt visual.
+
+Crear com a mínim aquestes seccions:
+
+1. HISTORIAL
+2. TÈCNICA
+3. ESCALFAMENT
+4. NOVA COMPETICIÓ
+5. ESTIC A CASA
+6. ESTIC A PISTA
+
+També pot existir una secció de:
+
+7. EVOLUCIÓ
+
+La pantalla ha de ser moderna i visual.
+
+Utilitzar:
+
+- targetes;
+- icones;
+- colors;
+- botons grans;
+- indicadors;
+- gràfics quan siguin útils.
+
+No vull una interfície que sembli una aplicació tècnica de desenvolupador.
+
+==================================================
+4. HISTORIAL
+==================================================
+
+Crear una secció "HISTORIAL".
+
+Aquí s'han de guardar totes les dades de l'atleta i les seves competicions.
+
+L'objectiu és poder veure l'evolució de:
+
+PRETEMPORADA
+↓
+INICI DE TEMPORADA
+↓
+MITJA TEMPORADA
+↓
+FINAL DE TEMPORADA
+
+Guardar:
+
+- competicions;
+- dates;
+- llocs;
+- marques;
+- objectius;
+- resultats dels sis salts;
+- anàlisis biomecàmiques;
+- puntuacions de pista;
+- observacions;
+- evolució.
+
+Cada competició ha de poder obrir-se posteriorment per consultar tota la informació.
+
+==================================================
+5. TÈCNICA DEL TRIPLE SALT
+==================================================
+
+Crear una secció:
+
+"TÈCNICA DEL TRIPLE SALT"
+
+Ha de permetre mostrar:
+
+- explicacions escrites;
+- vídeos explicatius;
+- conceptes tècnics;
+- errors habituals;
+- possibles correccions;
+- plans de millora.
+
+IMPORTANT:
+
+No inventis informació tècnica.
+
+La informació haurà de provenir de fonts fiables, informació que jo proporcionaré i/o informació validada.
+
+Deixar l'estructura preparada perquè posteriorment pugui afegir el contingut.
+
+==================================================
+6. ESCALFAMENT
+==================================================
+
+Crear una secció:
+
+"ESCALFAMENT PREVI A LA COMPETICIÓ"
+
+Ha d'incloure:
+
+- explicació escrita;
+- vídeos;
+- exercicis;
+- ordre;
+- indicacions.
+
+No inventis encara el contingut si no està proporcionat.
+
+Deixar la secció preparada per afegir-lo posteriorment.
+
+==================================================
+7. NOVA COMPETICIÓ
+==================================================
+
+Crear un botó:
+
+"+ NOVA COMPETICIÓ"
+
+Quan l'usuari el seleccioni, demanar:
+
+- Lloc
+- Data
+- Objectiu de la competició
+- Millor marca personal
+- Objectiu per al final de temporada
+
+Guardar aquesta informació.
+
+==================================================
+8. RESULTATS DE LA COMPETICIÓ
+==================================================
+
+Per cada competició registrar:
+
+1r salt
+2n salt
+3r salt
+4t salt
+5è salt
+6è salt
+
+Exemple:
+
+1r salt → 11,00 m
+2n salt → 11,10 m
+3r salt → 10,90 m
+4t salt → 11,25 m
+5è salt → 11,35 m
+6è salt → X
+
+Permetre introduir manualment els resultats.
+
+"X" significa salt nul.
+
+Calcular automàticament:
+
+- millor salt de la competició;
+- diferència respecte a la marca personal;
+- diferència respecte a l'objectiu;
+- evolució respecte a altres competicions.
+
+==================================================
+9. OBJECTIU DE LA COMPETICIÓ
+==================================================
+
+Després de la competició preguntar:
+
+"HAS ASSOLIT L'OBJECTIU D'AQUESTA COMPETICIÓ?"
+
+Opcions:
+
+✓ SÍ
+
+✕ NO
+
+Permetre afegir una observació.
+
+Guardar-ho a l'historial.
+
+==================================================
+10. ESTIC A CASA
+==================================================
+
+"ESTIC A CASA" és la part d'anàlisi tècnica i biomecànica.
+
+Aquí l'usuari pujarà un vídeo d'un atleta fent triple salt.
+
+L'aplicació haurà d'utilitzar MediaPipe Pose REAL.
+
+NO utilitzar dades fictícies.
+
+NO simular deteccions.
+
+Els landmarks han de provenir realment del sistema de pose estimation.
+
+==================================================
+11. SELECCIÓ DE L'ATLETA
+==================================================
+
+Quan es carregui el vídeo:
+
+preguntar:
+
+"QUI ÉS L'ATLETA?"
+
+L'usuari ha de poder:
+
+- seleccionar un atleta existent;
+- crear un atleta nou.
+
+Si hi ha diverses persones al vídeo, l'usuari ha de poder seleccionar QUINA persona s'ha d'analitzar.
+
+Aquesta selecció s'ha de poder fer:
+
+- al principi;
+- durant el vídeo;
+- durant els fotogrames.
+
+IMPORTANT:
+
+MediaPipe actualment pot confondre l'atleta amb altres persones o objectes del fons.
+
+Millorar el sistema de seguiment perquè mantingui l'atleta seleccionat.
+
+Si hi ha persones, objectes o altres elements al fons, no ha de canviar automàticament d'atleta.
+
+Si tècnicament no és possible eliminar les persones/objectes del fons, com a mínim:
+
+- bloquejar l'atleta seleccionat;
+- mantenir-ne el seguiment;
+- permetre canviar manualment l'atleta en qualsevol moment;
+- permetre tornar a seleccionar la persona correcta sobre un fotograma.
+
+L'usuari NO pot quedar atrapat amb una persona incorrecta.
+
+==================================================
+12. MEDIA​PIPE
+==================================================
+
+Utilitzar MediaPipe Pose o una tecnologia equivalent real.
+
+Com a mínim detectar:
+
+- maluc esquerre;
+- maluc dret;
+- genoll esquerre;
+- genoll dret;
+- turmell esquerre;
+- turmell dret;
+- espatlla esquerra;
+- espatlla dreta;
+- colze esquerre;
+- colze dret;
+- canell esquerre;
+- canell dret.
+
+També utilitzar, si és possible:
+
+centre de pelvis = centre aproximat entre els dos malucs.
+
+Mostrar l'esquelet sobre el vídeo.
+
+Mostrar els landmarks detectats.
+
+Utilitzar la confiança dels landmarks.
+
+==================================================
+13. VELOCITAT DEL VÍDEO
+==================================================
+
+Permetre reproduir el vídeo a:
+
+0,25x
+0,5x
+0,75x
+1x
+1,25x
+
+i altres velocitats si és útil.
+
+També permetre:
+
+- Play;
+- Pause;
+- fotograma anterior;
+- fotograma següent;
+- barra de temps;
+- número de fotograma;
+- temps exacte.
+
+La selecció dels fotogrames ha de poder fer-se amb precisió.
+
+==================================================
+14. SELECCIÓ DELS TRAMS
+==================================================
+
+L'usuari ha de poder seleccionar visualment els trams del triple salt directament des del vídeo.
+
+NO vull que hagi d'escriure manualment:
+
+"inici = 00:05"
+"final = 00:09"
+
+En lloc d'això:
+
+L'usuari reprodueix el vídeo.
+
+Quan comença el HOP:
+
+→ prem "COMENÇA HOP"
+
+Quan acaba:
+
+→ prem "ACABA HOP"
+
+Després:
+
+→ "COMENÇA STEP"
+→ "ACABA STEP"
+
+Després:
+
+→ "COMENÇA JUMP"
+→ "ACABA JUMP"
+
+També permetre esborrar i tornar a seleccionar qualsevol tram.
+
+==================================================
+15. CLIPS INDEPENDENTS
+==================================================
+
+Una vegada seleccionats els trams:
+
+crear tres clips independents:
+
+HOP
+→ només clip del HOP
+
+STEP
+→ només clip del STEP
+
+JUMP
+→ només clip del JUMP
+
+NO barrejar els tres salts en una mateixa pantalla.
+
+==================================================
+16. SELECCIÓ MANUAL DELS FOTOGRAMES
+==================================================
+
+Aquesta part és MOLT IMPORTANT.
+
+L'aplicació NO ha de decidir automàticament els tres fotogrames finals que s'utilitzaran per a l'anàlisi.
+
+Els fotogrames finals els selecciona l'usuari.
+
+Per cada salt:
+
+HOP
+→ seleccionar 3 fotogrames
+
+STEP
+→ seleccionar 3 fotogrames
+
+JUMP
+→ seleccionar 3 fotogrames
+
+L'usuari ha de poder avançar fotograma a fotograma i seleccionar exactament el moment que considera important.
+
+==================================================
+17. CORRECCIÓ ESPECÍFICA DEL JUMP
+==================================================
+
+El sistema actual s'està equivocant amb el JUMP.
+
+NO considerar que el moment important del JUMP és quan l'atleta cau a la sorra.
+
+El moment important és la TERCERA BATUDA.
+
+És a dir:
+
+HOP → primera batuda
+STEP → segona batuda
+JUMP → tercera batuda
+
+La selecció/proposta del JUMP ha d'estar centrada en la tercera batuda i el moment biomecànic corresponent.
+
+NO utilitzar simplement l'arribada a la sorra com a referència.
+
+L'aterratge a la sorra és posterior al JUMP i no és el moment que vull analitzar com a batuda.
+
+Tot i això, l'usuari sempre ha de poder modificar el fotograma manualment.
+
+==================================================
+18. MEDIA​PIPE DURANT LA SELECCIÓ
+==================================================
+
+Mentre l'usuari busca els fotogrames:
+
+mostrar l'esquelet de MediaPipe sobre l'atleta.
+
+L'usuari ha de poder veure:
+
+- cos;
+- landmarks;
+- esquelet;
+- confiança.
+
+Si MediaPipe es desvia cap a una altra persona:
+
+permetre corregir immediatament la persona seleccionada.
+
+==================================================
+19. DEFINICIÓ DELS ANGLES
+==================================================
+
+Una vegada seleccionats els 3 fotogrames de cada salt, començar la fase:
+
+"DEFINIR ANGLES"
+
+Aquesta pantalla ha de ser molt visual.
+
+Per cada fotograma mostrar:
+
+ESQUERRA:
+→ IMATGE DE REFERÈNCIA DE JONATHAN EDWARDS
+
+DRETA:
+→ FOTOGRAMA DE L'ATLETA
+
+La imatge de Jonathan Edwards ha de servir com a guia visual per identificar quin angle s'ha d'analitzar.
+
+==================================================
+20. IMATGE DE REFERÈNCIA
+==================================================
+
+Utilitzar la imatge de referència que he proporcionat.
+
+La imatge mostra:
+
+BATUDA 1
+BATUDA 2
+BATUDA 3
+ATERRATGE
+
+I els valors:
+
+BATUDA 1:
+
+69° ± 3°
+62° ± 3°
+α = 142° ± 3°
+angle de trajectòria/enlairament = 17° ± 1°
+
+BATUDA 2:
+
+68° ± 2°
+61° ± 3°
+β = 138° ± 3°
+angle de trajectòria/enlairament = 14° ± 1°
+
+BATUDA 3:
+
+66° ± 2°
+63° ± 3°
+γ = 135° ± 3°
+angle de trajectòria/enlairament = 18° ± 2°
+
+NO modificar aquests valors.
+
+NO inventar altres valors.
+
+NO inventar una metodologia diferent.
+
+==================================================
+21. PUNTS DE L'ANGLE
+==================================================
+
+Aquesta és una funcionalitat imprescindible.
+
+L'usuari NO ha d'estar limitat als landmarks de MediaPipe.
+
+Ha de poder seleccionar QUALSEVOL PUNT DE LA PANTALLA.
+
+Per exemple:
+
+Punt 1 → landmark de MediaPipe
+
+Punt 2 → landmark de MediaPipe
+
+Punt 3 → punt manual sobre el terra
+
+Això ha de funcionar.
+
+Els punts poden ser:
+
+- landmarks;
+- terra;
+- pista;
+- línies;
+- punts manuals;
+- qualsevol punt visible del fotograma.
+
+==================================================
+22. ANGLES AMB PUNTS MANUALS
+==================================================
+
+Quan l'usuari seleccioni tres punts:
+
+P1
+P2
+P3
+
+calcular matemàticament l'angle amb P2 com a vèrtex.
+
+Utilitzar les coordenades reals dels punts.
+
+No estimar visualment.
+
+No inventar el resultat.
+
+Mostrar una decimal.
+
+Exemple:
+
+67,4°
+
+==================================================
+23. ANGLES RESPECTE A L'HORITZONTAL
+==================================================
+
+Alguns angles no són angles interns del cos.
+
+Permetre calcular:
+
+SEGMENT CORPORAL
++
+HORITZONTAL
+
+L'usuari ha de poder seleccionar els punts necessaris.
+
+Si cal crear una línia horitzontal:
+
+permetre seleccionar dos punts.
+
+Calcular matemàticament l'angle entre les línies.
+
+==================================================
+24. CORRECCIÓ DELS PUNTS
+==================================================
+
+Després de seleccionar els punts:
+
+mostrar:
+
+- punts;
+- línies;
+- angle;
+- arc de l'angle quan sigui possible.
+
+Permetre arrossegar qualsevol punt.
+
+Si es mou un punt:
+
+→ recalcular l'angle immediatament.
+
+Permetre també modificar manualment un valor si és necessari.
+
+Guardar:
+
+- valor automàtic;
+- valor corregit;
+- valor final.
+
+==================================================
+25. TAULA DE COMPARACIÓ
+==================================================
+
+Una vegada calculat cada angle:
+
+comparar-lo amb la referència.
+
+Mostrar:
+
+REFERÈNCIA
+Jonathan Edwards: XX° ± tolerància
+
+ATLETA
+XX°
+
+DIFERÈNCIA
+XX°
+
+ESTAT
+
+DINS DEL RANG
+PER SOBRE
+PER SOTA
+
+==================================================
+26. DISSENY DE LA PANTALLA D'ANÀLISI
+==================================================
+
+La pantalla d'anàlisi ha de tenir un disseny semblant a la referència visual que he proporcionat.
+
+NO vull una taula tècnica enorme.
+
+Vull TARGETES INDIVIDUALS.
+
+Cada targeta ha de mostrar:
+
+------------------------------------------
+
+BATUDA 1 — ANGLE 1
+
+[ IMATGE JONATHAN EDWARDS ]
+[ IMATGE ATLETA + ESQUELET + ANGLE ]
+
+REFERÈNCIA: 69° ± 3°
+ATLETA: 67,4°
+DIFERÈNCIA: -1,6°
+
+🟢 DINS DEL RANG
+
+Confiança: 🟢 Alta
+
+[EDITAR]
+[CANVIAR FOTOGRAMA]
+[CORREGIR PUNTS]
+
+------------------------------------------
+
+Repetir per cada angle.
+
+==================================================
+27. ORGANITZACIÓ DE LES TARGETES
+==================================================
+
+Organitzar per:
+
+BATUDA 1
+
+- Angle 1
+- Angle 2
+- Angle α
+- Angle de trajectòria
+
+BATUDA 2
+
+- Angle 1
+- Angle 2
+- Angle β
+- Angle de trajectòria
+
+BATUDA 3
+
+- Angle 1
+- Angle 2
+- Angle γ
+- Angle de trajectòria
+
+NO barrejar els angles de les diferents batudes.
+
+==================================================
+28. ELIMINAR "ANGLE SENSE NOM"
+==================================================
+
+Eliminar completament qualsevol text:
+
+"Angle sense nom"
+
+No ha d'aparèixer enlloc.
+
+Cada angle ha de tenir:
+
+- nom;
+- fase;
+- moment;
+- referència;
+- tolerància.
+
+Si encara no s'ha configurat un angle, permetre configurar-lo.
+
+==================================================
+29. TAULA DE RESULTATS
+==================================================
+
+A més de les targetes visuals, crear una taula final resumida:
+
+FASE
+MOMENT
+ANGLE
+REFERÈNCIA
+ATLETA
+DIFERÈNCIA
+ESTAT
+FOTOGRAMA
+TEMPS
+CORREGIT
+
+Aquesta taula servirà per tenir una visió global dels resultats.
+
+==================================================
+30. CONFIANÇA
+==================================================
+
+Per cada landmark utilitzat:
+
+🟢 Alta confiança
+🟠 Revisar
+🔴 Baixa confiança
+
+Si un punt té baixa confiança:
+
+avisar l'usuari perquè el revisi.
+
+NO afirmar que la detecció és mèdicament precisa.
+
+==================================================
+31. ESTIC A PISTA
+==================================================
+
+Crear una secció independent:
+
+"ESTIC A PISTA"
+
+Aquesta part NO és una anàlisi biomecànica.
+
+És una valoració general de l'execució.
+
+Ha de ser fàcil d'utilitzar per:
+
+- atleta;
+- pares;
+- entrenador.
+
+==================================================
+32. A. LA CURSA I L'ENTRADA — VELOCITAT
+==================================================
+
+Pregunta:
+
+"Com has entrat a la taula?"
+
+Opció 1:
+
+"Amb molta velocitat, controlat i clavant la taula."
+
+Molt bé
+10 – 8,5
+
+Opció 2:
+
+"He hagut de frenar els últims passos per no fer nul (he entrat 'clavat')."
+
+Normal
+8,5 – 6
+
+Opció 3:
+
+"He arribat cansat/sense forces al final de la cursa."
+
+Fatal
+6 – 0
+
+Guardar resposta i puntuació.
+
+==================================================
+33. B. EL RITME DEL SALT
+==================================================
+
+Explicar visualment el ritme:
+
+TA — TA ——— TA
+
+Pregunta:
+
+"Com has sentit el ritme del salt global?"
+
+Opció 1:
+
+"Fluid. He anat rebotant i avançant cap endavant fàcilment."
+
+Molt bé
+10 – 8,5
+
+Opció 2:
+
+"Tallat. El primer salt ha anat molt bé, però de cop m'he quedat clavat a terra."
+
+Normal
+8,5 – 6
+
+Opció 3:
+
+"Precipitat. He anat molt ràpid però descontrolat, com si en lloc de saltar estigués corrent."
+
+Fatal
+6 – 0
+
+Guardar resposta i puntuació.
+
+==================================================
+34. C. LA CAIGUDA I EL RESULTAT — EFICIÈNCIA
+==================================================
+
+Pregunta:
+
+"Com has arribat a la sorra?"
+
+Opció 1:
+
+"Amb energia, llançant els peus endavant i caient bé."
+
+Molt bé
+10 – 8,5
+
+Opció 2:
+
+"Mort/Sense velocitat. He caigut gairebé en vertical de seguida que he entrat a la sorra."
+
+Normal
+8,5 – 6
+
+Opció 3:
+
+"Desequilibrat/Cap a un costat."
+
+Fatal
+6 – 0
+
+Guardar resposta i puntuació.
+
+==================================================
+35. PUNTUACIÓ DE PISTA
+==================================================
+
+Mostrar visualment:
+
+VELOCITAT
+X / 10
+
+RITME
+X / 10
+
+EFICIÈNCIA
+X / 10
+
+I una puntuació global.
+
+Aquesta puntuació és una valoració general basada en les respostes.
+
+NO presentar-la com una mesura mèdica o científica.
+
+==================================================
+36. CORRECCIONS DE "ESTIC A PISTA"
+==================================================
+
+A partir de les puntuacions, en el futur l'aplicació haurà de poder mostrar una correcció.
+
+PERÒ ARA NO TENIM LES CORRECCIONS.
+
+NO INVENTAR-LES.
+
+Crear una estructura preparada:
+
+CATEGORIA
+→ RANG DE PUNTUACIÓ
+→ PROBLEMA
+→ CORRECCIÓ
+→ EXERCICI
+→ PLA DE MILLORA
+
+Els camps de correcció poden quedar buits fins que jo proporcioni la informació.
+
+==================================================
+37. CORRECCIONS DE "ESTIC A CASA"
+==================================================
+
+També crear una estructura preparada per a les correccions biomecàniques.
+
+L'anàlisi serà:
+
+ANGLE DE REFERÈNCIA
+↓
+ANGLE DE L'ATLETA
+↓
+DIFERÈNCIA
+↓
+DETECCIÓ D'UN POSSIBLE ERROR
+↓
+CORRECCIÓ
+
+Però les correccions encara NO estan proporcionades.
+
+NO inventar-les.
+
+Jo proporcionaré posteriorment la metodologia exacta.
+
+==================================================
+38. RELACIÓ ENTRE LES DUES PARTS
+==================================================
+
+En el futur:
+
+ESTIC A CASA
+→ errors biomecànics a partir dels angles
+
++
+
+ESTIC A PISTA
+→ problemes percebuts durant l'execució a partir de les puntuacions
+
+↓
+
+VISIÓ GLOBAL DE L'ATLETA
+
+↓
+
+ASPECTES A MILLORAR
+
+↓
+
+CORRECCIONS
+
+↓
+
+PLA DE MILLORA
+
+Però actualment només cal deixar aquesta arquitectura preparada.
+
+==================================================
+39. ESTIC A CASA — TESTEIG
+==================================================
+
+"Estic a casa" és el sistema de testeig/anàlisi que ja hem estat desenvolupant.
+
+Ha d'incloure:
+
+- vídeo;
+- selecció d'atleta;
+- MediaPipe;
+- HOP;
+- STEP;
+- JUMP;
+- selecció manual dels tres fotogrames de cada fase;
+- punts de MediaPipe;
+- punts manuals;
+- càlcul matemàtic;
+- referència Jonathan Edwards;
+- comparació;
+- correcció;
+- resultats.
+
+NO substituir aquesta funcionalitat.
+
+==================================================
+40. ESTIC A CASA — RESULTAT
+==================================================
+
+Al final de l'anàlisi mostrar:
+
+RESULTATS BIOMECÀNICS
+
++
+
+POSSIBLES ASPECTES A MILLORAR
+
++
+
+TAULA DE COMPARACIÓ
+
++
+
+FOTOGRAMES ANALITZATS
+
++
+
+ANGLES
+
++
+
+DIFERÈNCIES
+
+Les correccions concretes quedaran pendents fins que jo les proporcioni.
+
+==================================================
+41. EVOLUCIÓ DE L'ATLETA
+==================================================
+
+Crear una secció d'evolució.
+
+Mostrar, quan hi hagi prou dades:
+
+- millor marca;
+- marques per competició;
+- objectius;
+- objectius assolits;
+- evolució de puntuacions;
+- evolució dels angles;
+- evolució dels errors;
+- evolució dels aspectes tècnics.
+
+Utilitzar gràfics quan sigui útil.
+
+==================================================
+42. HISTORIAL DE CADA COMPETICIÓ
+==================================================
+
+Quan l'usuari obri una competició antiga, poder veure:
+
+INFORMACIÓ
+
+Lloc
+Data
+Objectiu
+Marca personal
+Objectiu temporada
+
+RESULTATS
+
+1r
+2n
+3r
+4t
+5è
+6è
+
+ESTIC A PISTA
+
+Velocitat
+Ritme
+Eficiència
+Puntuació global
+
+ESTIC A CASA
+
+HOP
+STEP
+JUMP
+
+Angles
+Fotogrames
+Comparacions
+Correccions
+
+==================================================
+43. BASE DE DADES
+==================================================
+
+Les dades han de ser persistents.
+
+No poden desaparèixer quan es tanqui la pàgina.
+
+Guardar de manera estructurada:
+
+- usuaris;
+- atletes;
+- competicions;
+- resultats;
+- vídeos/metadades;
+- trams;
+- fotogrames;
+- landmarks;
+- punts manuals;
+- angles;
+- valors;
+- correccions;
+- puntuacions;
+- objectius;
+- historial.
+
+L'arquitectura ha de permetre ampliar posteriorment l'aplicació.
+
+==================================================
+44. DISSENY GENERAL
+==================================================
+
+Vull una aplicació:
+
+- visual;
+- moderna;
+- colorida;
+- professional;
+- fàcil d'entendre;
+- en català.
+
+Utilitzar:
+
+- targetes;
+- colors diferenciats;
+- icones;
+- gràfics;
+- indicadors de progrés;
+- botons grans;
+- vídeos grans;
+- comparacions visuals.
+
+Evitar:
+
+- massa text;
+- taules complicades;
+- pantalles massa tècniques;
+- informació amuntegada;
+- etiquetes confuses;
+- "Angle sense nom".
+
+==================================================
+45. PRINCIPIS IMPORTANTS
+==================================================
+
+NO inventar dades biomecàniques.
+
+NO inventar angles.
+
+NO inventar punts.
+
+NO inventar correccions.
+
+NO inventar exercicis.
+
+NO substituir MediaPipe per una simulació.
+
+NO limitar els angles als landmarks de MediaPipe.
+
+NO seleccionar automàticament els tres fotogrames finals.
+
+NO considerar l'aterratge a la sorra com el moment del JUMP.
+
+El JUMP correspon a la TERCERA BATUDA.
+
+L'usuari sempre ha de poder modificar:
+
+- atleta;
+- tram;
+- fotograma;
+- punt;
+- angle.
+
+==================================================
+46. FLUX COMPLET DE L'APLICACIÓ
+==================================================
+
+REGISTRE
+↓
+INICI DE SESSIÓ
+↓
+PANTALLA PRINCIPAL
+↓
+HISTORIAL / TÈCNICA / ESCALFAMENT / NOVA COMPETICIÓ
+↓
+NOVA COMPETICIÓ
+↓
+OBJECTIU
+↓
+RESULTATS DELS 6 SALTS
+↓
+ESTIC A CASA
+↓
+PUJAR VÍDEO
+↓
+SELECCIONAR ATLETA
+↓
+SELECCIONAR HOP
+↓
+SELECCIONAR STEP
+↓
+SELECCIONAR JUMP
+↓
+CREAR 3 CLIPS
+↓
+HOP → SELECCIONAR 3 FOTOGRAMES
+↓
+STEP → SELECCIONAR 3 FOTOGRAMES
+↓
+JUMP → SELECCIONAR 3 FOTOGRAMES
+↓
+DEFINIR ANGLES
+↓
+REFERÈNCIA JONATHAN EDWARDS + ATLETA
+↓
+SELECCIONAR PUNTS
+↓
+LANDMARKS + PUNTS MANUALS
+↓
+CÀLCUL MATEMÀTIC
+↓
+CORRECCIÓ
+↓
+COMPARACIÓ
+↓
+RESULTATS BIOMECÀNICS
+↓
+ESTIC A PISTA
+↓
+PREGUNTES
+↓
+PUNTUACIONS
+↓
+VALORACIÓ GENERAL
+↓
+HISTORIAL
+↓
+EVOLUCIÓ
+↓
+FUTUR PLA DE MILLORA
+
+==================================================
+47. IMPORTANT SOBRE LES CORRECCIONS FUTURES
+==================================================
+
+L'aplicació ha de quedar preparada perquè posteriorment jo proporcioni:
+
+1. Les correccions derivades dels angles biomecànics.
+
+2. Les correccions derivades de les puntuacions d'"Estic a pista".
+
+3. Els exercicis corresponents.
+
+4. El pla de millora.
+
+Quan jo proporcioni aquestes dades, s'han de poder afegir sense haver de reconstruir tota l'aplicació.
+
+NO les inventis ara.
+
+==================================================
+OBJECTIU FINAL
+==================================================
+
+Vull que aquesta aplicació sigui una eina completa de seguiment del triple salt durant tota la temporada.
+
+Ha de combinar:
+
+SEGUIMENT DE L'ATLETA
++
+COMPETICIONS
++
+RESULTATS
++
+ANÀLISI BIOMECÀNICA
++
+MEDIA​PIPE
++
+ANGLES
++
+COMPARACIÓ AMB JONATHAN EDWARDS
++
+VALORACIÓ A PISTA
++
+HISTORIAL
++
+EVOLUCIÓ
++
+FUTUR PLA DE MILLORA
+
+La part biomecànica ha de ser real i matemàtica.
+
+La part de pista ha de ser senzilla i fàcil d'utilitzar.
+
+Les dues parts han d'estar connectades dins de l'historial de cada competició.
+
+I sobretot, l'aplicació ha de quedar preparada perquè més endavant jo pugui introduir les correccions exactes sense haver de tornar a construir el sistema.
