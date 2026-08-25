@@ -1208,6 +1208,17 @@ button {
   text-align: left;
 }
 
+.frame-slot-thumb {
+  display: block;
+  width: 100%;
+  height: 5.7rem;
+  margin: 0 0 .35rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .25rem;
+  background: hsl(217 31% 11%);
+  object-fit: contain;
+}
+
 .frame-slot-clear {
   justify-self: start;
   margin-top: .3rem;
@@ -2185,6 +2196,33 @@ button {
 .hub-analysis-main,
 .analysis-embed {
   min-width: 0;
+}
+
+.hub-analysis-main {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+.analysis-embed {
+  width: 100%;
+}
+
+.hub-analysis-main .app-shell {
+  min-height: calc(100dvh - 3.7rem);
+}
+
+.hub-analysis-main .content {
+  width: min(100%, 1840px);
+  padding: clamp(1rem, 2.2vw, 2rem);
+}
+
+.hub-analysis-main .video-stage {
+  min-height: clamp(28rem, 55vw, 44rem);
+}
+
+.hub-analysis-main .reference-image {
+  max-height: 15rem;
 }
 
 .analysis-hub-bar {

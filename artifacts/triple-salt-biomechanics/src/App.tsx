@@ -1394,6 +1394,7 @@ export function AnalysisWorkspace() {
                           {frameSlots[activeClipPhase].map((slot, index) => (
                             <div key={`${activeClipPhase}-${index}`} className={`frame-slot ${activeFrameSlot === index ? 'active' : ''}`}>
                               <button className="frame-slot-select" onClick={() => selectFrameSlot(activeClipPhase, index)} data-testid={`button-${activeClipPhase.toLowerCase()}-frame-${index + 1}`}>
+                                {frameImages[activeClipPhase][index] && <img className="frame-slot-thumb" src={frameImages[activeClipPhase][index] ?? undefined} alt="" />}
                                 <strong>Fotograma {index + 1}</strong>
                                 <span>{slot.frame === null ? 'Pendent de selecció' : `F ${slot.frame} · ${formatTime(slot.frame / fps)}`}</span>
                                 <small>{slot.points.length}/3 punts</small>
