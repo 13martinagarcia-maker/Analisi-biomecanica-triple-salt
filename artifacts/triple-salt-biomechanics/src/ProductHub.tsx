@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   Activity,
+  ArrowLeft,
   ArrowRight,
   BarChart3,
   BookOpen,
@@ -15,6 +16,7 @@ import {
   LogOut,
   MapPin,
   Plus,
+  Pencil,
   Save,
   Target,
   Trophy,
@@ -23,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 
-type Page = "inici" | "historial" | "competició" | "pista" | "casa" | "tècnica" | "escalfament";
+type Page = "inici" | "historial" | "competició" | "detall-competició" | "pista" | "casa" | "tècnica" | "escalfament";
 type User = { id: string; firstName: string; lastName: string; email: string };
 type Athlete = { id: string; firstName: string; lastName: string; goals: string | null; technicalNotes: string | null };
 type Competition = {
@@ -35,6 +37,7 @@ type Competition = {
   personalBest: string | null;
   seasonGoal: string | null;
   achieved: boolean | null;
+  resultNote: string | null;
   jumps: Array<{ id?: string; jumpNumber: number; mark: string | null; isFoul: boolean }>;
 };
 type TrackEvaluation = {
@@ -113,6 +116,45 @@ function EmptyState({ title, description, action }: { title: string; description
   return <div className="hub-empty"><ClipboardList size={24} /><h3>{title}</h3><p>{description}</p>{action}</div>;
 }
 
+function BackButton({ onClick, label = "Enrere" }: { onClick: () => void; label?: string }) {
+  return <button type="button" className="hub-back-button" onClick={onClick}><ArrowLeft size={15} /> {label}</button>;
+}
+
+const formatJumpMark = (jump: Competition["jumps"][number]) => {
+  if (jump.isFoul) return "Nul";
+  if (jump.mark !== null && jump.mark !== "") return `${jump.mark.replace(".", ",")} m`;
+  return "Sense marca";
+};
+
+function CompetitionFields({ athletes, competition, defaultAthleteId }: { athletes: Athlete[]; competition?: Competition; defaultAthleteId: string }) {
+  const jumps = Array.from({ length: 6 }, (_, index) => competition?.jumps.find((jump) => jump.jumpNumber === index + 1));
+  return <>
+    <section className="hub-form-card">
+      <div className="section-card-heading"><div><span className="eyebrow">01 / Dades generals</span><h2>Informació de la jornada</h2></div></div>
+      <div className="form-grid">
+        <label>Atleta<select name="athleteId" required defaultValue={competition?.athleteId ?? defaultAthleteId}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>
+        <label>Lloc<input name="location" required defaultValue={competition?.location ?? ""} placeholder="Lloc de la competició" /></label>
+        <label>Data<input name="eventDate" type="date" required defaultValue={competition?.eventDate ?? ""} /></label>
+        <label>Objectiu de la competició<input name="objective" required defaultValue={competition?.objective ?? ""} placeholder="Objectiu definit abans de competir" /></label>
+        <label>Millor marca personal<input name="personalBest" inputMode="decimal" defaultValue={competition?.personalBest ?? ""} placeholder="m (opcional)" /></label>
+        <label>Objectiu final de temporada<input name="seasonGoal" inputMode="decimal" defaultValue={competition?.seasonGoal ?? ""} placeholder="m (opcional)" /></label>
+      </div>
+    </section>
+    <section className="hub-form-card">
+      <div className="section-card-heading"><div><span className="eyebrow">02 / Els sis salts</span><h2>Marques de la competició</h2><p>La marca es conserva tal com la introdueixes. Si marques Nul, es mostrarà Nul.</p></div></div>
+      <div className="jump-entry-grid">{jumps.map((jump, index) => <div className={`jump-entry ${jump?.isFoul ? "is-foul" : jump?.mark ? "has-mark" : ""}`} key={index}><span>SALT {index + 1}</span><input name={`jump-${index + 1}`} inputMode="decimal" defaultValue={jump?.mark ?? ""} placeholder="Marca (m)" aria-label={`Marca del salt ${index + 1}`} /><label className="foul-toggle"><input name={`foul-${index + 1}`} type="checkbox" defaultChecked={jump?.isFoul ?? false} /> Nul</label></div>)}</div>
+    </section>
+    <section className="hub-form-card objective-result-card">
+      <div className="section-card-heading"><div><span className="eyebrow">03 / Resultat</span><h2>Has aconseguit l’objectiu?</h2><p>Deixa el resultat registrat dins la mateixa competició.</p></div></div>
+      <div className="objective-choice-grid">
+        <label className="objective-choice"><input type="radio" name="achieved" value="yes" required defaultChecked={competition?.achieved === true} /><span><Check size={18} /><strong>Sí, objectiu assolit</strong></span></label>
+        <label className="objective-choice"><input type="radio" name="achieved" value="no" required defaultChecked={competition?.achieved === false} /><span><X size={18} /><strong>No, encara no</strong></span></label>
+      </div>
+      <label className="result-note-label">Notes del resultat<textarea name="resultNote" defaultValue={competition?.resultNote ?? ""} placeholder="Opcional: sensacions, context o correccions del dia" /></label>
+    </section>
+  </>;
+}
+
 function ProductHub({ analysisWorkspace }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -127,8 +169,10 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [feedback, setFeedback] = useState("");
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
   const [assessmentSaved, setAssessmentSaved] = useState(false);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
 
   const selectedAthlete = athletes.find((athlete) => athlete.id === selectedAthleteId);
+  const selectedCompetition = competitions.find((competition) => competition.id === selectedCompetitionId);
 
   const loadData = async () => {
     const [athleteData, competitionData, evaluationData] = await Promise.all([
@@ -227,11 +271,14 @@ function ProductHub({ analysisWorkspace }: Props) {
           objective: data.get("objective"),
           personalBest: data.get("personalBest"),
           seasonGoal: data.get("seasonGoal"),
+          achieved: data.get("achieved") === "yes",
+          resultNote: data.get("resultNote"),
           jumps,
         }),
       });
       setCompetitions((previous) => [result.competition, ...previous]);
-      notify("Competició guardada. Ja pots registrar-ne el resultat.");
+      if (result.competition.athleteId) setSelectedAthleteId(result.competition.athleteId);
+      notify("Competició i resultat guardats a l’historial.");
       form.reset();
       setPage("historial");
     } catch (error) {
@@ -239,17 +286,40 @@ function ProductHub({ analysisWorkspace }: Props) {
     }
   };
 
-  const markCompetitionResult = async (competitionId: string, achieved: boolean) => {
+  const updateCompetition = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedCompetition) return;
+    const data = new FormData(event.currentTarget);
+    const jumps = Array.from({ length: 6 }, (_, index) => ({
+      mark: data.get(`jump-${index + 1}`),
+      isFoul: data.get(`foul-${index + 1}`) === "on",
+    }));
     try {
-      const result = await api<{ competition: Competition }>(`/competitions/${competitionId}/result`, {
+      const result = await api<{ competition: Competition }>(`/competitions/${selectedCompetition.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ achieved }),
+        body: JSON.stringify({
+          athleteId: data.get("athleteId"),
+          location: data.get("location"),
+          eventDate: data.get("eventDate"),
+          objective: data.get("objective"),
+          personalBest: data.get("personalBest"),
+          seasonGoal: data.get("seasonGoal"),
+          achieved: data.get("achieved") === "yes",
+          resultNote: data.get("resultNote"),
+          jumps,
+        }),
       });
-      setCompetitions((previous) => previous.map((competition) => competition.id === competitionId ? { ...competition, ...result.competition } : competition));
-      notify("Resultat de la competició actualitzat.");
+      setCompetitions((previous) => previous.map((competition) => competition.id === result.competition.id ? result.competition : competition));
+      if (result.competition.athleteId) setSelectedAthleteId(result.competition.athleteId);
+      notify("Competició actualitzada correctament.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "No s’ha pogut guardar el resultat.");
+      notify(error instanceof Error ? error.message : "No s’ha pogut actualitzar la competició.");
     }
+  };
+
+  const openCompetition = (competition: Competition) => {
+    setSelectedCompetitionId(competition.id);
+    setPage("detall-competició");
   };
 
   const selectedAssessment = assessmentGroups.map((group) => group.options[assessmentAnswers[group.key] ?? -1]);
@@ -296,6 +366,12 @@ function ProductHub({ analysisWorkspace }: Props) {
       .filter((mark) => Number.isFinite(mark));
     return marks.length ? Math.max(...marks) : null;
   }, [athleteCompetitions]);
+  const selectedAthleteIndex = athletes.findIndex((athlete) => athlete.id === selectedAthleteId);
+  const moveAthlete = (direction: -1 | 1) => {
+    if (athletes.length < 2) return;
+    const nextIndex = (selectedAthleteIndex + direction + athletes.length) % athletes.length;
+    setSelectedAthleteId(athletes[nextIndex].id);
+  };
 
   if (loadingSession) return <div className="hub-loading">Carregant l’espai esportiu…</div>;
 
@@ -333,6 +409,8 @@ function ProductHub({ analysisWorkspace }: Props) {
             { icon: BarChart3, title: "Historial", text: "Consulta atletes, competicions i evolució quan hi hagi registres.", page: "historial" as Page },
             { icon: Activity, title: "Estic a pista", text: "Fes una valoració ràpida després de saltar.", page: "pista" as Page },
             { icon: CircleGauge, title: "Estic a casa", text: "Accedeix al flux actual de vídeo i anàlisi biomecànica.", page: "casa" as Page },
+            { icon: BookOpen, title: "Tècnica", text: "Organitza els continguts i les correccions de cada fase del salt.", page: "tècnica" as Page },
+            { icon: Dumbbell, title: "Escalfament", text: "Prepara exercicis, temps i repeticions abans de competir.", page: "escalfament" as Page },
           ].map((card) => <button className="hub-action-card" key={card.page} onClick={() => setPage(card.page)}><card.icon size={21} /><span><strong>{card.title}</strong><small>{card.text}</small></span><ChevronRight size={17} /></button>)}
         </div>
         <div className="hub-summary-grid">
@@ -344,26 +422,41 @@ function ProductHub({ analysisWorkspace }: Props) {
     );
     if (page === "historial") return (
       <section className="hub-page">
-        <div className="hub-title-row"><div><span className="eyebrow">Seguiment de temporada</span><h1>Historial</h1><p>Les dades de competicions, objectius i anàlisis apareixeran aquí a mesura que les registris.</p></div><button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={16} /> Afegir atleta</button></div>
+        <BackButton onClick={() => setPage("inici")} />
+        <div className="hub-title-row"><div><span className="eyebrow">Seguiment de temporada</span><h1>Historial</h1><p>Entra a qualsevol competició per revisar i corregir totes les dades de la jornada.</p></div><button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={16} /> Afegir atleta</button></div>
         {!athletes.length ? <EmptyState title="Encara no hi ha atletes registrats." description="Crea la primera fitxa per començar a relacionar competicions, salts i valoracions." action={<button className="button-primary" onClick={() => setAthleteFormOpen(true)}><Plus size={15} /> Crear atleta</button>} /> : <>
-          <div className="athlete-selector-list">{athletes.map((athlete) => <button key={athlete.id} className={selectedAthleteId === athlete.id ? "active" : ""} onClick={() => setSelectedAthleteId(athlete.id)}><span className="athlete-avatar">{`${athlete.firstName[0]}${athlete.lastName[0]}`}</span>{athlete.firstName} {athlete.lastName}</button>)}</div>
-          {selectedAthlete && <div className="athlete-history-grid"><article className="athlete-profile-card"><div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div><div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Valoracions de pista</span><strong>{athleteEvaluations.length ? `${athleteEvaluations.length} registrada${athleteEvaluations.length > 1 ? "s" : ""}` : "Encara no disponibles"}</strong></div></div></article><article className="history-competitions"><div className="section-card-heading"><div><span className="eyebrow">Competicions</span><h2>Últims registres</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>{athleteCompetitions.length ? athleteCompetitions.map((competition) => <div className="competition-history-row" key={competition.id}><div><strong>{competition.location}</strong><span>{competition.eventDate} · Objectiu: {competition.objective}</span><div className="competition-marks">{competition.jumps.map((jump) => <span key={jump.jumpNumber}>S{jump.jumpNumber}: {jump.isFoul ? "Nul" : jump.mark ? `${jump.mark} m` : "Sense marca"}</span>)}</div></div><div className="competition-result-control">{competition.achieved === null ? <><span>Has assolit l’objectiu?</span><div><button onClick={() => markCompetitionResult(competition.id, true)}>Sí</button><button onClick={() => markCompetitionResult(competition.id, false)}>No</button></div></> : <span>{competition.achieved ? "Objectiu assolit" : "Objectiu no assolit"}</span>}</div></div>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}{athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}</article></div>}
+          <div className="athlete-switcher"><button type="button" onClick={() => moveAthlete(-1)} disabled={athletes.length < 2} aria-label="Atleta anterior"><ArrowLeft size={17} /></button><select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)} aria-label="Canviar d’atleta">{athletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select><button type="button" onClick={() => moveAthlete(1)} disabled={athletes.length < 2} aria-label="Atleta següent"><ArrowRight size={17} /></button></div>
+          {selectedAthlete && <div className="athlete-history-grid"><article className="athlete-profile-card"><div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div><div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Valoracions de pista</span><strong>{athleteEvaluations.length ? `${athleteEvaluations.length} registrada${athleteEvaluations.length > 1 ? "s" : ""}` : "Encara no disponibles"}</strong></div></div></article><article className="history-competitions"><div className="section-card-heading"><div><span className="eyebrow">Competicions</span><h2>Últims registres</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>{athleteCompetitions.length ? athleteCompetitions.map((competition) => <button type="button" className="competition-history-row" key={competition.id} onClick={() => openCompetition(competition)}><div><strong>{competition.location}</strong><span>{competition.eventDate} · Objectiu: {competition.objective}</span><div className="competition-marks">{competition.jumps.map((jump) => <span key={jump.jumpNumber}>S{jump.jumpNumber}: {formatJumpMark(jump)}</span>)}</div></div><div className="competition-result-control"><span>{competition.achieved === null ? "Resultat pendent" : competition.achieved ? "Objectiu assolit" : "Objectiu no assolit"}</span><strong>Veure i editar <ChevronRight size={14} /></strong></div></button>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}{athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}</article></div>}
         </>}
       </section>
     );
     if (page === "competició") return (
       <section className="hub-page">
+        <BackButton onClick={() => setPage("inici")} />
         <div className="hub-title-row"><div><span className="eyebrow">Registre de competició</span><h1>Nova competició</h1><p>Les dades que introdueixis quedaran vinculades a l’atleta escollit.</p></div></div>
         {!athletes.length ? <EmptyState title="Primer crea un atleta." description="La competició necessita una fitxa d’atleta per quedar ben organitzada a l’historial." action={<button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={15} /> Crear atleta</button>} /> :
           <form className="competition-form" onSubmit={saveCompetition}>
-            <section className="hub-form-card"><div className="section-card-heading"><div><span className="eyebrow">01 / Dades generals</span><h2>Abans de competir</h2></div></div><div className="form-grid"><label>Atleta<select name="athleteId" required defaultValue={selectedAthleteId}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label><label>Lloc<input name="location" required placeholder="Lloc de la competició" /></label><label>Data<input name="eventDate" type="date" required /></label><label>Objectiu de la competició<input name="objective" required placeholder="Objectiu definit abans de competir" /></label><label>Millor marca personal<input name="personalBest" inputMode="decimal" placeholder="m (opcional)" /></label><label>Objectiu final de temporada<input name="seasonGoal" inputMode="decimal" placeholder="m (opcional)" /></label></div></section>
-            <section className="hub-form-card"><div className="section-card-heading"><div><span className="eyebrow">02 / Els sis salts</span><h2>Registre de marques</h2><p>Introdueix una marca o marca el salt com a nul.</p></div></div><div className="jump-entry-grid">{Array.from({ length: 6 }, (_, index) => <div className="jump-entry" key={index}><span>SALT {index + 1}</span><input name={`jump-${index + 1}`} inputMode="decimal" placeholder="Marca (m)" aria-label={`Marca del salt ${index + 1}`} /><label className="foul-toggle"><input name={`foul-${index + 1}`} type="checkbox" /> Nul</label></div>)}</div></section>
+            <CompetitionFields athletes={athletes} defaultAthleteId={selectedAthleteId} />
             <button className="button-primary save-competition" type="submit"><Save size={16} /> Guardar competició</button>
           </form>}
       </section>
     );
+    if (page === "detall-competició") return (
+      <section className="hub-page">
+        <BackButton onClick={() => setPage("historial")} label="Enrere a l’historial" />
+        {!selectedCompetition ? <EmptyState title="No s’ha trobat la competició." description="Torna a l’historial i selecciona un registre disponible." action={<button className="button-primary" type="button" onClick={() => setPage("historial")}>Obrir l’historial</button>} /> :
+          <>
+            <div className="hub-title-row competition-detail-heading"><div><span className="eyebrow">Edició persistent</span><h1>{selectedCompetition.location}</h1><p>Revisa i modifica totes les dades, salts i resultat d’aquesta competició.</p></div><span className="detail-date"><Pencil size={15} /> {selectedCompetition.eventDate}</span></div>
+            <form className="competition-form" onSubmit={updateCompetition}>
+              <CompetitionFields athletes={athletes} competition={selectedCompetition} defaultAthleteId={selectedAthleteId} />
+              <button className="button-primary save-competition" type="submit"><Save size={16} /> Guardar canvis</button>
+            </form>
+          </>}
+      </section>
+    );
     if (page === "pista") return (
       <section className="hub-page">
+        <BackButton onClick={() => setPage("inici")} />
         <div className="hub-title-row"><div><span className="eyebrow">Valoració posterior al salt</span><h1>Estic a pista</h1><p>Una autoavaluació general. No substitueix l’anàlisi biomecànica de vídeo.</p></div>{athletes.length > 0 && <label className="compact-select">Atleta<select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>}</div>
         <div className="assessment-stack">{assessmentGroups.map((group, groupIndex) => <article className="assessment-card" key={group.key}><div className="assessment-heading"><span>0{groupIndex + 1}</span><div><h2>{group.title}</h2><p>{group.subtitle}</p></div></div>{group.hint && <div className="assessment-hint">{group.hint}</div>}<h3>{group.question}</h3><div className="assessment-options">{group.options.map((option, index) => <button type="button" className={`${assessmentAnswers[group.key] === index ? "selected" : ""} ${option.tone}`} onClick={() => { setAssessmentAnswers((previous) => ({ ...previous, [group.key]: index })); setAssessmentSaved(false); }} key={option.label}><span>{option.label}</span><strong>{option.band}</strong></button>)}</div></article>)}</div>
         {assessmentComplete && <section className="assessment-result"><div><span className="eyebrow">Valoració general</span><h2>{assessmentAverage?.toFixed(1).replace(".", ",")} / 10</h2><p>Resultat calculat a partir de les tres opcions escollides. És una orientació general, no una anàlisi biomecànica.</p></div><button className="button-primary" onClick={saveAssessment} disabled={assessmentSaved}><Check size={16} /> {assessmentSaved ? "Valoració guardada" : "Guardar valoració"}</button></section>}
@@ -373,7 +466,7 @@ function ProductHub({ analysisWorkspace }: Props) {
       const isTechnique = page === "tècnica";
       const title = isTechnique ? "Tècnica" : "Escalfament";
       const blocks = isTechnique ? ["Cursa d’aproximació", "Entrada a la taula", "Hop", "Step", "Jump", "Caiguda", "Errors habituals", "Correccions"] : ["01 — Exercici", "02 — Exercici", "03 — Exercici"];
-      return <section className="hub-page"><div className="hub-title-row"><div><span className="eyebrow">Espai de contingut</span><h1>{title}</h1><p>{isTechnique ? "Prepara explicacions, vídeos, imatges i exercicis per a cada fase del triple salt." : "Prepara l’ordre, vídeos, instruccions, temps i repeticions de l’escalfament previ."}</p></div></div><div className="content-placeholder-grid">{blocks.map((block) => <article key={block} className="content-placeholder"><span className="placeholder-icon">{isTechnique ? <BookOpen size={19} /> : <Dumbbell size={19} />}</span><h2>{block}</h2><p>Aquí apareixerà el contingut quan l’afegeixis.</p><div><span>Text</span><span>Vídeo</span><span>{isTechnique ? "Imatges" : "Temps / repeticions"}</span></div></article>)}</div></section>;
+      return <section className="hub-page"><BackButton onClick={() => setPage("inici")} /><div className="hub-title-row"><div><span className="eyebrow">Espai de contingut</span><h1>{title}</h1><p>{isTechnique ? "Prepara explicacions, vídeos, imatges i exercicis per a cada fase del triple salt." : "Prepara l’ordre, vídeos, instruccions, temps i repeticions de l’escalfament previ."}</p></div></div><div className="content-placeholder-grid">{blocks.map((block) => <article key={block} className="content-placeholder"><span className="placeholder-icon">{isTechnique ? <BookOpen size={19} /> : <Dumbbell size={19} />}</span><h2>{block}</h2><p>Aquí apareixerà el contingut quan l’afegeixis.</p><div><span>Text</span><span>Vídeo</span><span>{isTechnique ? "Imatges" : "Temps / repeticions"}</span></div></article>)}</div></section>;
     }
     return null;
   };
@@ -382,7 +475,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     <div className="hub-shell">
       {page !== "casa" && <aside className="hub-sidebar"><div className="sidebar-brand"><div className="brand-mark">TS<br />01</div><div><div className="font-display" style={{ fontSize: "1.1rem", lineHeight: 1 }}>Triple Salt</div><div className="sidebar-label" style={{ padding: ".35rem 0 0", color: "hsl(215 14% 67%)" }}>Temporada i anàlisi</div></div></div><nav className="sidebar-nav" aria-label="Navegació principal"><div className="sidebar-label">El teu espai</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}><item.icon size={16} /><span>{item.label}</span></button>)}</nav><div className="hub-user-block"><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><div><strong>{user.firstName} {user.lastName}</strong><button onClick={logout}><LogOut size={12} /> Tancar sessió</button></div></div></aside>}
       <main className={page === "casa" ? "hub-analysis-main" : "hub-main"}>
-        {page === "casa" && <div className="analysis-hub-bar"><button className="button-outline" onClick={() => setPage("inici")}><ArrowRight size={14} /> Tornar a l’espai de temporada</button><div><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><strong>{user.firstName} {user.lastName}</strong><button className="button-quiet" onClick={logout}><LogOut size={14} /><span>Tancar sessió</span></button></div></div>}
+        {page === "casa" && <div className="analysis-hub-bar"><button className="button-outline" onClick={() => setPage("inici")}><ArrowLeft size={14} /> Tornar a l’espai de temporada</button><div><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><strong>{user.firstName} {user.lastName}</strong><button className="button-quiet" onClick={logout}><LogOut size={14} /><span>Tancar sessió</span></button></div></div>}
         {page !== "casa" && <header className="hub-topbar"><div><span className="live-dot" /><span className="eyebrow">Espai personal / Triple salt</span></div><button className="button-outline" onClick={() => setPage("casa")}><CircleGauge size={14} /> Estic a casa</button></header>}
         {renderPage()}
       </main>
