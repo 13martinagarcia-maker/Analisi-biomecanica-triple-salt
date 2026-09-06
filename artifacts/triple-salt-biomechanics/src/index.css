@@ -141,6 +141,10 @@
   --chart-4: 217 31% 15%;
   --chart-5: 4 69% 47%;
 
+  --color-hop: hsl(192 43% 38%);
+  --color-step: hsl(24 76% 48%);
+  --color-jump: hsl(43 100% 70%);
+
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-serif: 'Bricolage Grotesque', sans-serif;
   --app-font-mono: 'DM Mono', monospace;
@@ -290,6 +294,10 @@
   --chart-3: 24 76% 48%;
   --chart-4: 36 33% 94%;
   --chart-5: 4 69% 47%;
+
+  --color-hop: hsl(192 43% 38%);
+  --color-step: hsl(24 76% 48%);
+  --color-jump: hsl(43 100% 70%);
 
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
@@ -3625,6 +3633,162 @@ button {
 
 .competition-detail-heading {
   align-items: center !important;
+}
+
+/* Estic a casa — flux per fases i targetes de fotograma */
+.temps-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.46fr) minmax(340px, .86fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.phase-section {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 4px solid hsl(var(--primary));
+}
+
+.phase-section.hop { border-top-color: var(--color-hop); }
+.phase-section.step { border-top-color: var(--color-step); }
+.phase-section.jump { border-top-color: var(--color-jump); }
+
+.active-card-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .8fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.inactive-card {
+  width: 100%;
+  min-height: 150px;
+  color: inherit;
+  text-align: left;
+}
+
+.inactive-card-content {
+  min-height: 148px;
+}
+
+.inactive-card-thumb {
+  width: min(30%, 260px) !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9;
+}
+
+.inline-comparison {
+  overflow: hidden;
+}
+
+.angle-point-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: .7rem 0;
+  color: hsl(var(--muted-foreground));
+  font-size: .75rem;
+}
+
+.angle-point-progress strong {
+  color: hsl(var(--foreground));
+  font-family: var(--app-font-mono);
+}
+
+.reference-picker {
+  display: grid;
+  gap: .45rem;
+  margin-top: 1rem;
+  padding-top: .85rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.reference-picker > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .35rem;
+}
+
+.reference-choice {
+  min-width: 0;
+  padding: .5rem .35rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .45rem;
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  font-size: .65rem;
+  font-weight: 700;
+}
+
+.reference-choice:hover,
+.reference-choice.active {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / .1);
+  color: hsl(var(--primary));
+}
+
+.inline-comparison-visuals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+}
+
+.inline-comparison-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+  margin-top: .65rem;
+}
+
+.inline-comparison-metrics > div {
+  display: grid;
+  gap: .2rem;
+  min-width: 0;
+  padding: .55rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .5rem;
+  background: hsl(var(--muted) / .45);
+}
+
+.inline-comparison-metrics span {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: .58rem;
+  text-transform: uppercase;
+}
+
+.inline-comparison-metrics strong {
+  overflow-wrap: anywhere;
+  font-size: .76rem;
+}
+
+@media (max-width: 1050px) {
+  .temps-workspace,
+  .active-card-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .temps-sidebar {
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .phase-header,
+  .inactive-card-content {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  .inactive-card-thumb {
+    width: 100% !important;
+  }
+
+  .inline-comparison-visuals,
+  .inline-comparison-metrics,
+  .reference-picker > div {
+    grid-template-columns: 1fr;
+  }
 }
 .detail-date {
   display: flex;

@@ -6,6 +6,7 @@ import {
   ArrowDownToLine,
   Check,
   ChevronDown,
+  ChevronRight,
   Crosshair,
   FileVideo,
   Gauge,
@@ -286,6 +287,7 @@ export function AnalysisWorkspace() {
   const activeClipMark = phases[activeClipPhase];
   const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) / fps : 0;
   const activeClipEnd = activeClipMark.end ? Number(activeClipMark.end) / fps : duration;
+  const allPhasesValid = (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).every((phase) => phases[phase].start && phases[phase].end);
   const allFramesSelected = (['HOP', 'STEP', 'JUMP'] as PhaseKey[])
     .every((phase) => frameSlots[phase].every((slot) => slot.frame !== null));
   const phaseTitle = (phase: PhaseKey) => `Batuda ${phase === 'HOP' ? 1 : phase === 'STEP' ? 2 : 3}`;
@@ -1078,6 +1080,11 @@ export function AnalysisWorkspace() {
     const reference = REFERENCE_ROWS.find((row) => row.phase === phase)!;
     return slot.referenceId ? reference[slot.referenceId] : 'Sense referència assignada';
   };
+  const activeReferenceText = referenceTextForSlot(activeClipPhase, activeSlot);
+  const activeReferenceRange = activeSlot.referenceId ? parseReferenceRange(activeReferenceText) : null;
+  const activeDifference = activeComputedAngle !== null && activeReferenceRange
+    ? activeComputedAngle - activeReferenceRange.target
+    : null;
 
   const resultRows = useMemo(() => (
     (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).flatMap((phase) => frameSlots[phase].map((slot, index) => {
@@ -1181,69 +1188,11 @@ export function AnalysisWorkspace() {
         ? 'POSE NO DISPONIBLE'
         : 'POSE EN ESPERA';
 
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-mark">TS<br />01</div>
-          <div>
-            <div className="font-display" style={{ fontSize: '1.1rem', lineHeight: 1 }}>Triple Salt</div>
-            <div className="sidebar-label" style={{ padding: '.35rem 0 0', color: 'hsl(215 14% 67%)' }}>Anàlisi biomecànica</div>
-          </div>
-        </div>
-        <nav className="sidebar-nav" aria-label="Seccions d’anàlisi">
-          <div className="sidebar-label">Sessió</div>
-          <button className="nav-item active" data-testid="button-nav-analysis" onClick={() => document.getElementById('analysis')?.scrollIntoView({ behavior: 'smooth' })}>
-            <Activity size={16} /><span>Panell d’anàlisi</span>
-          </button>
-          <button className="nav-item" data-testid="button-nav-report" onClick={() => document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' })}>
-            <Layers3 size={16} /><span>Informe comparatiu</span>
-          </button>
-          <button className="nav-item" data-testid="button-nav-settings" onClick={() => showToast('La selecció d’angles es configura al panell de revisió.')}>
-            <Settings2 size={16} /><span>Configuració</span>
-          </button>
-        </nav>
-        <div className="sidebar-meta">
-          <div className="eyebrow" style={{ color: 'hsl(38 89% 61%)' }}>Sessió local</div>
-          <div style={{ marginTop: '.45rem', fontSize: '.7rem', lineHeight: 1.5 }}>El vídeo es manté en aquest navegador. No es puja enlloc.</div>
-        </div>
-      </aside>
 
-      <main className="main-shell">
-        <header className="topbar">
-          <div className="topbar-title">
-            <span className="live-dot" />
-            <span className="eyebrow" style={{ color: 'hsl(216 13% 43%)' }}>Sessió 07 / triple salt</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-            <span className="status-badge pending" data-testid="status-analysis-mode"><Gauge size={12} /> {videoSrc ? 'Vídeo local carregat' : 'Sense vídeo carregat'}</span>
-            <button className="button-outline" data-testid="button-export-report" onClick={downloadReport}><ArrowDownToLine size={14} /><span>Exportar informe</span></button>
-          </div>
-        </header>
-
-        <div className="content">
-          <section className="page-heading" id="analysis">
-            <div>
-              <div className="eyebrow" style={{ color: 'hsl(24 76% 48%)' }}>Revisable per disseny</div>
-              <h1>De la cursa a<br /><span style={{ color: 'hsl(24 76% 48%)' }}>l’evidència traçable.</span></h1>
-              <p>Una eina centrada per a entrenadors i estudiants de ciències de l’esport. Marca els tres salts, revisa els fotogrames i corregeix el model quan la teva mirada tingui més context.</p>
-            </div>
-            <div style={{ display: 'grid', gap: '.5rem', minWidth: '13rem' }}>
-              <label className="field-label" htmlFor="athlete-select">Atleta</label>
-              <div className="selector-row">
-                <select id="athlete-select" className="select-field" data-testid="select-athlete" value={athlete} onChange={(event) => setAthlete(event.target.value)}>
-                  {athletes.map((name) => <option key={name} value={name}>{name}</option>)}
-                </select>
-                <button className="button-primary" style={{ paddingInline: '.65rem' }} data-testid="button-create-athlete" onClick={() => setCreateAthleteOpen(true)} aria-label="Create athlete"><Plus size={16} /></button>
-              </div>
-            </div>
-          </section>
-
-          <section className="workspace">
-            <div className="stack">
-              <div className="panel video-panel">
+  const videoEditorContent = (
+    <div className="panel video-panel">
                 <div className="panel-header">
-                  <div className="panel-title"><Video size={17} /> Revisió del vídeo</div>
+                  <div className="panel-title"><Video size={17} /> {analysisStarted ? `Mini vídeo · ${activeClipPhase}` : 'Vídeo complet · Definició de temps'}</div>
                   <div className="eyebrow" style={{ color: 'hsl(216 13% 43%)' }}>{fileName || 'Sense vídeo'}</div>
                 </div>
                 <div
@@ -1306,10 +1255,10 @@ export function AnalysisWorkspace() {
                   <div className="timeline">
                     <input
                       type="range"
-                      min={0}
-                      max={duration || 1}
+                      min={analysisStarted ? activeClipStart : 0}
+                      max={analysisStarted ? (activeClipEnd || duration || 1) : (duration || 1)}
                       step={1 / fps}
-                      value={Math.min(currentTime, duration || 1)}
+                      value={Math.min(Math.max(currentTime, analysisStarted ? activeClipStart : 0), analysisStarted ? (activeClipEnd || duration || 1) : (duration || 1))}
                       onChange={(event) => seekTo(Number(event.target.value))}
                       disabled={!videoSrc}
                        aria-label="Línia de temps del vídeo"
@@ -1358,190 +1307,27 @@ export function AnalysisWorkspace() {
                   </div>
                 </div>
               </div>
+  );
 
-              <div className="panel">
+  const referenceContent = (
+    <div className="panel">
                 <div className="panel-header">
-                  <div className="panel-title"><Target size={17} /> Selecció dels salts</div>
-                  <span className="status-badge pending" data-testid="status-frame-number">Fotograma {currentFrame}</span>
-                </div>
-                <div className="panel-body">
-                  <div className="section-caption">
-                    <div><h2>Marca els moments directament al vídeo</h2><div className="small-note">Reprodueix, pausa i prem el botó del moment corresponent. No cal escriure temps.</div></div>
-                    <button className="button-primary" onClick={startAnalysis} disabled={!videoSrc} data-testid="button-start-analysis"><Activity size={14} /> Analitzar els tres salts</button>
-                  </div>
-                  <div className="phase-list">
-                    {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => (
-                      <div className={`phase-row ${activePhase === phase ? 'active' : ''}`} key={phase}>
-                        <button className="phase-chip" onClick={() => setActivePhase(phase)} data-testid={`button-phase-${phase.toLowerCase()}`}>{phase}</button>
-                        <div className="phase-time phase-time-readout" data-testid={`readout-${phase.toLowerCase()}-range`}>{phaseBounds(phase)}</div>
-                        <button className="phase-action" onClick={() => markPhase(phase, phases[phase].start ? 'end' : 'start')} data-testid={`button-mark-${phase.toLowerCase()}`} disabled={!videoSrc}>
-                          {phases[phase].start ? `Final ${phase}` : `Inici ${phase}`} <ChevronDown size={12} style={{ transform: 'rotate(-90deg)', verticalAlign: 'middle' }} />
-                        </button>
-                          {(phases[phase].start || phases[phase].end) && <button className="phase-action phase-clear" onClick={() => clearPhase(phase)} data-testid={`button-clear-${phase.toLowerCase()}`}>Esborrar {phase}</button>}
-                      </div>
-                    ))}
-                  </div>
-                    {analysisStarted && (
-                      <div className="clip-workspace" data-testid="analysis-clips">
-                        <div className="section-caption">
-                          <div><h2>Unitats d’anàlisi</h2><div className="small-note">Cada salt és un clip independent. Els tres fotogrames només els selecciona manualment l’usuari.</div></div>
-                          {!athleteLocked && <span className="status-badge pending">Revisar detecció</span>}
-                        </div>
-                        <div className="clip-tabs">
-                          {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => <button key={phase} className={`phase-chip ${activeClipPhase === phase ? 'active' : ''}`} onClick={() => selectFrameSlot(phase, 0)}>{phase}</button>)}
-                        </div>
-                        <div className="frame-slots">
-                          {frameSlots[activeClipPhase].map((slot, index) => (
-                            <div key={`${activeClipPhase}-${index}`} className={`frame-slot ${activeFrameSlot === index ? 'active' : ''}`}>
-                              <button className="frame-slot-select" onClick={() => selectFrameSlot(activeClipPhase, index)} data-testid={`button-${activeClipPhase.toLowerCase()}-frame-${index + 1}`}>
-                                {frameImages[activeClipPhase][index] && <img className="frame-slot-thumb" src={frameImages[activeClipPhase][index] ?? undefined} alt="" />}
-                                <strong>Fotograma {index + 1}</strong>
-                                <span>{slot.frame === null ? 'Pendent de selecció' : `F ${slot.frame} · ${formatTime(slot.frame / fps)}`}</span>
-                                <small>{slot.points.length}/3 punts</small>
-                              </button>
-                              {slot.frame !== null && <button className="frame-slot-clear" onClick={() => { selectFrameSlot(activeClipPhase, index); window.setTimeout(clearActiveFrameSlot, 0); }} data-testid={`button-clear-${activeClipPhase.toLowerCase()}-frame-${index + 1}`}>Esborrar</button>}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="clip-picker">
-                          <div>
-                            <div className="eyebrow">Clip {activeClipPhase}</div>
-                            <strong>{formatTime(activeClipStart)} — {formatTime(activeClipEnd)} · Fotograma actual: F {currentFrame}</strong>
-                            <span>MediaPipe ha de detectar l’esquelet abans de permetre la selecció.</span>
-                          </div>
-                          <button className="button-primary" onClick={selectCurrentFrameForSlot} disabled={!landmarks || currentTime < activeClipStart || currentTime > activeClipEnd} data-testid="button-select-analysis-frame"><Check size={14} /> Seleccionar fotograma</button>
-                        </div>
-                        {allFramesSelected ? (
-                          <div className="angle-editor">
-                            <div>
-                              <div className="eyebrow">Fotograma actiu</div>
-                              <strong>{`F ${activeSlot.frame} · ${formatTime((activeSlot.frame ?? 0) / fps)}`}</strong>
-                            </div>
-                            <select className="select-field" value={activeSlot.angleMode} onChange={(event) => {
-                              const angleMode = event.target.value as AngleMode;
-                              updateActiveFrameSlot({ angleMode, points: [] });
-                              setAngleSelectionMode(true);
-                            }} data-testid="select-angle-mode">
-                              <option value="vertex">3 punts · angle amb vèrtex</option>
-                              <option value="segments">4 punts · entre dos segments</option>
-                            </select>
-                            <button className={`button-outline ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={activeSlot.frame !== currentFrame || activeSlot.points.length >= requiredAnglePointCount} data-testid="button-select-angle">
-                              <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció' : 'Seleccionar angle'}
-                            </button>
-                            <button className="button-outline" onClick={() => { updateActiveFrameSlot({ points: [] }); setAngleSelectionMode(true); }} disabled={!activeSlot.points.length} data-testid="button-reset-angle-points"><RotateCcw size={14} /> Repetir</button>
-                            <input className="text-field" value={activeSlot.label} onChange={(event) => updateActiveFrameSlot({ label: event.target.value })} placeholder="Nom de l’angle (opcional)" data-testid="input-angle-label" />
-                            <select className="select-field" value={activeSlot.referenceId} onChange={(event) => updateActiveFrameSlot({ referenceId: event.target.value as FrameSlot['referenceId'] })} data-testid="select-angle-reference">
-                              <option value="">Sense referència assignada</option>
-                              <option value="lead">Referència 1: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.lead}</option>
-                              <option value="trail">Referència 2: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.trail}</option>
-                              <option value="internal">Referència 3: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.internal}</option>
-                              <option value="trajectory">Referència 4: {REFERENCE_ROWS.find((row) => row.phase === activeClipPhase)!.trajectory}</option>
-                            </select>
-                            <div className="angle-result">
-                              <span>Angle calculat</span>
-                              <strong data-testid="text-active-angle">{activeComputedAngle === null ? '—' : `${activeComputedAngle.toFixed(1)}°`}</strong>
-                              <small>{activeSlot.points.length === requiredAnglePointCount
-                                ? 'Calculat matemàticament amb les coordenades seleccionades.'
-                                : activeSlot.angleMode === 'segments'
-                                  ? 'Clica A i B per al primer segment; C i D per a la línia o el segon segment.'
-                                  : 'Clica el punt 1, el vèrtex (punt 2) i el punt 3. Pots clicar qualsevol punt del fotograma.'}</small>
-                            </div>
-                            <div className="angle-point-list" aria-label="Punts seleccionats per a l’angle">
-                              {activeSlot.points.map((point, index) => (
-                                <div className="angle-point-row" key={point.id}>
-                                  <span className={`angle-point-kind ${point.source}`}>{point.source === 'landmark' ? 'MediaPipe' : 'Manual'}</span>
-                                  <span>Punt {index + 1}{point.source === 'landmark' ? ` · ${LANDMARK_NAMES[point.landmarkIndex ?? -1] ?? 'Landmark'}` : ` · X ${point.x.toFixed(3)}, Y ${point.y.toFixed(3)}`}</span>
-                                  <button onClick={() => updateActiveFrameSlot({ points: activeSlot.points.filter((currentPoint) => currentPoint.id !== point.id) })} aria-label={`Eliminar punt ${index + 1}`} data-testid={`button-remove-angle-point-${index + 1}`}>Eliminar</button>
-                                </div>
-                              ))}
-                            </div>
-                            <button className="button-primary" onClick={() => showToast('Angle confirmat. El resultat s’ha actualitzat a la taula comparativa.')} disabled={activeComputedAngle === null} data-testid="button-confirm-angle"><Check size={14} /> Confirmar angle</button>
-                          </div>
-                        ) : <div className="empty-inline" data-testid="analysis-waiting-frames">Selecciona manualment els 3 fotogrames de HOP, STEP i JUMP abans de començar l’anàlisi d’angles.</div>}
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
-
-            <div className="stack">
-              <div className="panel">
-                <div className="panel-header">
-                  <div className="panel-title"><UserRound size={17} /> Atleta analitzat</div>
-                  <span className="eyebrow">Selecció manual</span>
-                </div>
-                <div className="panel-body athlete-card">
-                  <div className="athlete-ident">
-                    <div className="athlete-avatar" data-testid="text-athlete-initials">{initials(athlete)}</div>
-                    <div><div className="athlete-name" data-testid="text-athlete-name">{athlete}</div><div className="athlete-meta">TRIPLE SALT / BATUDA DRETA</div></div>
-                  </div>
-                   <div className="small-note">La selecció té prioritat sobre el tracking automàtic. Només els seus landmarks s’utilitzen per calcular els angles.</div>
-                   <div className="athlete-lock-row">
-                     <span className={`status-badge ${athleteLocked ? '' : 'pending'}`}>{athleteLocked ? 'ATLETA BLOQUEJAT' : 'CAL SELECCIONAR'}</span>
-                     <button className="button-outline" style={{ minHeight: '1.9rem', padding: '.35rem .55rem' }} onClick={changeAthlete} disabled={!videoSrc} data-testid="button-change-athlete">{athleteLocked ? 'Canviar atleta' : 'Seleccionar atleta'}</button>
-                   </div>
-                   {trackingWarning && <div className="tracking-warning" role="alert" data-testid="status-tracking-warning">{trackingWarning}</div>}
-                   {poseCandidates.length > 1 && !athleteSelectionMode && <div className="small-note" style={{ marginTop: '.65rem' }}>{poseCandidates.length} persones visibles. Només l’atleta bloquejat alimenta els càlculs biomecànics.</div>}
-                   {athleteSelectionMode && <div className="selection-callout">Fes clic sobre la persona que vols analitzar. Les figures no seleccionades quedaran diferenciades.</div>}
-                </div>
-              </div>
-
-              <div className="panel">
-                <div className="panel-header">
-                  <div className="panel-title"><Sparkles size={17} /> Fotogrames importants</div>
-                  <button className="button-outline" style={{ minHeight: '1.9rem', padding: '.35rem .55rem' }} onClick={proposeCurrentFrame} data-testid="button-propose-frame" disabled={!videoSrc}><Sparkles size={13} /> Proposar l’actual</button>
-                </div>
-                <div className="panel-body">
-                  <div className="small-note" style={{ marginBottom: '.7rem' }}>Les propostes provenen d’un fotograma analitzat real i es poden revisar.</div>
-                  {proposals.length ? (
-                    <div className="proposal-list">
-                      {proposals.map((proposal) => (
-                        <div className="proposal-row" key={proposal.frame}>
-                        <div className="proposal-frame">F {proposal.frame}</div>
-                        <div><div className="proposal-reason">Visibilitat de pose: {proposal.score}%</div><div className="athlete-meta">{formatTime(proposal.time)}</div></div>
-                          <span className="status-badge"><Check size={11} /> {proposal.score}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty-inline" data-testid="empty-proposals">Encara no hi ha propostes. Analitza un fotograma i afegeix-lo a la revisió.</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="panel">
-                <div className="panel-header">
-                  <div className="panel-title"><ScanLine size={17} /> Revisió de confiança</div>
-                  <span className={`status-badge ${confidence === null ? 'pending' : ''}`} data-testid="status-confidence">{confidence === null ? 'Esperant fotograma' : confidence >= .7 ? 'Alta confiança' : 'Revisar'}</span>
-                </div>
-                <div className="panel-body">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span className="small-note">Confiança dels landmarks visibles</span>
-                    <strong className="confidence-value" data-testid="text-confidence-value">{confidence === null ? '—' : `${Math.round(confidence * 100)}%`}</strong>
-                  </div>
-                  <div className="confidence-line"><div className="confidence-meter"><span style={{ width: `${confidence === null ? 0 : Math.min(100, confidence * 100)}%` }} /></div></div>
-                  <div className="small-note" style={{ marginTop: '.7rem' }}>{poseStatus === 'error' ? 'MediaPipe no s’ha pogut carregar. Comprova la connexió i torna a carregar la pàgina.' : 'La visibilitat baixa demana correcció manual; mai se substitueix per dades inventades.'}</div>
-                </div>
-              </div>
-
-              <div className="panel">
-                <div className="panel-header">
-                  <div className="panel-title"><Settings2 size={17} /> Referència biomecànica</div>
+                  <div className="panel-title"><Settings2 size={17} /> Referència · {activeClipPhase}</div>
                   <span className="eyebrow">Jonathan Edwards</span>
                 </div>
                 <div className="panel-body">
                   <img src={referenceImage} alt="Imatge de referència biomecànica de Jonathan Edwards" className="reference-image" />
                   <div className="small-note" style={{ marginBottom: '.8rem' }}>La metodologia interna és configurable i no s’assumeixen nous criteris fins que es defineixin.</div>
                   <div className="reference-strip" aria-label="Jonathan Edwards reference values">
-                    {REFERENCE_ROWS.map((row) => <div className="reference-cell" key={row.phase}><strong>{row.phase}</strong><span>{row.lead} · {row.trail}</span><span>{row.internal} · {row.trajectory}</span></div>)}
+                    {REFERENCE_ROWS.filter((row) => row.phase === activeClipPhase).map((row) => <div className="reference-cell" key={row.phase}><strong>{row.phase}</strong><span>{row.lead} · {row.trail}</span><span>{row.internal}</span></div>)}
                   </div>
-                  <div className="small-note" style={{ marginTop: '.8rem' }}>Angle calculat del fotograma actual: <strong data-testid="text-live-angle">{liveAngle === null ? '—' : `${liveAngle.toFixed(1)}°`}</strong> <span style={{ color: 'hsl(216 13% 43%)' }}>({angleDefinition === 'internal' ? 'angle intern' : angleDefinition === 'segment-horizontal' ? 'segment respecte a l’horitzontal' : 'trajectòria respecte a l’horitzontal'})</span></div>
+                  <div className="small-note" style={{ marginTop: '.8rem' }}>Angle calculat del fotograma actual: <strong data-testid="text-live-angle">{liveAngle === null ? '—' : `${liveAngle.toFixed(1)}°`}</strong> <span style={{ color: 'hsl(216 13% 43%)' }}>({angleDefinition === 'internal' ? 'angle intern' : 'segment respecte a l’horitzontal'})</span></div>
                 </div>
               </div>
-            </div>
-          </section>
+  );
 
-          <section className="panel report-section" id="report">
+  const reportContent = (
+    <section className="panel report-section" id="report">
             <div className="panel-header">
                   <div className="panel-title"><Layers3 size={17} /> Resultats i comparació</div>
               <div className="eyebrow">Valors editables</div>
@@ -1663,9 +1449,267 @@ export function AnalysisWorkspace() {
               <div className="disclosure"><Info size={15} /><span>Eina d’anàlisi esportiva, no de precisió mèdica. La confiança dels landmarks, l’angle de càmera, la velocitat de fotogrames i les correccions manuals afecten la interpretació.</span></div>
             </div>
           </section>
+  );
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <div className="brand-mark">TS<br />01</div>
+          <div>
+            <div className="font-display" style={{ fontSize: '1.1rem', lineHeight: 1 }}>Triple Salt</div>
+            <div className="sidebar-label" style={{ padding: '.35rem 0 0', color: 'hsl(215 14% 67%)' }}>Anàlisi biomecànica</div>
+          </div>
+        </div>
+        <nav className="sidebar-nav" aria-label="Seccions d’anàlisi">
+          <div className="sidebar-label">Sessió</div>
+          <button className="nav-item active" data-testid="button-nav-analysis" onClick={() => document.getElementById('analysis')?.scrollIntoView({ behavior: 'smooth' })}>
+            <Activity size={16} /><span>Panell d’anàlisi</span>
+          </button>
+          <button className="nav-item" data-testid="button-nav-report" onClick={() => document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' })}>
+            <Layers3 size={16} /><span>Informe comparatiu</span>
+          </button>
+          <button className="nav-item" data-testid="button-nav-settings" onClick={() => showToast('La selecció d’angles es configura al panell de revisió.')}>
+            <Settings2 size={16} /><span>Configuració</span>
+          </button>
+        </nav>
+        <div className="sidebar-meta">
+          <div className="eyebrow" style={{ color: 'hsl(38 89% 61%)' }}>Sessió local</div>
+          <div style={{ marginTop: '.45rem', fontSize: '.7rem', lineHeight: 1.5 }}>El vídeo es manté en aquest navegador. No es puja enlloc.</div>
+        </div>
+      </aside>
+
+      <main className="main-shell">
+        <header className="topbar">
+          <div className="topbar-title">
+            <span className="live-dot" />
+            <span className="eyebrow" style={{ color: 'hsl(216 13% 43%)' }}>Sessió 07 / triple salt</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <span className="status-badge pending" data-testid="status-analysis-mode"><Gauge size={12} /> {videoSrc ? 'Vídeo local carregat' : 'Sense vídeo carregat'}</span>
+            <button className="button-outline" data-testid="button-export-report" onClick={downloadReport}><ArrowDownToLine size={14} /><span>Exportar informe</span></button>
+          </div>
+        </header>
+
+        <div className="content">
+          <section className="page-heading" id="analysis">
+            <div>
+              <div className="eyebrow" style={{ color: 'hsl(24 76% 48%)' }}>Anàlisi biomecànica</div>
+              <h1>De la cursa a<br /><span style={{ color: 'hsl(24 76% 48%)' }}>l’evidència traçable.</span></h1>
+              <p>Una eina centrada per a entrenadors i estudiants de ciències de l’esport. Marca els tres salts, revisa els fotogrames i corregeix el model quan la teva mirada tingui més context.</p>
+            </div>
+            <div style={{ display: 'grid', gap: '.5rem', minWidth: '13rem' }}>
+              <label className="field-label" htmlFor="athlete-select">Atleta</label>
+              <div className="selector-row">
+                <select id="athlete-select" className="select-field" data-testid="select-athlete" value={athlete} onChange={(event) => setAthlete(event.target.value)}>
+                  {athletes.map((name) => <option key={name} value={name}>{name}</option>)}
+                </select>
+                <button className="button-primary" style={{ paddingInline: '.65rem' }} data-testid="button-create-athlete" onClick={() => setCreateAthleteOpen(true)} aria-label="Create athlete"><Plus size={16} /></button>
+              </div>
+            </div>
+          </section>
+
+          <section className="workspace">
+            {!analysisStarted ? (
+              <div className="temps-workspace">
+                <div className="temps-main">
+                  <div className="section-caption mb-4">
+                    <h2>1. TEMPS: Defineix les fases del salt</h2>
+                    <div className="small-note">Puja un vídeo i marca l'inici i final de cada fase (Batuda 1, 2, 3) usant els controls de sota.</div>
+                  </div>
+                  {videoEditorContent}
+                </div>
+                <div className="temps-sidebar stack" style={{ marginTop: '3.5rem' }}>
+                  <div className="panel">
+                    <div className="panel-header">
+                      <div className="panel-title"><Target size={17} /> Talls de temps</div>
+                    </div>
+                    <div className="panel-body">
+                      <div className="phase-list">
+                        {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => (
+                          <div className={`phase-row ${activePhase === phase ? 'active' : ''}`} key={phase}>
+                            <button className="phase-chip" onClick={() => setActivePhase(phase)} data-testid={`button-phase-${phase.toLowerCase()}`}>{phase}</button>
+                            <div className="phase-time phase-time-readout" data-testid={`readout-${phase.toLowerCase()}-range`}>{phaseBounds(phase)}</div>
+                            <button className="phase-action" onClick={() => markPhase(phase, phases[phase].start ? 'end' : 'start')} data-testid={`button-mark-${phase.toLowerCase()}`} disabled={!videoSrc}>
+                              {phases[phase].start ? `Final ${phase}` : `Inici ${phase}`} <ChevronDown size={12} style={{ transform: 'rotate(-90deg)', verticalAlign: 'middle' }} />
+                            </button>
+                              {(phases[phase].start || phases[phase].end) && <button className="phase-action phase-clear" onClick={() => clearPhase(phase)} data-testid={`button-clear-${phase.toLowerCase()}`}>Esborrar</button>}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-border">
+                        <button className="button-primary w-full" onClick={() => { setAnalysisStarted(true); setActiveClipPhase('HOP'); setActiveFrameSlot(0); }} disabled={!videoSrc || !allPhasesValid} data-testid="button-start-analysis">
+                          <Activity size={14} /> Anar a l'anàlisi biomecànica
+                        </button>
+                        {!allPhasesValid && videoSrc && <div className="small-note text-center mt-2">Cal definir inici i final de les tres fases per continuar.</div>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="phases-workspace stack">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 style={{ fontFamily: 'var(--app-font-serif)', fontSize: '1.8rem' }}>2. FASES: Anàlisi Fotograma a Fotograma</h2>
+                    <p className="small-note text-muted-foreground mt-1">Escull 3 fotogrames manuals per cada fase, ajusta els punts i avalua l'angle de referència.</p>
+                  </div>
+                  <button className="button-outline" onClick={() => setAnalysisStarted(false)}>
+                    <RotateCcw size={14} /> Tornar als talls de temps
+                  </button>
+                </div>
+
+                {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
+                  return (
+                      <div key={phase} className={`phase-section ${phase.toLowerCase()}`}>
+                      <div className="phase-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                        <h2 style={{ fontSize: '1.6rem', fontFamily: 'var(--app-font-serif)', margin: 0, textTransform: 'uppercase' }}>{phaseTitle(phase)}</h2>
+                        <div className="phase-times" style={{ fontFamily: 'var(--app-font-mono)', fontSize: '.85rem', color: 'hsl(var(--muted-foreground))', background: 'hsl(var(--muted))', padding: '.3rem .6rem', borderRadius: '.3rem' }}>
+                          {formatTime(Number(phases[phase].start) / fps)} — {formatTime(Number(phases[phase].end) / fps)}
+                        </div>
+                      </div>
+
+                      <div className="cards-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {[0, 1, 2].map((slotIndex) => {
+                          const isActive = activeClipPhase === phase && activeFrameSlot === slotIndex;
+                          const slot = frameSlots[phase][slotIndex];
+                          const hasCaptured = slot.frame !== null;
+                          const image = frameImages[phase][slotIndex];
+
+                          if (isActive) {
+                            return (
+                              <div key={slotIndex} className="active-card-container panel" style={{ borderColor: 'hsl(var(--primary))', borderWidth: '2px' }}>
+                                <div className="panel-header" style={{ background: 'hsl(var(--primary) / .05)' }}>
+                                  <div className="panel-title" style={{ color: 'hsl(var(--primary))' }}>{slotTitle(phase, slot, slotIndex)}</div>
+                                </div>
+                                <div className="panel-body active-card-layout" style={{ padding: '1.5rem' }}>
+                                  <div className="active-card-editor" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {!hasCaptured && (
+                                      <div className="selection-callout" style={{ marginBottom: '.5rem' }}>
+                                        <strong>Mode captura:</strong> Busca el moment exacte en aquest clip i clica "Capturar". El vídeo està limitat a la fase actual.
+                                      </div>
+                                    )}
+                                    {videoEditorContent}
+                                    <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg border border-border mt-2">
+                                       <div>
+                                          <div className="eyebrow">Acció</div>
+                                          <strong>{slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.frame / fps)}` : 'Clica per capturar el fotograma actual'}</strong>
+                                       </div>
+                                       {!hasCaptured ? (
+                                         <button className="button-primary" onClick={selectCurrentFrameForSlot} disabled={!landmarks || currentTime < activeClipStart || currentTime > activeClipEnd} data-testid="button-select-analysis-frame">
+                                           <Check size={14} /> Capturar fotograma
+                                         </button>
+                                       ) : (
+                                         <button className="button-outline text-destructive hover:bg-destructive/10 border-destructive/30" onClick={() => clearActiveFrameSlot()}>
+                                           <RotateCcw size={14} /> Esborrar captura
+                                         </button>
+                                       )}
+                                    </div>
+                                  </div>
+
+                                  {hasCaptured ? (
+                                    <div className="active-card-sidebar stack">
+                                      <div className="angle-mode-selector panel p-4 bg-card">
+                                        <div className="eyebrow mb-2">Tipus d'Angle</div>
+                                        <select className="select-field mb-4" value={slot.angleMode} onChange={(event) => {
+                                          const angleMode = event.target.value as AngleMode;
+                                          updateActiveFrameSlot({ angleMode, points: [] });
+                                          setAngleSelectionMode(true);
+                                        }} data-testid="select-angle-mode">
+                                          <option value="vertex">3 punts · angle amb vèrtex</option>
+                                          <option value="segments">4 punts · entre dos segments</option>
+                                        </select>
+                                        <button className={`button-outline w-full ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={slot.points.length >= requiredAnglePointCount} style={{ borderColor: angleSelectionMode ? 'hsl(var(--primary))' : undefined, color: angleSelectionMode ? 'hsl(var(--primary))' : undefined }}>
+                                          <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció de punts' : 'Seleccionar punts manuals'}
+                                        </button>
+                                        <div className="angle-point-progress"><span>Punts seleccionats</span><strong>{slot.points.length} / {requiredAnglePointCount}</strong></div>
+                                        <button type="button" className="button-outline w-full" onClick={() => { updateActiveFrameSlot({ points: [] }); setAngleSelectionMode(true); }} disabled={!slot.points.length} data-testid="button-reset-angle-points"><RotateCcw size={14} /> Repetir selecció</button>
+                                        <div className="reference-picker">
+                                          <span className="eyebrow">Comparar amb Jonathan</span>
+                                          <div>
+                                            {([
+                                              ['lead', 'Cama davantera'],
+                                              ['trail', 'Cama posterior'],
+                                              ['internal', 'Angle intern'],
+                                            ] as const).map(([referenceId, label]) => <button type="button" key={referenceId} className={`reference-choice ${slot.referenceId === referenceId ? 'active' : ''}`} onClick={() => updateActiveFrameSlot({ referenceId })} data-testid={`button-reference-${referenceId}`}>{label}</button>)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {referenceContent}
+                                      <div className="panel inline-comparison">
+                                        <div className="panel-header"><div className="panel-title"><Layers3 size={16} /> Comparació directa</div></div>
+                                        <div className="panel-body">
+                                          <div className="inline-comparison-visuals">
+                                            <figure className={`analysis-reference-visual reference-crop-${phase.toLowerCase()}`}>
+                                              <img src={referenceImage} alt={`${phase} de Jonathan Edwards`} />
+                                              <figcaption>JONATHAN EDWARDS · {phase}</figcaption>
+                                            </figure>
+                                            <figure className="analysis-athlete-visual">
+                                              {image ? <img src={image} alt={`${athlete}, ${phase}, fotograma ${slotIndex + 1}`} /> : <div className="analysis-image-empty">Fotograma no disponible</div>}
+                                              {image && <svg className="analysis-athlete-overlay" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-label="Punts i angle de l’atleta">
+                                                {slot.points.slice(0, -1).map((point, pointIndex) => <line key={`${point.id}-active-line`} x1={point.x} y1={point.y} x2={slot.points[pointIndex + 1].x} y2={slot.points[pointIndex + 1].y} className="overlay-angle-line" />)}
+                                                {slot.angleMode === 'vertex' && slot.points.length === 3 && <path d={angleArcPath(slot.points[0], slot.points[1], slot.points[2])} className="overlay-angle-arc" />}
+                                                {slot.points.map((point, pointIndex) => <g key={`${point.id}-active`}><circle cx={point.x} cy={point.y} r=".017" className={point.source === 'landmark' ? 'overlay-point-landmark' : 'overlay-point-manual'} /><text x={point.x + .023} y={point.y - .018} fontSize=".07">{pointIndex + 1}</text></g>)}
+                                              </svg>}
+                                              <figcaption>ATLETA · F {slot.frame ?? '—'}</figcaption>
+                                            </figure>
+                                          </div>
+                                          <div className="inline-comparison-metrics">
+                                            <div><span>Referència</span><strong>{activeReferenceText}</strong></div>
+                                            <div><span>Atleta</span><strong>{activeComputedAngle === null ? 'Angle pendent' : `${activeComputedAngle.toFixed(1)}°`}</strong></div>
+                                            <div><span>Diferència</span><strong>{activeDifference === null ? '—' : `${activeDifference >= 0 ? '+' : ''}${activeDifference.toFixed(1)}°`}</strong></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="active-card-sidebar empty-state border border-dashed border-border rounded-xl flex flex-col items-center justify-center p-8 text-center" style={{ minHeight: '300px' }}>
+                                      <Video size={32} className="text-muted-foreground mb-4" />
+                                      <h3 className="font-serif text-lg">Targeta buida</h3>
+                                      <p className="text-sm text-muted-foreground max-w-[200px] mt-2">Captura un fotograma primer per desbloquejar els controls biomecànics.</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <button type="button" key={slotIndex} className="inactive-card panel hover-elevate cursor-pointer transition-all hover:border-primary/50" onClick={() => focusAnalysisCard(phase, slotIndex)} data-testid={`button-${phase.toLowerCase()}-frame-${slotIndex + 1}`}>
+                                <div className="inactive-card-content flex items-center p-4 gap-6">
+                                  <div className="inactive-card-thumb shrink-0 w-32 h-20 bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
+                                    {image ? (
+                                      <img src={image} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span className="text-sm text-muted-foreground font-mono">Buit</span>
+                                    )}
+                                  </div>
+                                  <div className="inactive-card-info grow">
+                                    <h4 className="font-bold text-lg m-0 mb-1 font-serif">{slotTitle(phase, slot, slotIndex)}</h4>
+                                    <p className="text-sm text-muted-foreground m-0">
+                                      {slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.frame / fps)}` : 'Clica per activar i capturar'}
+                                    </p>
+                                  </div>
+                                  <div className="inactive-card-action shrink-0 px-4">
+                                    {hasCaptured ? <Check size={24} className="text-primary" /> : <ChevronRight size={24} className="text-muted-foreground" />}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          }
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="report-container mt-16 pt-8 border-t border-border">
+                   {reportContent}
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       </main>
-
       {createAthleteOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setCreateAthleteOpen(false); }}>
           <form className="modal" onSubmit={addAthlete}>
@@ -1685,6 +1729,7 @@ export function AnalysisWorkspace() {
       {toast && <div className="toast" role="status" data-testid="status-toast">{toast}</div>}
     </div>
   );
+
 }
 
 function App() {

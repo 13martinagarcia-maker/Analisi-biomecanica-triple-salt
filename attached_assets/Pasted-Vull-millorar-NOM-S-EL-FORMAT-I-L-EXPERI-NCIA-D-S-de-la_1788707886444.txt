@@ -1,0 +1,101 @@
+Vull millorar NOMÉS EL FORMAT I L’EXPERIÈNCIA D’ÚS de la secció “ESTIC A CASA”.
+
+IMPORTANT: NO TOQUIS ni modifiquis la funcionalitat actual de MediaPipe Pose, detecció de punts, seguiment de l’atleta, càlcul matemàtic dels angles ni cap altra part biomecànica que ja funciona correctament. Només vull reorganitzar i millorar la interfície.
+
+FUNCIONAMENT NOU:
+
+1. MINI VÍDEOS PER FASE
+Un cop l’usuari ha definit els temps d’inici i final de cada fase:
+- HOP
+- STEP
+- JUMP
+
+NO vull tenir-ho tot concentrat en el mateix vídeo principal.
+
+Vull que es generi i es mostri un MINI VÍDEO INDEPENDENT per a cada fase, clarament separat visualment per una barra/divisor de color.
+
+2. 3 FOTOGRAMES PER CADA FASE
+A partir de cada mini vídeo, l’usuari ha de poder seleccionar manualment els 3 fotogrames que vol analitzar.
+
+Per tant:
+- HOP → 3 fotogrames
+- STEP → 3 fotogrames
+- JUMP → 3 fotogrames
+
+TOTAL = 9 TARGETES/FOTOGRAMES.
+
+No seleccionar-los automàticament. Els ha de seleccionar l’usuari.
+
+3. TOT EL PROCÉS DINS DE CADA TARGETA
+Aquesta és la part MÉS IMPORTANT:
+
+Cada un dels 9 fotogrames ha de tenir la seva pròpia targeta gran i independent.
+
+DINS DE LA MATEIXA TARGETA vull tenir:
+
+- Foto/fotograma de l’atleta
+- Punts de MediaPipe sobre l’atleta
+- Possibilitat de corregir/moure els punts si cal
+- Possibilitat de seleccionar punts manuals sobre qualsevol lloc de la imatge
+- Selecció i dibuix dels angles
+- Càlcul matemàtic de l’angle
+- Valor de l’angle calculat
+- Possibilitat de corregir-lo
+- Imatge de referència de Jonathan Edwards corresponent a aquella fase
+- Comparació entre atleta i referència
+
+NO vull haver de tornar al vídeo principal per seleccionar els angles i després enviar-los a una targeta.
+
+TOT HA DE PASSAR DIRECTAMENT DINS DE LA TARGETA DEL FOTOGRAMA.
+
+4. 9 TARGETES GRANS
+Crea 9 targetes, una per cada fotograma:
+
+HOP
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+STEP
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+JUMP
+- Fotograma 1
+- Fotograma 2
+- Fotograma 3
+
+L’ANGLE DE PROJECCIÓ NO S’HA DE TENIR EN COMPTE EN AQUESTA FASE.
+
+5. DISSENY
+Fes que aquestes targetes siguin GRANS i ocupin pràcticament tota l’amplada disponible de la pantalla.
+
+Si cal, permet fer una targeta encara més gran per treballar còmodament sobre el fotograma.
+
+La prioritat és que sigui:
+- molt visual
+- fàcil d’utilitzar
+- net
+- modern
+- esportiu
+- intuïtiu
+
+Vull un disseny molt més semblant a l’estil visual de LOVABLE:
+- targetes grans
+- bona jerarquia visual
+- imatges grans
+- botons clars
+- icones
+- colors per diferenciar HOP / STEP / JUMP
+- poc text innecessari
+- aspecte professional.
+
+IMPORTANTÍSSIM:
+NO MODIFIQUIS LA FUNCIONALITAT ACTUAL DE MEDIAPIPE POSE NI ELS CÀLCULS. NO RECONSTRUEIXIS EL SISTEMA DES DE ZERO.
+
+Només reorganitza la interfície perquè el flux sigui:
+
+TEMPS → MINI VÍDEO DE FASE → ESCOLLIR 3 FOTOGRAMES → TARGETA GRAN → FOTO + MEDIAPIPE + PUNTS + ANGLES + REFERÈNCIA JONATHAN + RESULTAT.
+
+Tot ha de quedar integrat dins de cada targeta i ser molt més fàcil de fer servir.
