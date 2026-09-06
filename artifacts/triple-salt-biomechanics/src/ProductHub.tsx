@@ -19,6 +19,7 @@ import {
   Pencil,
   Save,
   Target,
+  Trash2,
   Trophy,
   UserPlus,
   Users,
@@ -170,6 +171,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
   const [assessmentSaved, setAssessmentSaved] = useState(false);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
+  const [competitionToDelete, setCompetitionToDelete] = useState<Competition | null>(null);
 
   const selectedAthlete = athletes.find((athlete) => athlete.id === selectedAthleteId);
   const selectedCompetition = competitions.find((competition) => competition.id === selectedCompetitionId);
@@ -276,7 +278,7 @@ function ProductHub({ analysisWorkspace }: Props) {
           jumps,
         }),
       });
-      setCompetitions((previous) => [result.competition, ...previous]);
+      await loadData();
       if (result.competition.athleteId) setSelectedAthleteId(result.competition.athleteId);
       notify("Competició i resultat guardats a l’historial.");
       form.reset();
@@ -309,7 +311,8 @@ function ProductHub({ analysisWorkspace }: Props) {
           jumps,
         }),
       });
-      setCompetitions((previous) => previous.map((competition) => competition.id === result.competition.id ? result.competition : competition));
+      await loadData();
+      setSelectedCompetitionId(result.competition.id);
       if (result.competition.athleteId) setSelectedAthleteId(result.competition.athleteId);
       notify("Competició actualitzada correctament.");
     } catch (error) {
@@ -317,9 +320,28 @@ function ProductHub({ analysisWorkspace }: Props) {
     }
   };
 
-  const openCompetition = (competition: Competition) => {
-    setSelectedCompetitionId(competition.id);
-    setPage("detall-competició");
+  const openCompetition = async (competition: Competition) => {
+    try {
+      const result = await api<{ competition: Competition }>(`/competitions/${competition.id}`);
+      setCompetitions((previous) => previous.map((item) => item.id === result.competition.id ? result.competition : item));
+      setSelectedCompetitionId(result.competition.id);
+      setPage("detall-competició");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No s’ha pogut recuperar la competició.");
+    }
+  };
+
+  const deleteCompetition = async () => {
+    if (!competitionToDelete) return;
+    try {
+      await api(`/competitions/${competitionToDelete.id}`, { method: "DELETE" });
+      setCompetitions((previous) => previous.filter((competition) => competition.id !== competitionToDelete.id));
+      if (selectedCompetitionId === competitionToDelete.id) setSelectedCompetitionId("");
+      setCompetitionToDelete(null);
+      notify("Competició esborrada de l’historial.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No s’ha pogut esborrar la competició.");
+    }
   };
 
   const selectedAssessment = assessmentGroups.map((group) => group.options[assessmentAnswers[group.key] ?? -1]);
@@ -426,7 +448,28 @@ function ProductHub({ analysisWorkspace }: Props) {
         <div className="hub-title-row"><div><span className="eyebrow">Seguiment de temporada</span><h1>Historial</h1><p>Entra a qualsevol competició per revisar i corregir totes les dades de la jornada.</p></div><button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={16} /> Afegir atleta</button></div>
         {!athletes.length ? <EmptyState title="Encara no hi ha atletes registrats." description="Crea la primera fitxa per començar a relacionar competicions, salts i valoracions." action={<button className="button-primary" onClick={() => setAthleteFormOpen(true)}><Plus size={15} /> Crear atleta</button>} /> : <>
           <div className="athlete-switcher"><button type="button" onClick={() => moveAthlete(-1)} disabled={athletes.length < 2} aria-label="Atleta anterior"><ArrowLeft size={17} /></button><select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)} aria-label="Canviar d’atleta">{athletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select><button type="button" onClick={() => moveAthlete(1)} disabled={athletes.length < 2} aria-label="Atleta següent"><ArrowRight size={17} /></button></div>
-          {selectedAthlete && <div className="athlete-history-grid"><article className="athlete-profile-card"><div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div><div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Valoracions de pista</span><strong>{athleteEvaluations.length ? `${athleteEvaluations.length} registrada${athleteEvaluations.length > 1 ? "s" : ""}` : "Encara no disponibles"}</strong></div></div></article><article className="history-competitions"><div className="section-card-heading"><div><span className="eyebrow">Competicions</span><h2>Últims registres</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>{athleteCompetitions.length ? athleteCompetitions.map((competition) => <button type="button" className="competition-history-row" key={competition.id} onClick={() => openCompetition(competition)}><div><strong>{competition.location}</strong><span>{competition.eventDate} · Objectiu: {competition.objective}</span><div className="competition-marks">{competition.jumps.map((jump) => <span key={jump.jumpNumber}>S{jump.jumpNumber}: {formatJumpMark(jump)}</span>)}</div></div><div className="competition-result-control"><span>{competition.achieved === null ? "Resultat pendent" : competition.achieved ? "Objectiu assolit" : "Objectiu no assolit"}</span><strong>Veure i editar <ChevronRight size={14} /></strong></div></button>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}{athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}</article></div>}
+          {selectedAthlete && <div className="athlete-history-grid">
+            <article className="athlete-profile-card">
+              <div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div>
+              <div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Valoracions de pista</span><strong>{athleteEvaluations.length ? `${athleteEvaluations.length} registrada${athleteEvaluations.length > 1 ? "s" : ""}` : "Encara no disponibles"}</strong></div></div>
+            </article>
+            <article className="history-competitions">
+              <div className="section-card-heading"><div><span className="eyebrow">Competicions</span><h2>Últims registres</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>
+              {athleteCompetitions.length ? athleteCompetitions.map((competition) => <div className="competition-history-item" key={competition.id}>
+                <button type="button" className="competition-history-row" onClick={() => void openCompetition(competition)}>
+                  <div>
+                    <strong>{competition.location}</strong>
+                    <span>{competition.eventDate} · Objectiu: {competition.objective}</span>
+                    {competition.seasonGoal && <span>Objectiu final de temporada: {competition.seasonGoal.replace(".", ",")} m</span>}
+                    <div className="competition-marks">{competition.jumps.map((jump) => <span key={jump.jumpNumber}>S{jump.jumpNumber}: {formatJumpMark(jump)}</span>)}</div>
+                  </div>
+                  <div className="competition-result-control"><span>{competition.achieved === null ? "Resultat pendent" : competition.achieved ? "Objectiu assolit" : "Objectiu no assolit"}</span><strong>Veure i editar <ChevronRight size={14} /></strong></div>
+                </button>
+                <button type="button" className="competition-delete-button" onClick={() => setCompetitionToDelete(competition)} aria-label={`Esborrar la competició de ${competition.location}`}><Trash2 size={16} /> Esborrar</button>
+              </div>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}
+              {athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}
+            </article>
+          </div>}
         </>}
       </section>
     );
@@ -480,6 +523,13 @@ function ProductHub({ analysisWorkspace }: Props) {
         {renderPage()}
       </main>
       {athleteFormOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAthleteFormOpen(false); }}><form className="modal hub-athlete-modal" onSubmit={addAthlete}><div className="modal-title-row"><div><span className="eyebrow">Nou atleta</span><h2>Crea una fitxa</h2></div><button type="button" className="button-quiet" onClick={() => setAthleteFormOpen(false)} aria-label="Tancar"><X size={15} /></button></div><div className="auth-name-grid"><label>Nom<input name="firstName" required autoFocus /></label><label>Cognom<input name="lastName" required /></label></div><label>Objectius<input name="goals" placeholder="Opcional" /></label><label>Informació tècnica<textarea name="technicalNotes" placeholder="Opcional" /></label><div className="modal-actions"><button type="button" className="button-outline" onClick={() => setAthleteFormOpen(false)}>Cancel·lar</button><button className="button-primary" type="submit"><Save size={14} /> Guardar atleta</button></div></form></div>}
+      {competitionToDelete && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setCompetitionToDelete(null); }}>
+        <section className="modal competition-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-competition-title">
+          <span className="delete-warning-icon"><Trash2 size={22} /></span>
+          <div><span className="eyebrow">Confirmació necessària</span><h2 id="delete-competition-title">Vols esborrar aquesta competició?</h2><p><strong>{competitionToDelete.location}</strong> i tots els seus salts desapareixeran definitivament de l’Historial.</p></div>
+          <div className="modal-actions"><button type="button" className="button-outline" onClick={() => setCompetitionToDelete(null)}>Cancel·lar</button><button type="button" className="button-danger" onClick={() => void deleteCompetition()}><Trash2 size={15} /> Sí, esborrar</button></div>
+        </section>
+      </div>}
       {feedback && <div className="toast" role="status">{feedback}</div>}
     </div>
   );

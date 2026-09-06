@@ -2728,6 +2728,10 @@ button {
   margin-top: .25rem;
 }
 
+.competition-history-item {
+  position: relative;
+}
+
 .competition-history-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -2743,6 +2747,8 @@ button {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  padding-right: 7.5rem;
 }
 .competition-history-row:hover {
   transform: translateY(-2px);
@@ -2802,6 +2808,31 @@ button {
 }
 .competition-history-row:hover .competition-result-control strong {
   color: hsl(var(--primary));
+}
+
+.competition-delete-button {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  transform: translateY(-50%);
+  padding: .55rem .7rem;
+  border: 1px solid hsl(var(--destructive) / .2);
+  border-radius: .55rem;
+  background: hsl(var(--card));
+  color: hsl(var(--destructive));
+  font-size: .72rem;
+  font-weight: 700;
+  transition: all .2s ease;
+}
+
+.competition-delete-button:hover {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-color: hsl(var(--destructive));
 }
 
 /* 7. COMPETITION FORM */
@@ -3352,6 +3383,38 @@ button {
   border-radius: .5rem;
 }
 
+.competition-delete-modal {
+  max-width: 520px;
+}
+
+.competition-delete-modal > div:not(.modal-actions) {
+  display: grid;
+  gap: .6rem;
+}
+
+.competition-delete-modal h2 {
+  margin: 0;
+  font-family: var(--app-font-serif);
+  font-size: 1.5rem;
+}
+
+.competition-delete-modal p {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+}
+
+.delete-warning-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1rem;
+  border-radius: .8rem;
+  background: hsl(var(--destructive) / .1);
+  color: hsl(var(--destructive));
+}
+
 .toast {
   position: fixed;
   bottom: 2rem;
@@ -3485,6 +3548,15 @@ button {
   .competition-history-row {
     grid-template-columns: 1fr;
     gap: 1rem;
+    padding-right: 1.5rem;
+    padding-bottom: 4.5rem;
+  }
+  .competition-delete-button {
+    top: auto;
+    right: auto;
+    left: 1.5rem;
+    bottom: 1rem;
+    transform: none;
   }
   .competition-result-control {
     align-items: flex-start;
