@@ -2227,10 +2227,10 @@ button {
 }
 
 .hub-analysis-main .content {
-  width: min(100%, 1500px);
-  max-width: 1500px;
+  width: min(100%, 1280px);
+  max-width: 1280px;
   margin: 0 auto;
-  padding: clamp(1rem, 2vw, 2rem);
+  padding: clamp(.85rem, 1.5vw, 1.5rem);
 }
 
 .hub-analysis-main .workspace {
@@ -2239,7 +2239,7 @@ button {
 }
 
 .hub-analysis-main .video-stage {
-  min-height: clamp(24rem, 45vw, 38rem);
+  min-height: clamp(18rem, 36vw, 30rem);
 }
 
 .hub-analysis-main .reference-image {
