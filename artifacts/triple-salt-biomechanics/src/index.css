@@ -2219,15 +2219,26 @@ button {
 
 .hub-analysis-main .app-shell {
   min-height: calc(100dvh - 3.7rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hub-analysis-main .app-shell > .sidebar {
+  display: none;
 }
 
 .hub-analysis-main .content {
-  width: min(100%, 1840px);
-  padding: clamp(1rem, 2.2vw, 2rem);
+  width: 100%;
+  max-width: none;
+  padding: clamp(.75rem, 1.4vw, 1.5rem);
+}
+
+.hub-analysis-main .workspace {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
 }
 
 .hub-analysis-main .video-stage {
-  min-height: clamp(28rem, 55vw, 44rem);
+  min-height: clamp(34rem, 67vw, 62rem);
 }
 
 .hub-analysis-main .reference-image {
@@ -3638,9 +3649,13 @@ button {
 /* Estic a casa — flux per fases i targetes de fotograma */
 .temps-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.46fr) minmax(340px, .86fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
+}
+
+.temps-sidebar {
+  margin-top: 0 !important;
 }
 
 .phase-section {
@@ -3655,9 +3670,19 @@ button {
 
 .active-card-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .8fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
+}
+
+.active-card-sidebar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.active-card-sidebar .inline-comparison {
+  grid-column: 1 / -1;
 }
 
 .inactive-card {
@@ -3770,6 +3795,14 @@ button {
 
   .temps-sidebar {
     margin-top: 0 !important;
+  }
+
+  .active-card-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .active-card-sidebar .inline-comparison {
+    grid-column: auto;
   }
 }
 
