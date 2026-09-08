@@ -2227,9 +2227,10 @@ button {
 }
 
 .hub-analysis-main .content {
-  width: 100%;
-  max-width: none;
-  padding: clamp(.75rem, 1.4vw, 1.5rem);
+  width: min(100%, 1500px);
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: clamp(1rem, 2vw, 2rem);
 }
 
 .hub-analysis-main .workspace {
@@ -2238,7 +2239,7 @@ button {
 }
 
 .hub-analysis-main .video-stage {
-  min-height: clamp(34rem, 67vw, 62rem);
+  min-height: clamp(24rem, 45vw, 38rem);
 }
 
 .hub-analysis-main .reference-image {
@@ -3673,6 +3674,54 @@ button {
   grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
+}
+
+.active-card-container {
+  overflow: hidden;
+  border-color: hsl(215 20% 30%) !important;
+  background: hsl(216 28% 15%);
+  color: hsl(36 33% 94%);
+  box-shadow: 0 18px 45px hsl(216 31% 11% / .18);
+}
+
+.active-card-container > .panel-header {
+  border-bottom-color: hsl(215 20% 30%);
+  background: hsl(216 25% 18%) !important;
+}
+
+.active-card-container > .panel-header .panel-title {
+  color: hsl(36 33% 94%) !important;
+}
+
+.active-card-container .selection-callout {
+  border-color: hsl(24 76% 48% / .45);
+  background: hsl(24 76% 48% / .12);
+  color: hsl(36 33% 94%);
+}
+
+.active-card-container .video-panel,
+.active-card-container .angle-mode-selector,
+.active-card-container .inline-comparison,
+.active-card-container .active-card-sidebar > .panel {
+  border-color: hsl(215 20% 30%);
+  background: hsl(216 25% 18%);
+  color: hsl(36 33% 94%);
+}
+
+.active-card-container .small-note,
+.active-card-container .angle-point-progress,
+.active-card-container .inline-comparison-metrics span {
+  color: hsl(215 14% 72%);
+}
+
+.active-card-container .angle-point-progress strong,
+.active-card-container .inline-comparison-metrics strong {
+  color: hsl(36 33% 94%);
+}
+
+.active-card-container .inline-comparison-metrics > div {
+  border-color: hsl(215 20% 30%);
+  background: hsl(216 27% 14%);
 }
 
 .active-card-sidebar {

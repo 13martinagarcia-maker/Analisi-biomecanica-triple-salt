@@ -802,6 +802,8 @@ export function AnalysisWorkspace() {
       setLandmarks(null);
       setConfidence(null);
       seekTo(frame / fps);
+    } else if (phases[phase].start) {
+      seekTo(Number(phases[phase].start) / fps);
     }
   };
 
@@ -838,10 +840,6 @@ export function AnalysisWorkspace() {
         ...previous,
         [activeClipPhase]: previous[activeClipPhase].map((currentImage, index) => index === activeFrameSlot ? image : currentImage),
       }));
-    }
-    const nextSlot = frameSlots[activeClipPhase].findIndex((slot, index) => index > activeFrameSlot && slot.frame === null);
-    if (nextSlot >= 0) {
-      window.setTimeout(() => selectFrameSlot(activeClipPhase, nextSlot), 0);
     }
     showToast(`${activeClipPhase} — Fotograma ${activeFrameSlot + 1} seleccionat: F ${currentFrame}.`);
   };
@@ -1538,7 +1536,7 @@ export function AnalysisWorkspace() {
                         ))}
                       </div>
                       <div className="mt-6 pt-4 border-t border-border">
-                        <button className="button-primary w-full" onClick={() => { setAnalysisStarted(true); setActiveClipPhase('HOP'); setActiveFrameSlot(0); }} disabled={!videoSrc || !allPhasesValid} data-testid="button-start-analysis">
+                        <button className="button-primary w-full" onClick={startAnalysis} disabled={!videoSrc || !allPhasesValid} data-testid="button-start-analysis">
                           <Activity size={14} /> Anar a l'anàlisi biomecànica
                         </button>
                         {!allPhasesValid && videoSrc && <div className="small-note text-center mt-2">Cal definir inici i final de les tres fases per continuar.</div>}
@@ -1596,7 +1594,7 @@ export function AnalysisWorkspace() {
                                           <strong>{slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.frame / fps)}` : 'Clica per capturar el fotograma actual'}</strong>
                                        </div>
                                        {!hasCaptured ? (
-                                         <button className="button-primary" onClick={selectCurrentFrameForSlot} disabled={!landmarks || currentTime < activeClipStart || currentTime > activeClipEnd} data-testid="button-select-analysis-frame">
+                                          <button className="button-primary" onClick={selectCurrentFrameForSlot} disabled={!videoSrc || currentTime < activeClipStart || currentTime > activeClipEnd} data-testid="button-select-analysis-frame">
                                            <Check size={14} /> Capturar fotograma
                                          </button>
                                        ) : (
