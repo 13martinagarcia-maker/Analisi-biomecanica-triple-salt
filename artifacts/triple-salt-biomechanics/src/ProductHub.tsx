@@ -176,6 +176,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "3",
     title: "AJUST DE TALONACIÓ I COMPETICIÓ",
+    videoSrc: `${import.meta.env.BASE_URL}videos/ajust-talonacio-competicio.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/ajust-talonacio-competicio-poster.jpg`,
     items: [
       { title: "Mesura de la cursa (talonació)", description: "Talonar els peus establerts amb l’entrenador/a amb un tros de cinta o fita." },
       { title: "Cursa de prova sense batuda", description: "Córrer a una velocitat pròxima a la de competició, passant per sobre de la taula de batuda sense saltar i sense allargar les passes finals. Enregistrar un vídeo o rebre informació d’una altra persona per comprovar si s’ha trepitjat la taula, si s’ha quedat lluny o si l’ajust ha estat correcte." },
