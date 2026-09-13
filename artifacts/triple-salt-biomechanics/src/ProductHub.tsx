@@ -55,7 +55,7 @@ type AssessmentOption = { label: string; band: string; value: number; tone: "hig
 type AssessmentGroup = { key: string; title: string; subtitle: string; question: string; hint?: string; options: AssessmentOption[] };
 type WarmupItem = { title?: string; description: string; note?: string };
 type WarmupSubsection = { title: string; intro?: string; items: WarmupItem[] };
-type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; posterSrc?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
+type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; posterSrc?: string; imageSrc?: string; imageAlt?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
 
 type Props = { analysisWorkspace: ReactNode };
 
@@ -211,6 +211,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "6",
     title: "RECORDATORIS",
+    imageSrc: `${import.meta.env.BASE_URL}images/recordatoris-pista.jpeg`,
+    imageAlt: "Vista de la pista d’atletisme des de la graderia",
     items: [
       { description: "L’escalfament és una preparació, no una reivindicació. Cal reservar energia pels intents oficials." },
       { description: "El triple no és una acció de força parada, sinó una seqüència de moviments en velocitat. Has de fer exercicis en constant moviment perquè el múscul no s’acostumi a una contracció molt lenta." },
@@ -293,7 +295,9 @@ function WarmupSectionCard({ section }: { section: WarmupSection }) {
           )}
         </div>
         <div className="warmup-section-video">
-          {section.videoSrc ? (
+          {section.imageSrc ? (
+            <img src={section.imageSrc} alt={section.imageAlt ?? ""} className="warmup-section-image" />
+          ) : section.videoSrc ? (
             <video src={section.videoSrc} poster={section.posterSrc} controls preload="metadata" playsInline className="exercise-video" />
           ) : (
             <div className="exercise-video-pending">
