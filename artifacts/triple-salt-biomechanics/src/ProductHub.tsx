@@ -23,6 +23,7 @@ import {
   Trophy,
   UserPlus,
   Users,
+  Video,
   X,
 } from "lucide-react";
 
@@ -52,9 +53,9 @@ type TrackEvaluation = {
 };
 type AssessmentOption = { label: string; band: string; value: number; tone: "high" | "mid" | "low" };
 type AssessmentGroup = { key: string; title: string; subtitle: string; question: string; hint?: string; options: AssessmentOption[] };
-type WarmupItem = { letter?: string; title: string; description: string; note?: string };
+type WarmupItem = { title?: string; description: string; note?: string };
 type WarmupSubsection = { title: string; intro?: string; items: WarmupItem[] };
-type WarmupSection = { number: string; title: string; intro?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
+type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
 
 type Props = { analysisWorkspace: ReactNode };
 
@@ -108,12 +109,11 @@ const assessmentGroups: AssessmentGroup[] = [
 const warmupSections: WarmupSection[] = [
   {
     number: "1",
-    title: "Escalfament general",
+    title: "ESCALFAMENT GENERAL",
     subsections: [
       {
         title: "1.1 Cursa contínua",
         items: [{
-          letter: "A",
           title: "Cursa contínua",
           description: "Trotar durant uns 5–10 minuts a un ritme suau i regeneratiu per activar el sistema cardiovascular i augmentar la temperatura corporal de manera progressiva.",
           note: "5–10 minuts · Ritme suau",
@@ -123,95 +123,96 @@ const warmupSections: WarmupSection[] = [
         title: "1.2 Tècnica de cursa",
         intro: "Realitzar els exercicis en una recta d’aproximadament 25 metres.",
         items: [
-          { letter: "B", title: "Caminar de puntetes", description: "Avançar caminant sobre la part davantera dels peus, mantenint els talons separats del terra. El tronc es manté dret i el moviment ha de ser controlat." },
-          { letter: "C", title: "Caminar de talons", description: "Avançar recolzant principalment els talons, amb les puntes dels peus elevades i dirigides cap amunt. Cal evitar inclinar excessivament el tronc enrere." },
-          { letter: "D", title: "Skipping endavant", description: "Desplaçar-se endavant elevant alternativament els genolls fins a una alçada aproximada de la cintura. El tronc es manté dret, la mirada cap endavant i els braços acompanyen el moviment." },
-          { letter: "E", title: "Talons al gluti", description: "Córrer suaument portant els talons cap als glutis de manera alterna. El tronc es manté dret i els braços segueixen el moviment natural de la cursa." },
-          { letter: "F", title: "Desplaçaments laterals", description: "Amb els peus separats i els genolls lleugerament flexionats, desplaçar-se ràpidament cap a un costat, impulsant-se amb la cama contrària. Les cames no s’han de creuar." },
-          { letter: "G", title: "Desplaçaments laterals amb encreuament de cames", description: "Desplaçar-se lateralment encreuant una cama per davant o per darrere de l’altra de manera alterna. El tronc es manté estable i els passos han de ser coordinats." },
-          { letter: "H", title: "Cames rectes", description: "Desplaçar-se endavant mantenint les cames gairebé esteses i evitant flexionar els genolls. Els peus han de contactar activament amb el terra i els braços han d’acompanyar el moviment." },
-          { letter: "I", title: "Una cama recta i l’altra en skipping", description: "Avançar combinant dos gestos: amb una cama es realitza el moviment de cames rectes i amb l’altra es fa skipping. Després s’intercanvien les funcions de les cames." },
-          { letter: "J", title: "Heidi", description: "Impulsar-se verticalment amb una cama mentre l’altra s’eleva flexionant el maluc i el genoll. El braç contrari a la cama elevada acompanya el moviment. L’aterratge ha de ser estable abans de repetir amb l’altra cama." },
-          { letter: "K", title: "Segons de triple", description: "Realitzar una seqüència de salts alternats cap endavant, canviant el peu de suport i mantenint un ritme fluid. Els contactes han de ser actius i ràpids, evitant aterrar de taló. Els braços ajuden a mantenir el ritme i l’avançament.", note: "Recta d’aproximadament 50 metres" },
-          { letter: "L", title: "Progressions", description: "Fer un sprint començant a poc a poc i acabant amb el teu màxim.", note: "2 × 50 metres" },
+          { title: "Caminar de puntetes", description: "Avançar caminant sobre la part davantera dels peus, mantenint els talons separats del terra. El tronc es manté dret i el moviment ha de ser controlat." },
+          { title: "Caminar de talons", description: "Avançar recolzant principalment els talons, amb les puntes dels peus elevades i dirigides cap amunt. Cal evitar inclinar excessivament el tronc enrere." },
+          { title: "Skipping endavant", description: "Desplaçar-se endavant elevant alternativament els genolls fins a una alçada aproximada de la cintura. El tronc es manté dret, la mirada cap endavant i els braços acompanyen el moviment." },
+          { title: "Talons al gluti", description: "Córrer suaument portant els talons cap als glutis de manera alterna. El tronc es manté dret i els braços segueixen el moviment natural de la cursa." },
+          { title: "Desplaçaments laterals", description: "Amb els peus separats i els genolls lleugerament flexionats, desplaçar-se ràpidament cap a un costat, impulsant-se amb la cama contrària. Les cames no s’han de creuar." },
+          { title: "Desplaçaments laterals amb encreuament de cames", description: "Desplaçar-se lateralment encreuant una cama per davant o per darrere de l’altra de manera alterna. El tronc es manté estable i els passos han de ser coordinats." },
+          { title: "Cames rectes", description: "Desplaçar-se endavant mantenint les cames gairebé esteses i evitant flexionar els genolls. Els peus han de contactar activament amb el terra i els braços han d’acompanyar el moviment." },
+          { title: "Una cama recta i l’altra en skipping", description: "Avançar combinant dos gestos: amb una cama es realitza el moviment de cames rectes i amb l’altra es fa skipping. Després s’intercanvien les funcions de les cames." },
+          { title: "Heidi", description: "Impulsar-se verticalment amb una cama mentre l’altra s’eleva flexionant el maluc i el genoll. El braç contrari a la cama elevada acompanya el moviment. L’aterratge ha de ser estable abans de repetir amb l’altra cama." },
+          { title: "Segons de triple", description: "Realitzar una seqüència de salts alternats cap endavant, canviant el peu de suport i mantenint un ritme fluid. Els contactes han de ser actius i ràpids, evitant aterrar de taló. Els braços ajuden a mantenir el ritme i l’avançament.", note: "Recta d’aproximadament 50 metres" },
+          { title: "Progressions", description: "Fer un sprint començant a poc a poc i acabant amb el teu màxim.", note: "2 × 50 metres" },
         ],
       },
       {
         title: "1.3 Mobilitat articular",
         items: [
-          { letter: "M", title: "Rotacions de braços", description: "Realitzar cercles amplis amb els braços, primer cap endavant i després cap enrere.", note: "10 rotacions en cada direcció" },
-          { letter: "N", title: "Balancejos laterals de cama", description: "Dret davant d’una superfície estable, agafar-s’hi amb les dues mans i balancejar una cama cap a un costat i cap a l’altre com un pèndol.", note: "10 balancejos per cama" },
-          { letter: "O", title: "Mobilitat de genolls", description: "Amb els peus junts i els genolls una mica flexionats, realitzar petites rotacions cap a la dreta i després cap a l’esquerra.", note: "15 segons en cada direcció" },
-          { letter: "P", title: "Mobilitat de turmells", description: "Mantenir un peu pla a terra i, amb l’altre, flexionar la punta i realitzar rotacions de turmell en les dues direccions.", note: "30 segons per turmell · 15 segons en cada sentit" },
+          { title: "Rotacions de braços", description: "Realitzar cercles amplis amb els braços, primer cap endavant i després cap enrere.", note: "10 rotacions en cada direcció" },
+          { title: "Balancejos laterals de cama", description: "Dret davant d’una superfície estable, agafar-s’hi amb les dues mans i balancejar una cama cap a un costat i cap a l’altre com un pèndol.", note: "10 balancejos per cama" },
+          { title: "Mobilitat de genolls", description: "Amb els peus junts i els genolls una mica flexionats, realitzar petites rotacions cap a la dreta i després cap a l’esquerra.", note: "15 segons en cada direcció" },
+          { title: "Mobilitat de turmells", description: "Mantenir un peu pla a terra i, amb l’altre, flexionar la punta i realitzar rotacions de turmell en les dues direccions.", note: "30 segons per turmell · 15 segons en cada sentit" },
         ],
       },
       {
         title: "1.4 Estiraments actius",
         intro: "Realitzar els estiraments en una recta d’aproximadament 25 metres.",
         items: [
-          { letter: "Q", title: "Estocades caminant amb torsió", description: "Fer un pas llarg endavant, flexionar els genolls i baixar el maluc de manera controlada. Girar suaument el tronc cap al costat de la cama davantera i continuar avançant." },
-          { letter: "R", title: "Llançaments de cama frontals", description: "Avançar caminant i elevar una cama cap endavant, mantenint-la gairebé estesa. L’alçada s’ha d’adaptar a la mobilitat individual i no s’ha de forçar." },
+          { title: "Estocades caminant amb torsió", description: "Fer un pas llarg endavant, flexionar els genolls i baixar el maluc de manera controlada. Girar suaument el tronc cap al costat de la cama davantera i continuar avançant." },
+          { title: "Llançaments de cama frontals", description: "Avançar caminant i elevar una cama cap endavant, mantenint-la gairebé estesa. L’alçada s’ha d’adaptar a la mobilitat individual i no s’ha de forçar." },
         ],
       },
     ],
   },
   {
     number: "2",
-    title: "Escalfament específic",
+    title: "ESCALFAMENT ESPECÍFIC",
     items: [
-      { letter: "S", title: "Salts horitzontals", description: "Realitzar 5 salts, flexionant moderadament els genolls i els malucs, impulsant-se cap endavant amb l’ajuda dels braços i aterrant al fossat amb els dos peus. L’aterratge ha de ser controlat.", note: "5 salts" },
-      { letter: "T", title: "Salts horitzontals a una cama", description: "Realitzar un salt horitzontal impulsant-se amb una sola cama i aterrar amb els dos peus al fossat. Alternar les cames i mantenir el tronc estable.", note: "5 per cama" },
-      { letter: "U", title: "Multisalts a peu junts", description: "Impulsos endavant a peu junts, impulsant-se amb els turmells i evitant doblegar els genolls.", note: "10 impulsos" },
-      { letter: "V", title: "Multisalts a una cama", description: "Impulsos endavant a una cama, impulsant-se amb els turmells i evitant doblegar els genolls.", note: "10 impulsos" },
-      { letter: "W", title: "Batudes curtes alternades", description: "Fer batudes curtes alternant les cames en progressió cap endavant.", note: "10 batudes" },
-      { letter: "X", title: "Transferències des de la taula de batuda", description: "Sortir amb els peus junts, realitzar quatre batudes coordinades i finalitzar amb una caiguda al fossat.", note: "Des de 9 metres · 3 repeticions" },
-      { letter: "Y", title: "Triple salt amb cursa reduïda", description: "Realitzar una cursa curta però controlada i acabar fent els tres salts de triple salt.", note: "6 passes" },
-      { letter: "Z", title: "Acceleracions", description: "Realitzar rectes a intensitat màxima.", note: "1–2 rectes de 50 metres" },
+      { title: "Salts horitzontals", description: "Realitzar 5 salts, flexionant moderadament els genolls i els malucs, impulsant-se cap endavant amb l’ajuda dels braços i aterrant al fossat amb els dos peus. L’aterratge ha de ser controlat.", note: "5 salts" },
+      { title: "Salts horitzontals a una cama (5 per cama)", description: "Realitzar un salt horitzontal impulsant-se amb una sola cama i aterrar amb els dos peus al fossat. Alternar les cames i mantenir el tronc estable.", note: "5 per cama" },
+      { title: "10 impulsos endavant a peu junts", description: "Multisalts en moviment: impulsar-se amb els turmells i evitar doblegar els genolls.", note: "10 impulsos" },
+      { title: "10 impulsos endavant a una cama", description: "Multisalts en moviment: impulsar-se amb els turmells i evitar doblegar els genolls.", note: "10 impulsos" },
+      { title: "10 batudes curtes alternades en progressió cap endavant", description: "Multisalts en moviment amb batudes curtes alternant les cames i avançant de manera progressiva.", note: "10 batudes" },
+      { title: "Transferències des de la taula de batuda (9 metres)", description: "Sortir amb els peus junts, realitzar quatre batudes coordinades i finalitzar amb una caiguda al fossat.", note: "3 repeticions" },
+      { title: "Triple salt amb cursa reduïda (6 passes)", description: "Realitzar una cursa curta però controlada i acabar-la fent els tres salts de triple salt.", note: "6 passes" },
+      { title: "Acceleracions", description: "Realitzar 1–2 rectes de 50 metres, a intensitat màxima.", note: "1–2 rectes de 50 metres" },
     ],
   },
   {
     number: "3",
-    title: "Ajust de talonació i competició",
+    title: "AJUST DE TALONACIÓ I COMPETICIÓ",
     items: [
-      { letter: "AA", title: "Mesura de la cursa (talonació)", description: "Talonar els peus establerts amb l’entrenador/a amb un tros de cinta o fita." },
-      { letter: "AB", title: "Cursa de prova sense batuda", description: "Córrer a una velocitat pròxima a la de competició, passant per sobre de la taula de batuda sense saltar i sense allargar les passes finals. Enregistrar un vídeo o rebre informació d’una altra persona per comprovar si s’ha trepitjat la taula, si s’ha quedat lluny o si l’ajust ha estat correcte." },
-      { letter: "AC", title: "Assaig de seqüència completa", description: "Fer curses completes amb execució del triple salt, mantenint el control en els darrers metres sense modificar la mida del pas i mantenint la mirada a l’horitzó.", note: "2 curses completes" },
+      { title: "Mesura de la cursa (talonació)", description: "Talonar els peus establerts amb l’entrenador/a amb un tros de cinta o fita." },
+      { title: "Cursa de prova sense batuda", description: "Córrer a una velocitat pròxima a la de competició, passant per sobre de la taula de batuda sense saltar i sense allargar les passes finals. Enregistrar un vídeo o rebre informació d’una altra persona per comprovar si s’ha trepitjat la taula, si s’ha quedat lluny o si l’ajust ha estat correcte." },
+      { title: "Assaig de seqüència completa", description: "Fer curses completes amb execució del triple salt, mantenint el control en els darrers metres sense modificar la mida del pas i mantenint la mirada a l’horitzó.", note: "2 curses completes" },
     ],
   },
   {
     number: "4",
-    title: "Què fer entre salts?",
+    title: "QUÈ FER ENTRE SALTS?",
     items: [
-      { letter: "AD", title: "Hidratació", description: "Fer petits glops d’aigua entre salts. En cas de calor, buscar una zona d’ombra, utilitzar crema solar i portar gorra si cal. També és important refrescar-se regularment." },
-      { letter: "AE", title: "Reactivació", description: "Mentre s’espera el torn, evitar quedar-se completament en repòs durant massa temps. Es poden fer exercicis suaus com multisalts, skipping, progressions o batudes.", note: "Aproximadament 5 persones abans de saltar" },
-      { letter: "AF", title: "Enfocament mental", description: "Visualitzar la tècnica, recordar els objectius de la competició i mantenir la concentració en allò que es vol executar." },
+      { title: "Hidratació", description: "Fer petits glops d’aigua entre salts. En cas de calor, buscar una zona d’ombra, utilitzar crema solar i portar gorra si cal. També és important refrescar-se regularment." },
+      { title: "Reactivació (5 persones abans de saltar)", description: "Mentre s’espera el torn, evitar quedar-se completament en repòs durant massa temps. Aproximadament 5 persones abans de saltar, es poden realitzar exercicis suaus de reactivació, com ara multisalts, skipping, progressions o batudes.", note: "Aproximadament 5 persones abans de saltar" },
+      { title: "Enfocament mental", description: "Visualitzar la tècnica, recordar els objectius de la competició i mantenir la concentració en allò que es vol executar." },
     ],
   },
   {
     number: "5",
-    title: "Final de la competició · Tornada a la calma",
+    title: "FINAL DE LA COMPETICIÓ - TORNADA A LA CALMA",
     items: [
-      { letter: "AG", title: "Foam Roller", description: "Utilitzar el rodet lentament sobre quàdriceps, isquiotibials, glutis i bessons." },
-      { letter: "AH", title: "Estirament de torsió espinal", description: "Asseure’s amb les cames esteses, flexionar una cama i passar-la per sobre de l’altra. Girar suaument el tronc cap al costat de la cama flexionada." },
-      { letter: "AI", title: "Isquiotibials", description: "Estirat a terra amb una cama estirada cap endavant i l’altra flexionada. Inclinar el tronc lleugerament cap a la cama estirada fins a notar un estirament suau." },
-      { letter: "AJ", title: "Quàdriceps", description: "Dret, agafar el peu i portar-lo cap al gluti amb la mà, mantenint el cos recte i els genolls pròxims." },
-      { letter: "AK", title: "Pilota de tenis", description: "Dret, col·locar una pilota de tenis sota la planta del peu i realitzar petits moviments circulars, des del taló fins a la zona dels dits." },
+      { title: "Foam Roller", description: "Utilitzar el rodet lentament sobre quàdriceps, isquiotibials, glutis i bessons." },
+      { title: "Estirament de torsió espinal", description: "Asseure’s amb les cames esteses, flexionar una cama i passar-la per sobre de l’altra. Girar suaument el tronc cap al costat de la cama flexionada." },
+      { title: "Isquiotibials", description: "Estirat a terra amb una cama estirada cap endavant i l’altra flexionada. Inclinar el tronc lleugerament cap a la cama estirada fins a notar un estirament suau." },
+      { title: "Quàdriceps", description: "Dret, agafar el peu i portar-lo cap al gluti amb la mà, mantenint el cos recte i els genolls pròxims." },
+      { title: "Pilota de tenis", description: "Dret, col·locar una pilota de tenis sota la planta del peu i realitzar petits moviments circulars, des del taló fins a la zona dels dits." },
     ],
   },
   {
     number: "6",
-    title: "Recordatoris",
+    title: "RECORDATORIS",
     items: [
-      { title: "Preparar, no fatigar", description: "L’escalfament és una preparació, no una reivindicació. Cal reservar energia pels intents oficials." },
-      { title: "Mantenir el moviment", description: "El triple és una seqüència de moviments en velocitat. Fes exercicis en constant moviment perquè el múscul no s’acostumi a una contracció molt lenta." },
-      { title: "Prioritzar la velocitat controlable", description: "La velocitat és fonamental en el triple salt. Busca una velocitat alta, però sense perdre el control tècnic." },
-      { title: "Seguir una seqüència lògica", description: "L’escalfament ha de ser coherent i lògic." },
-      { title: "Recordar les tres oportunitats", description: "“En un salt de triple hi ha 3 salts per poder fallar en alguna cosa i un petit fallo que puguis fer es multiplica per 3.” — Naiara Estanga." },
-      { title: "Marcar la cursa", description: "Marca correctament el punt d’inici de la cursa amb una cinta, una fita o una marca visible." },
-      { title: "Cuidar la tècnica", description: "La tècnica de cursa és imprescindible. El salt no s’ha de preveure: la cursa s’ha de continuar de manera natural fins a la batuda." },
-      { title: "Mirar cap endavant", description: "Corre mirant cap endavant i evita mirar el terra durant els darrers passos." },
-      { title: "Escalfar prou", description: "Escalfa prou, però sense excedir-te. Un bon escalfament ha de preparar-te, no fatigar-te." },
-      { title: "Entrar amb un objectiu", description: "Estableix una motivació, un objectiu o un propòsit concret que t’ajudi a concentrar-te i confiar en les teves capacitats." },
+      { description: "L’escalfament és una preparació, no una reivindicació. Cal reservar energia pels intents oficials." },
+      { description: "El triple no és una acció de força parada, sinó una seqüència de moviments en velocitat. Has de fer exercicis en constant moviment perquè el múscul no s’acostumi a una contracció molt lenta." },
+      { description: "La velocitat és fonamental en el triple salt. Si no s’arriba a una velocitat elevada i controlable durant la cursa, serà més difícil aconseguir un bon salt. Cal buscar una velocitat alta, però sense perdre el control tècnic." },
+      { description: "L’escalfament ha de ser coherent i lògic." },
+      { description: "Recorda: “En un salt de triple hi ha 3 salts per poder fallar en alguna cosa i un petit fallo que puguis fer es multiplica per 3.” — Naiara Estanga." },
+      { description: "Marca correctament el punt d’inici de la cursa amb una cinta, una fita o una marca visible." },
+      { description: "La tècnica de cursa és imprescindible." },
+      { description: "El salt no s’ha de preveure: la cursa s’ha de continuar de manera natural fins a la batuda." },
+      { description: "Corre mirant cap endavant i evita mirar el terra durant els darrers passos." },
+      { description: "Escalfa prou, però sense excedir-te. Un bon escalfament ha de preparar-te, no fatigar-te." },
+      { description: "Estableix una motivació, un objectiu o un propòsit concret que t’ajudi a concentrar-te i confiar en les teves capacitats." },
     ],
   },
 ];
@@ -235,31 +236,22 @@ function BackButton({ onClick, label = "Enrere" }: { onClick: () => void; label?
   return <button type="button" className="hub-back-button" onClick={onClick}><ArrowLeft size={15} /> {label}</button>;
 }
 
-function WarmupItemCard({ item }: { item: WarmupItem }) {
-  const hasVideoSlot = Boolean(item.letter);
+function WarmupItemRow({ item }: { item: WarmupItem }) {
   return (
-    <article className={`warmup-item-card ${hasVideoSlot ? "has-video-slot" : "warmup-reminder"}`}>
-      <div className="warmup-item-copy">
-        <div className="warmup-item-heading">
-          {item.letter && <span className="warmup-letter">{item.letter}</span>}
-          <h3>{item.title}</h3>
-        </div>
+    <li className="warmup-exercise-row">
+      <span className="warmup-exercise-marker" aria-hidden="true" />
+      <div>
+        {item.title && <h4>{item.title}</h4>}
         <p>{item.description}</p>
-        {item.note && <span className="warmup-note">{item.note}</span>}
+        {item.note && <span className="exercise-note">{item.note}</span>}
       </div>
-      {hasVideoSlot && (
-        <div className="warmup-video-slot" aria-label={`Vídeo ${item.letter} pendent`}>
-          <span className="warmup-video-label">Vídeo {item.letter}</span>
-          <span>Preparat per afegir</span>
-        </div>
-      )}
-    </article>
+    </li>
   );
 }
 
 function WarmupSectionCard({ section }: { section: WarmupSection }) {
   return (
-    <section className={`warmup-section ${section.number === "6" ? "warmup-reminders-section" : ""}`}>
+    <article className="warmup-section-card">
       <div className="warmup-section-heading">
         <span className="warmup-section-number">{section.number.padStart(2, "0")}</span>
         <div>
@@ -268,26 +260,43 @@ function WarmupSectionCard({ section }: { section: WarmupSection }) {
           {section.intro && <p>{section.intro}</p>}
         </div>
       </div>
-      {section.subsections ? (
-        <div className="warmup-subsections">
-          {section.subsections.map((subsection) => (
-            <div className="warmup-subsection" key={subsection.title}>
-              <div className="warmup-subsection-heading">
-                <h3>{subsection.title}</h3>
-                {subsection.intro && <p>{subsection.intro}</p>}
-              </div>
-              <div className="warmup-item-grid">
-                {subsection.items.map((item) => <WarmupItemCard item={item} key={item.letter ?? item.title} />)}
-              </div>
+      <div className="warmup-card-layout">
+        <div className="warmup-card-information">
+          {section.subsections ? (
+            <div className="warmup-subsections">
+              {section.subsections.map((subsection) => (
+                <section className="warmup-subsection" key={subsection.title}>
+                  <div className="warmup-subsection-heading">
+                    <h3>{subsection.title}</h3>
+                    {subsection.intro && <p>{subsection.intro}</p>}
+                  </div>
+                  <ul className="warmup-exercise-list">
+                    {subsection.items.map((item, index) => <WarmupItemRow item={item} key={`${subsection.title}-${index}`} />)}
+                  </ul>
+                </section>
+              ))}
             </div>
-          ))}
+          ) : (
+            <ul className="warmup-exercise-list">
+              {section.items?.map((item, index) => <WarmupItemRow item={item} key={`${section.number}-${index}`} />)}
+            </ul>
+          )}
         </div>
-      ) : (
-        <div className="warmup-item-grid">
-          {section.items?.map((item) => <WarmupItemCard item={item} key={item.letter ?? item.title} />)}
+        <div className="warmup-section-video">
+          {section.videoSrc ? (
+            <video src={section.videoSrc} controls preload="metadata" playsInline className="exercise-video" />
+          ) : (
+            <div className="exercise-video-pending">
+              <div className="pending-icon-wrapper">
+                <Video size={24} />
+              </div>
+              <strong>Vídeo de {section.title.toLocaleLowerCase("ca-ES")}</strong>
+              <span>Pendent d’afegir</span>
+            </div>
+          )}
         </div>
-      )}
-    </section>
+      </div>
+    </article>
   );
 }
 
@@ -682,9 +691,8 @@ function ProductHub({ analysisWorkspace }: Props) {
           <div>
             <span className="eyebrow">Guia de preparació</span>
             <h1>Escalfament</h1>
-            <p>El protocol complet de triple salt, dividit per apartats. Cada lletra identifica el vídeo que hi afegirem.</p>
+            <p>El protocol complet de triple salt, agrupat en els sis apartats principals del document.</p>
           </div>
-          <div className="warmup-video-legend"><span className="warmup-legend-dot" /> Vídeos pendents d’afegir</div>
         </div>
         <div className="warmup-sections">
           {warmupSections.map((section) => <WarmupSectionCard section={section} key={section.number} />)}
