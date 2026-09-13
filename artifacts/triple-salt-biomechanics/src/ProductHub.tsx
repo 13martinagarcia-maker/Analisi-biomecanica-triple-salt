@@ -186,7 +186,9 @@ const warmupSections: WarmupSection[] = [
   },
   {
     number: "4",
-    title: "QUÈ FER ENTRE SALTS?",
+    title: "QUÈ FER ENTRE SALTS DURANT LA COMPETICIÓ?",
+    videoSrc: `${import.meta.env.BASE_URL}videos/entre-salts-competicio.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/entre-salts-competicio-poster.jpg`,
     items: [
       { title: "Hidratació", description: "Fer petits glops d’aigua entre salts. En cas de calor, buscar una zona d’ombra, utilitzar crema solar i portar gorra si cal. També és important refrescar-se regularment." },
       { title: "Reactivació (5 persones abans de saltar)", description: "Mentre s’espera el torn, evitar quedar-se completament en repòs durant massa temps. Aproximadament 5 persones abans de saltar, es poden realitzar exercicis suaus de reactivació, com ara multisalts, skipping, progressions o batudes.", note: "Aproximadament 5 persones abans de saltar" },
