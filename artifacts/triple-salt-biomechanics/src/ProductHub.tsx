@@ -55,7 +55,7 @@ type AssessmentOption = { label: string; band: string; value: number; tone: "hig
 type AssessmentGroup = { key: string; title: string; subtitle: string; question: string; hint?: string; options: AssessmentOption[] };
 type WarmupItem = { title?: string; description: string; note?: string };
 type WarmupSubsection = { title: string; intro?: string; items: WarmupItem[] };
-type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
+type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; posterSrc?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
 
 type Props = { analysisWorkspace: ReactNode };
 
@@ -110,6 +110,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "1",
     title: "ESCALFAMENT GENERAL",
+    videoSrc: `${import.meta.env.BASE_URL}videos/escalfament-general.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/escalfament-general-poster.jpg`,
     subsections: [
       {
         title: "1.1 Cursa contínua",
@@ -284,7 +286,7 @@ function WarmupSectionCard({ section }: { section: WarmupSection }) {
         </div>
         <div className="warmup-section-video">
           {section.videoSrc ? (
-            <video src={section.videoSrc} controls preload="metadata" playsInline className="exercise-video" />
+            <video src={section.videoSrc} poster={section.posterSrc} controls preload="metadata" playsInline className="exercise-video" />
           ) : (
             <div className="exercise-video-pending">
               <div className="pending-icon-wrapper">
