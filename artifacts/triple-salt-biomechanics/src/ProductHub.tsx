@@ -284,8 +284,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "4",
     title: "QUÈ FER ENTRE SALTS DURANT LA COMPETICIÓ?",
-    videoSrc: `${import.meta.env.BASE_URL}videos/entre-salts-competicio.mp4`,
-    posterSrc: `${import.meta.env.BASE_URL}videos/entre-salts-competicio-poster.jpg`,
+    videoSrc: `${import.meta.env.BASE_URL}videos/tornada-calma-actualitzat.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/tornada-calma-actualitzat-poster.jpg`,
     items: [
       { title: "Hidratació", description: "Fer petits glops d’aigua entre salts. En cas de calor, buscar una zona d’ombra, utilitzar crema solar i portar gorra si cal. També és important refrescar-se regularment." },
       { title: "Reactivació (5 persones abans de saltar)", description: "Mentre s’espera el torn, evitar quedar-se completament en repòs durant massa temps. Aproximadament 5 persones abans de saltar, es poden realitzar exercicis suaus de reactivació, com ara multisalts, skipping, progressions o batudes.", note: "Aproximadament 5 persones abans de saltar" },
@@ -295,8 +295,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "5",
     title: "FINAL DE LA COMPETICIÓ - TORNADA A LA CALMA",
-    videoSrc: `${import.meta.env.BASE_URL}videos/tornada-calma-actualitzat.mp4`,
-    posterSrc: `${import.meta.env.BASE_URL}videos/tornada-calma-actualitzat-poster.jpg`,
+    videoSrc: `${import.meta.env.BASE_URL}videos/tornada-calma.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/tornada-calma-poster.jpg`,
     items: [
       { title: "Foam Roller", description: "Utilitzar el rodet lentament sobre quàdriceps, isquiotibials, glutis i bessons." },
       { title: "Estirament de torsió espinal", description: "Asseure’s amb les cames esteses, flexionar una cama i passar-la per sobre de l’altra. Girar suaument el tronc cap al costat de la cama flexionada." },
