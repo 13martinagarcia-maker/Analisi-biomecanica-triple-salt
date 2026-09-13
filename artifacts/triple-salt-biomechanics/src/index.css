@@ -2708,7 +2708,7 @@ button {
 .progress-legend {
   display: flex;
   align-items: center;
-  gap: .55rem;
+  gap: .45rem;
   color: hsl(var(--muted-foreground));
   font-size: .75rem;
   white-space: nowrap;
@@ -2717,8 +2717,24 @@ button {
 .progress-legend > span {
   width: .8rem;
   height: .8rem;
+  margin-left: .4rem;
   border-radius: .2rem;
-  background: hsl(var(--primary));
+}
+
+.progress-legend > span:first-child {
+  margin-left: 0;
+}
+
+.progress-legend > span.achieved {
+  background: hsl(207 78% 50%);
+}
+
+.progress-legend > span.not-achieved {
+  background: hsl(28 90% 52%);
+}
+
+.progress-legend > span.pending {
+  background: hsl(215 14% 58%);
 }
 
 .competition-chart-scroll {
@@ -3906,6 +3922,11 @@ button {
   .competition-progress-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .progress-legend {
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
   .competition-progress-table {

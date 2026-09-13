@@ -26,7 +26,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type Page = "inici" | "historial" | "competició" | "detall-competició" | "pista" | "casa" | "tècnica" | "escalfament";
 type User = { id: string; firstName: string; lastName: string; email: string };
@@ -705,7 +705,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   }, [athleteCompetitions]);
   const competitionProgressData = useMemo<CompetitionProgressPoint[]>(() => (
     [...athleteCompetitions]
-      .sort((a, b) => a.eventDate.localeCompare(b.eventDate))
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate) || a.location.localeCompare(b.location))
       .map((competition) => {
         const bestMark = getCompetitionBest(competition);
         const competitionDate = new Date(`${competition.eventDate}T12:00:00`);
@@ -787,12 +787,16 @@ function ProductHub({ analysisWorkspace }: Props) {
             <section className="competition-progress-card">
               <div className="competition-progress-heading">
                 <div><span className="eyebrow">Evolució de marques</span><h2>Progrés per competició</h2><p>Millor marca vàlida aconseguida entre els salts registrats a cada competició.</p></div>
-                <div className="progress-legend"><span /><strong>Millor marca (m)</strong></div>
+                <div className="progress-legend">
+                  <span className="achieved" /><strong>Objectiu assolit</strong>
+                  <span className="not-achieved" /><strong>Objectiu no assolit</strong>
+                  <span className="pending" /><strong>Pendent</strong>
+                </div>
               </div>
               <div className="competition-chart-scroll">
-                <div style={{ width: `${Math.max(720, competitionProgressData.length * 165)}px` }}>
+                <div style={{ width: `${Math.max(420, competitionProgressData.length * 105)}px` }}>
                   <ResponsiveContainer width="100%" height={340}>
-                    <BarChart data={competitionProgressData} margin={{ top: 32, right: 24, left: 0, bottom: 58 }} accessibilityLayer>
+                    <BarChart data={competitionProgressData} margin={{ top: 32, right: 18, left: 0, bottom: 58 }} barCategoryGap="18%" accessibilityLayer>
                       <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="4 4" />
                       <XAxis dataKey="chartLabel" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} dy={12} angle={-12} textAnchor="end" interval={0} height={62} />
                       <YAxis axisLine={false} tickLine={false} width={48} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} tickFormatter={(value) => `${String(value).replace(".", ",")} m`} />
@@ -804,7 +808,13 @@ function ProductHub({ analysisWorkspace }: Props) {
                           return <div className="competition-chart-tooltip"><strong>{point.location}</strong><span>{point.fullDate}</span><b>{point.bestMark === null ? "Sense marca vàlida" : `${point.bestMark.toFixed(2).replace(".", ",")} m`}</b><small>{point.jumpsDone} salt{point.jumpsDone === 1 ? "" : "s"} registrat{point.jumpsDone === 1 ? "" : "s"}</small></div>;
                         }}
                       />
-                      <Bar dataKey="bestMark" fill="hsl(var(--primary))" maxBarSize={62} radius={[8, 8, 2, 2]}>
+                      <Bar dataKey="bestMark" maxBarSize={62} radius={[8, 8, 2, 2]}>
+                        {competitionProgressData.map((point) => (
+                          <Cell
+                            key={point.id}
+                            fill={point.achieved === true ? "hsl(207 78% 50%)" : point.achieved === false ? "hsl(28 90% 52%)" : "hsl(215 14% 58%)"}
+                          />
+                        ))}
                         <LabelList dataKey="bestLabel" position="top" fill="hsl(var(--foreground))" fontSize={12} fontWeight={700} />
                       </Bar>
                     </BarChart>
