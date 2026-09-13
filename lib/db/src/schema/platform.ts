@@ -2,6 +2,7 @@ import {
   boolean,
   date,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -77,5 +78,7 @@ export const trackEvaluationsTable = pgTable("ts_track_evaluations", {
   approachAnswer: text("approach_answer").notNull(),
   rhythmAnswer: text("rhythm_answer").notNull(),
   landingAnswer: text("landing_answer").notNull(),
+  finalScore: numeric("final_score", { precision: 4, scale: 2 }),
+  assessmentData: jsonb("assessment_data"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

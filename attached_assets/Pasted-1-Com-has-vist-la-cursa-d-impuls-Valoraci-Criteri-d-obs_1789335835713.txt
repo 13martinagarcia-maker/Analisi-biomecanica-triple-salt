@@ -1,0 +1,127 @@
+1. Com has vist la cursa d’impuls?
+Valoració
+Criteri d’observació
+Excel·lent
+Ha realitzat una cursa progressiva, ràpida i controlada. Ha mantingut un ritme constant, sense frenar abans de la taula, i ha combinat correctament l’amplitud i la freqüència de la gambada. La mirada s’ha mantingut cap a l’horitzó, els genolls s’han projectat amb energia i el peu ha entrat en contacte amb el terra de manera activa (peu “armat”).
+Notable
+Ha fet una cursa ràpida i bastant regular, tot i presentar algun petit error de ritme, postura o coordinació. No ha perdut gaire velocitat i ha arribat a la taula amb una bona preparació general.
+Satisfactori
+Ha completat la cursa, però amb una velocitat o una regularitat millorables. Ha pogut frenar lleugerament, mirar a terra o modificar la llargada de les passes abans de la batuda. Tot i això, ha aconseguit arribar a la taula i iniciar el salt.
+Suspès
+Ha fet una cursa poc controlada, lenta o molt irregular. Ha frenat clarament abans de la taula, ha mirat constantment a terra, ha perdut el ritme o ha corregut amb una postura inadequada. Aquests errors han perjudicat la batuda i la continuïtat del triple salt.
+
+
+2. Com ha entrat a la taula de batuda?
+Valoració
+Criteri d’observació
+Excel·lent
+Ha arribat a la taula amb precisió, sense frenar ni modificar el ritme dels últims passos. Ha entrat amb el peu ben preparat, el cos alineat i els malucs avançats. La batuda ha estat ràpida, activa i dirigida principalment cap endavant.
+Notable
+Ha entrat correctament a la taula i ha mantingut gairebé tota la velocitat. Pot haver comès algun petit error en la col·locació del peu, en la postura o en la coordinació, però sense afectar gaire el resultat de la batuda.
+Satisfactori
+Ha arribat a la taula de manera acceptable, però ha frenat lleugerament, ha allargat o escurçat l’últim pas o ha entrat amb una postura poc estable. La batuda ha estat vàlida, però ha provocat una certa pèrdua de velocitat.
+Suspès
+Ha entrat malament a la taula, ha frenat molt, ha trepitjat fora de la zona adequada o ha modificat clarament els últims passos. La batuda ha estat massa vertical, desequilibrada o poc coordinada, fet que ha perjudicat les fases següents.
+
+
+3. Com han estat els tres salts?
+Valoració
+Criteri d’observació
+Excel·lent
+Ha executat els tres salts de manera contínua, equilibrada i coordinada. El hop ha estat controlat i no excessivament vertical, l’step ha permès conservar la velocitat i el jump ha aprofitat l’impuls restant per aconseguir una bona distància. Les tres fases han estat ben connectades.
+Notable
+Ha realitzat correctament els tres salts, amb una bona continuïtat general. Pot haver-hi una petita pèrdua de velocitat o algun desequilibri en una de les fases, però el conjunt ha estat efectiu i tècnicament adequat.
+Satisfactori
+Ha completat les tres fases, però una d’elles ha estat clarament més dèbil. Pot haver fet un hop massa alt, un step massa curt o un jump amb poca velocitat. Tot i això, ha aconseguit mantenir una certa continuïtat i completar el salt.
+Suspès
+No ha aconseguit connectar correctament les tres fases. Ha perdut molt l’equilibri, ha fet un dels salts excessivament vertical, ha reduït molt la velocitat o ha interromput el moviment entre fases. El conjunt no ha estat fluid ni eficaç.
+
+
+7. Com ha acabat el salt al fossat?
+Valoració
+Criteri d’observació
+Excel·lent
+Ha projectat les cames cap endavant en el moment adequat i ha entrat a la sorra amb control. Després del contacte, ha flexionat les cames i ha portat el cos cap endavant per evitar deixar una marca enrere. Ha aprofitat molt bé la distància aconseguida durant el vol.
+Notable
+Ha fet una bona caiguda, amb les cames prou projectades i sense caure clarament cap enrere. Pot haver perdut uns centímetres per una petita falta de coordinació, però ha acabat el salt de manera correcta.
+Satisfactori
+Ha caigut de manera acceptable, però ha projectat poc les cames, les ha mantingut massa rígides o ha tingut una certa dificultat per portar el cos cap endavant després del contacte.
+Suspès
+Ha caigut cap enrere, ha deixat una marca amb les mans o els malucs darrere dels peus, no ha projectat les cames o ha entrat a la sorra de manera molt descontrolada. Això ha reduït clarament la distància final del salt.
+
+
+8. Com ha estat la seva posició corporal?
+Valoració
+Criteri d’observació
+Excel·lent
+Ha mantingut una postura estable i alineada durant tota la prova. El tronc ha estat controlat, els malucs s’han mantingut avançats, el cap ha mirat cap endavant i els braços i les cames han treballat de manera coordinada.
+Notable
+Ha mantingut una bona posició corporal en la major part del salt. Pot haver presentat alguna inclinació o rotació puntual, però no ha afectat gaire la continuïtat ni l’eficàcia del moviment.
+Satisfactori
+La posició corporal ha estat irregular. En alguns moments ha inclinat massa el tronc, ha endarrerit els malucs o ha perdut l’alineació, però ha pogut completar el triple salt.
+Suspès
+Ha mantingut una postura molt descontrolada, amb el tronc excessivament inclinat, els malucs endarrerits o una rotació important del cos. Aquesta mala posició ha afectat la batuda, els contactes i la caiguda.
+
+
+9. S’enfonsa massa durant els contactes i les caigudes?
+
+Valoració
+Criteri d’observació
+Excel·lent
+No s’enfonsa excessivament en els contactes. La cama de suport absorbeix l’impacte de manera controlada i els malucs continuen avançant. Manté una bona rigidesa activa sense bloquejar la cama i aconsegueix continuar el moviment cap endavant.
+Notable
+Presenta una bona resposta en els contactes, tot i que pot enfonsar-se lleugerament en alguna fase. La pèrdua de velocitat és reduïda i aconsegueix continuar el salt amb una tècnica adequada.
+Satisfactori
+S’enfonsa de manera visible en un o més contactes. Això provoca una certa pèrdua de velocitat i fa que la transició entre fases sigui menys fluida, però encara pot completar el salt.
+Suspès
+S’enfonsa molt en els contactes, especialment en l’step, i no aconsegueix transformar correctament l’impacte en un nou impuls. Perd molta velocitat, queda assegut sobre la cama de suport o interromp la continuïtat del triple salt.
+
+10. El ritme de tot el salt és “ta-ta-ta-ta”?
+Valoració
+Criteri d’observació
+Excel·lent
+El salt presenta un ritme continu, fluid i ben coordinat: “ta-ta-ta-ta”. No hi ha pauses ni frenades entre la batuda, el hop, l’step i el jump. Les fases estan connectades i el moviment sembla natural i controlat.
+Notable
+El ritme és bastant fluid i només presenta una petita interrupció o una lleugera pèrdua de continuïtat. En general, les fases estan ben connectades i l’atleta manté una bona velocitat.
+Satisfactori
+El ritme és irregular. Hi ha alguna pausa, contacte massa llarg o canvi brusc entre fases. Tot i això, l’atleta aconsegueix completar la seqüència del triple salt.
+Suspès
+El ritme és molt trencat i no es percep una continuïtat entre les fases. Hi ha frenades, contactes excessivament llargs, desequilibris o pauses que interrompen clarament el moviment.
+
+11. Ha mantingut la velocitat durant les tres fases?
+Valoració
+Criteri d’observació
+Excel·lent
+Ha conservat molt bé la velocitat horitzontal des de la batuda fins al jump. No ha fet salts excessivament verticals ni contactes que provoquessin una frenada important. Ha distribuït l’esforç de manera equilibrada entre les tres fases.
+Notable
+Ha mantingut una bona part de la velocitat, tot i perdre’n una mica en algun contacte. Aquesta pèrdua no ha afectat greument la distància final ni la continuïtat del salt.
+Satisfactori
+Ha perdut una quantitat visible de velocitat en una de les fases, sobretot en l’step o en la recepció del hop. Tot i això, ha pogut continuar i completar el jump.
+Suspès
+Ha perdut molta velocitat durant les fases, especialment per una batuda vertical, un contacte rígid, un enfonsament excessiu o un desequilibri. Aquesta pèrdua ha reduït clarament la distància dels salts posteriors.
+
+12. Com ha estat la coordinació entre braços i cames?
+Valoració
+Criteri d’observació
+Excel·lent
+Els braços i les cames han treballat de manera coordinada durant la cursa, la batuda, els tres salts i la caiguda. Els braços han ajudat a projectar els genolls, mantenir l’equilibri i preparar els contactes sense moviments innecessaris.
+Notable
+La coordinació ha estat bona en general, tot i presentar algun petit desajust en una de les fases. Els braços han contribuït al moviment i no han provocat desequilibris importants.
+Satisfactori
+La coordinació ha estat irregular. En alguns moments els braços s’han mogut tard, han quedat enrere o no han acompanyat prou les cames. Tot i això, l’atleta ha pogut completar el salt.
+Suspès
+Hi ha hagut una descoordinació clara entre braços, cames i tronc. Els moviments han estat rígids o desordenats i han provocat pèrdua d’equilibri, de velocitat o de control durant les fases.
+
+Arribada a taula i intent
+Nivell
+Criteri de valoració
+
+
+L’intent és vàlid i no comet cap nul. Respecta la línia de batuda i executa correctament les tres fases del triple salt.
+
+
+L’intent és vàlid, tot i que s’ha quedat molt lluny de la taula fet que ha repercutit en els tres salts.
+
+
+L’intent és nul, perquè trepitja o supera la línia de batuda, fa una batuda incorrecta o incompleix alguna de les normes bàsiques del triple salt.
+

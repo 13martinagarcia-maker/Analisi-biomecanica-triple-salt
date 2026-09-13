@@ -49,9 +49,10 @@ type TrackEvaluation = {
   approachScore: string;
   rhythmScore: string;
   landingScore: string;
+  finalScore: string | null;
   createdAt: string;
 };
-type AssessmentOption = { label: string; band: string; value: number; tone: "high" | "mid" | "low" };
+type AssessmentOption = { level: "Excel·lent" | "Notable" | "Satisfactori" | "Suspès"; description: string; value: 10 | 8.5 | 7 | 0; tone: "excellent" | "notable" | "satisfactory" | "failed" };
 type AssessmentGroup = { key: string; title: string; subtitle: string; question: string; hint?: string; options: AssessmentOption[] };
 type WarmupItem = { title?: string; description: string; note?: string };
 type WarmupSubsection = { title: string; intro?: string; items: WarmupItem[] };
@@ -72,39 +73,135 @@ const navItems: Array<{ id: Page; label: string; icon: typeof Home }> = [
 const assessmentGroups: AssessmentGroup[] = [
   {
     key: "approach",
-    title: "La Cursa i l’Entrada",
-    subtitle: "Velocitat",
-    question: "Com has entrat a la taula?",
+    title: "Cursa d’impuls",
+    subtitle: "Progressió, ritme i control",
+    question: "Com has vist la cursa d’impuls?",
     options: [
-      { label: "Amb molta velocitat, controlat i clavant la taula.", band: "8,5–10", value: 9.25, tone: "high" },
-      { label: "He hagut de frenar els últims passos per no fer nul (he entrat «clavat»).", band: "6–8,5", value: 7.25, tone: "mid" },
-      { label: "He arribat cansat/sense forces al final de la cursa.", band: "0–6", value: 3, tone: "low" },
+      { level: "Excel·lent", description: "Ha realitzat una cursa progressiva, ràpida i controlada. Ha mantingut un ritme constant, sense frenar abans de la taula, i ha combinat correctament l’amplitud i la freqüència de la gambada. La mirada s’ha mantingut cap a l’horitzó, els genolls s’han projectat amb energia i el peu ha entrat en contacte amb el terra de manera activa (peu «armat»).", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Ha fet una cursa ràpida i bastant regular, tot i presentar algun petit error de ritme, postura o coordinació. No ha perdut gaire velocitat i ha arribat a la taula amb una bona preparació general.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "Ha completat la cursa, però amb una velocitat o una regularitat millorables. Ha pogut frenar lleugerament, mirar a terra o modificar la llargada de les passes abans de la batuda. Tot i això, ha aconseguit arribar a la taula i iniciar el salt.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "Ha fet una cursa poc controlada, lenta o molt irregular. Ha frenat clarament abans de la taula, ha mirat constantment a terra, ha perdut el ritme o ha corregut amb una postura inadequada. Aquests errors han perjudicat la batuda i la continuïtat del triple salt.", value: 0, tone: "failed" },
     ],
   },
   {
-    key: "rhythm",
-    title: "El Ritme del Salt",
-    subtitle: "L’acústica i la inèrcia",
-    question: "Com has sentit el ritme del salt global?",
-    hint: "Ritme característic: «ta-ta---ta».",
+    key: "takeoff",
+    title: "Entrada a la taula",
+    subtitle: "Precisió i batuda",
+    question: "Com ha entrat a la taula de batuda?",
     options: [
-      { label: "Fluid. He anat rebotant i avançant cap endavant fàcilment.", band: "8,5–10", value: 9.25, tone: "high" },
-      { label: "Tallat. El primer salt ha anat molt bé, però de cop m’he quedat clavat a terra.", band: "6–8,5", value: 7.25, tone: "mid" },
-      { label: "Precipitat. He anat molt ràpid però descontrolat, com si en lloc de saltar estigués corrent.", band: "0–6", value: 3, tone: "low" },
+      { level: "Excel·lent", description: "Ha arribat a la taula amb precisió, sense frenar ni modificar el ritme dels últims passos. Ha entrat amb el peu ben preparat, el cos alineat i els malucs avançats. La batuda ha estat ràpida, activa i dirigida principalment cap endavant.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Ha entrat correctament a la taula i ha mantingut gairebé tota la velocitat. Pot haver comès algun petit error en la col·locació del peu, en la postura o en la coordinació, però sense afectar gaire el resultat de la batuda.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "Ha arribat a la taula de manera acceptable, però ha frenat lleugerament, ha allargat o escurçat l’últim pas o ha entrat amb una postura poc estable. La batuda ha estat vàlida, però ha provocat una certa pèrdua de velocitat.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "Ha entrat malament a la taula, ha frenat molt, ha trepitjat fora de la zona adequada o ha modificat clarament els últims passos. La batuda ha estat massa vertical, desequilibrada o poc coordinada, fet que ha perjudicat les fases següents.", value: 0, tone: "failed" },
+    ],
+  },
+  {
+    key: "phases",
+    title: "Les tres fases",
+    subtitle: "Hop, step i jump",
+    question: "Com han estat els tres salts?",
+    options: [
+      { level: "Excel·lent", description: "Ha executat els tres salts de manera contínua, equilibrada i coordinada. El hop ha estat controlat i no excessivament vertical, l’step ha permès conservar la velocitat i el jump ha aprofitat l’impuls restant per aconseguir una bona distància. Les tres fases han estat ben connectades.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Ha realitzat correctament els tres salts, amb una bona continuïtat general. Pot haver-hi una petita pèrdua de velocitat o algun desequilibri en una de les fases, però el conjunt ha estat efectiu i tècnicament adequat.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "Ha completat les tres fases, però una d’elles ha estat clarament més dèbil. Pot haver fet un hop massa alt, un step massa curt o un jump amb poca velocitat. Tot i això, ha aconseguit mantenir una certa continuïtat i completar el salt.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "No ha aconseguit connectar correctament les tres fases. Ha perdut molt l’equilibri, ha fet un dels salts excessivament vertical, ha reduït molt la velocitat o ha interromput el moviment entre fases. El conjunt no ha estat fluid ni eficaç.", value: 0, tone: "failed" },
     ],
   },
   {
     key: "landing",
-    title: "La Caiguda i el Resultat",
-    subtitle: "Eficiència",
-    question: "Com has arribat a la sorra?",
+    title: "Caiguda al fossat",
+    subtitle: "Projecció i aprofitament",
+    question: "Com ha acabat el salt al fossat?",
     options: [
-      { label: "Amb energia, llançant els peus endavant i caient bé.", band: "8,5–10", value: 9.25, tone: "high" },
-      { label: "Mort/Sense velocitat. He caigut gairebé en vertical de seguida que he entrat a la sorra.", band: "6–8,5", value: 7.25, tone: "mid" },
-      { label: "Desequilibrat/Cap a un costat.", band: "0–6", value: 3, tone: "low" },
+      { level: "Excel·lent", description: "Ha projectat les cames cap endavant en el moment adequat i ha entrat a la sorra amb control. Després del contacte, ha flexionat les cames i ha portat el cos cap endavant per evitar deixar una marca enrere. Ha aprofitat molt bé la distància aconseguida durant el vol.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Ha fet una bona caiguda, amb les cames prou projectades i sense caure clarament cap enrere. Pot haver perdut uns centímetres per una petita falta de coordinació, però ha acabat el salt de manera correcta.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "Ha caigut de manera acceptable, però ha projectat poc les cames, les ha mantingut massa rígides o ha tingut una certa dificultat per portar el cos cap endavant després del contacte.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "Ha caigut cap enrere, ha deixat una marca amb les mans o els malucs darrere dels peus, no ha projectat les cames o ha entrat a la sorra de manera molt descontrolada. Això ha reduït clarament la distància final del salt.", value: 0, tone: "failed" },
+    ],
+  },
+  {
+    key: "posture",
+    title: "Posició corporal",
+    subtitle: "Alineació i estabilitat",
+    question: "Com ha estat la seva posició corporal?",
+    options: [
+      { level: "Excel·lent", description: "Ha mantingut una postura estable i alineada durant tota la prova. El tronc ha estat controlat, els malucs s’han mantingut avançats, el cap ha mirat cap endavant i els braços i les cames han treballat de manera coordinada.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Ha mantingut una bona posició corporal en la major part del salt. Pot haver presentat alguna inclinació o rotació puntual, però no ha afectat gaire la continuïtat ni l’eficàcia del moviment.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "La posició corporal ha estat irregular. En alguns moments ha inclinat massa el tronc, ha endarrerit els malucs o ha perdut l’alineació, però ha pogut completar el triple salt.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "Ha mantingut una postura molt descontrolada, amb el tronc excessivament inclinat, els malucs endarrerits o una rotació important del cos. Aquesta mala posició ha afectat la batuda, els contactes i la caiguda.", value: 0, tone: "failed" },
+    ],
+  },
+  {
+    key: "contacts",
+    title: "Resposta als contactes",
+    subtitle: "Rigidesa activa i continuïtat",
+    question: "S’enfonsa massa durant els contactes i les caigudes?",
+    options: [
+      { level: "Excel·lent", description: "No s’enfonsa excessivament en els contactes. La cama de suport absorbeix l’impacte de manera controlada i els malucs continuen avançant. Manté una bona rigidesa activa sense bloquejar la cama i aconsegueix continuar el moviment cap endavant.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Presenta una bona resposta en els contactes, tot i que pot enfonsar-se lleugerament en alguna fase. La pèrdua de velocitat és reduïda i aconsegueix continuar el salt amb una tècnica adequada.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "S’enfonsa de manera visible en un o més contactes. Això provoca una certa pèrdua de velocitat i fa que la transició entre fases sigui menys fluida, però encara pot completar el salt.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "S’enfonsa molt en els contactes, especialment en l’step, i no aconsegueix transformar correctament l’impacte en un nou impuls. Perd molta velocitat, queda assegut sobre la cama de suport o interromp la continuïtat del triple salt.", value: 0, tone: "failed" },
+    ],
+  },
+  {
+    key: "rhythm",
+    title: "Ritme global",
+    subtitle: "Continuïtat entre fases",
+    question: "El ritme de tot el salt és «ta-ta-ta-ta»?",
+    hint: "Escolta la continuïtat entre la batuda, el hop, l’step i el jump.",
+    options: [
+      { level: "Excel·lent", description: "El salt presenta un ritme continu, fluid i ben coordinat: «ta-ta-ta-ta». No hi ha pauses ni frenades entre la batuda, el hop, l’step i el jump. Les fases estan connectades i el moviment sembla natural i controlat.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "El ritme és bastant fluid i només presenta una petita interrupció o una lleugera pèrdua de continuïtat. En general, les fases estan ben connectades i l’atleta manté una bona velocitat.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "El ritme és irregular. Hi ha alguna pausa, contacte massa llarg o canvi brusc entre fases. Tot i això, l’atleta aconsegueix completar la seqüència del triple salt.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "El ritme és molt trencat i no es percep una continuïtat entre les fases. Hi ha frenades, contactes excessivament llargs, desequilibris o pauses que interrompen clarament el moviment.", value: 0, tone: "failed" },
+    ],
+  },
+  {
+    key: "coordination",
+    title: "Velocitat i coordinació",
+    subtitle: "Conservació de l’impuls",
+    question: "Ha mantingut la velocitat durant les tres fases?",
+    options: [
+      { level: "Excel·lent", description: "Ha conservat molt bé la velocitat horitzontal des de la batuda fins al jump. No ha fet salts excessivament verticals ni contactes que provoquessin una frenada important. Ha distribuït l’esforç de manera equilibrada entre les tres fases.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "Ha mantingut una bona part de la velocitat, tot i perdre’n una mica en algun contacte. Aquesta pèrdua no ha afectat greument la distància final ni la continuïtat del salt.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "Ha perdut una quantitat visible de velocitat en una de les fases, sobretot en l’step o en la recepció del hop. Tot i això, ha pogut continuar i completar el jump.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "Ha perdut molta velocitat durant les fases, especialment per una batuda vertical, un contacte rígid, un enfonsament excessiu o un desequilibri. Aquesta pèrdua ha reduït clarament la distància dels salts posteriors.", value: 0, tone: "failed" },
+    ],
+  },
+  {
+    key: "arms",
+    title: "Coordinació segmentària",
+    subtitle: "Braços i cames",
+    question: "Com ha estat la coordinació entre braços i cames?",
+    options: [
+      { level: "Excel·lent", description: "Els braços i les cames han treballat de manera coordinada durant la cursa, la batuda, els tres salts i la caiguda. Els braços han ajudat a projectar els genolls, mantenir l’equilibri i preparar els contactes sense moviments innecessaris.", value: 10, tone: "excellent" },
+      { level: "Notable", description: "La coordinació ha estat bona en general, tot i presentar algun petit desajust en una de les fases. Els braços han contribuït al moviment i no han provocat desequilibris importants.", value: 8.5, tone: "notable" },
+      { level: "Satisfactori", description: "La coordinació ha estat irregular. En alguns moments els braços s’han mogut tard, han quedat enrere o no han acompanyat prou les cames. Tot i això, l’atleta ha pogut completar el salt.", value: 7, tone: "satisfactory" },
+      { level: "Suspès", description: "Hi ha hagut una descoordinació clara entre braços, cames i tronc. Els moviments han estat rígids o desordenats i han provocat pèrdua d’equilibri, de velocitat o de control durant les fases.", value: 0, tone: "failed" },
     ],
   },
 ];
+
+const validityOptions = [
+  {
+    key: "valid",
+    level: "Intent vàlid",
+    description: "Respecta la línia de batuda i executa correctament les tres fases del triple salt.",
+    improvement: "Mantén aquesta precisió a la taula sense reduir la velocitat dels últims passos.",
+  },
+  {
+    key: "far",
+    level: "Vàlid, però lluny de la taula",
+    description: "L’intent és vàlid, però la distància fins a la taula ha repercutit en el resultat dels tres salts.",
+    improvement: "Ajusta la talonació i conserva el ritme de cursa per arribar més a prop de la taula sense allargar ni escurçar els últims passos.",
+  },
+  {
+    key: "foul",
+    level: "Intent nul",
+    description: "Trepitja o supera la línia de batuda, fa una batuda incorrecta o incompleix alguna norma bàsica del triple salt.",
+    improvement: "Revisa la talonació i el punt d’inici de la cursa. Prioritza una entrada natural i controlada, sense buscar la taula amb els últims passos.",
+  },
+] as const;
 
 const warmupSections: WarmupSection[] = [
   {
@@ -362,6 +459,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [athleteFormOpen, setAthleteFormOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
+  const [validityAnswer, setValidityAnswer] = useState<number | null>(null);
   const [assessmentSaved, setAssessmentSaved] = useState(false);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [competitionToDelete, setCompetitionToDelete] = useState<Competition | null>(null);
@@ -538,7 +636,8 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const selectedAssessment = assessmentGroups.map((group) => group.options[assessmentAnswers[group.key] ?? -1]);
-  const assessmentComplete = selectedAssessment.every(Boolean);
+  const selectedValidity = validityAnswer === null ? null : validityOptions[validityAnswer];
+  const assessmentComplete = selectedAssessment.every(Boolean) && Boolean(selectedValidity);
   const assessmentAverage = assessmentComplete
     ? selectedAssessment.reduce((sum, option) => sum + option.value, 0) / selectedAssessment.length
     : null;
@@ -550,12 +649,14 @@ function ProductHub({ analysisWorkspace }: Props) {
         method: "POST",
         body: JSON.stringify({
           athleteId: selectedAthleteId || null,
-          approachAnswer: selectedAssessment[0].label,
-          rhythmAnswer: selectedAssessment[1].label,
-          landingAnswer: selectedAssessment[2].label,
-          approachScore: selectedAssessment[0].value,
-          rhythmScore: selectedAssessment[1].value,
-          landingScore: selectedAssessment[2].value,
+          criteria: assessmentGroups.map((group, index) => ({
+            key: group.key,
+            question: group.question,
+            level: selectedAssessment[index].level,
+            criterion: selectedAssessment[index].description,
+            score: selectedAssessment[index].value,
+          })),
+          validity: selectedValidity,
         }),
       });
       setEvaluations((previous) => [result.evaluation, ...previous]);
@@ -660,7 +761,7 @@ function ProductHub({ analysisWorkspace }: Props) {
                 </button>
                 <button type="button" className="competition-delete-button" onClick={() => setCompetitionToDelete(competition)} aria-label={`Esborrar la competició de ${competition.location}`}><Trash2 size={16} /> Esborrar</button>
               </div>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}
-              {athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}
+              {athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{Number(evaluation.finalScore ?? ((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3)).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}
             </article>
           </div>}
         </>}
@@ -691,11 +792,58 @@ function ProductHub({ analysisWorkspace }: Props) {
       </section>
     );
     if (page === "pista") return (
-      <section className="hub-page">
+      <section className="hub-page track-assessment-page">
         <BackButton onClick={() => setPage("inici")} />
-        <div className="hub-title-row"><div><span className="eyebrow">Valoració posterior al salt</span><h1>Estic a pista</h1><p>Una autoavaluació general. No substitueix l’anàlisi biomecànica de vídeo.</p></div>{athletes.length > 0 && <label className="compact-select">Atleta<select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>}</div>
-        <div className="assessment-stack">{assessmentGroups.map((group, groupIndex) => <article className="assessment-card" key={group.key}><div className="assessment-heading"><span>0{groupIndex + 1}</span><div><h2>{group.title}</h2><p>{group.subtitle}</p></div></div>{group.hint && <div className="assessment-hint">{group.hint}</div>}<h3>{group.question}</h3><div className="assessment-options">{group.options.map((option, index) => <button type="button" className={`${assessmentAnswers[group.key] === index ? "selected" : ""} ${option.tone}`} onClick={() => { setAssessmentAnswers((previous) => ({ ...previous, [group.key]: index })); setAssessmentSaved(false); }} key={option.label}><span>{option.label}</span><strong>{option.band}</strong></button>)}</div></article>)}</div>
-        {assessmentComplete && <section className="assessment-result"><div><span className="eyebrow">Valoració general</span><h2>{assessmentAverage?.toFixed(1).replace(".", ",")} / 10</h2><p>Resultat calculat a partir de les tres opcions escollides. És una orientació general, no una anàlisi biomecànica.</p></div><button className="button-primary" onClick={saveAssessment} disabled={assessmentSaved}><Check size={16} /> {assessmentSaved ? "Valoració guardada" : "Guardar valoració"}</button></section>}
+        <div className="hub-title-row"><div><span className="eyebrow">Anàlisi immediata del salt</span><h1>Estic a pista</h1><p>Valora cada aspecte observat i obtén una nota tècnica clara del salt.</p></div>{athletes.length > 0 && <label className="compact-select">Atleta<select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>}</div>
+        <div className="assessment-overview">
+          <div>
+            <span className="eyebrow">Escala de puntuació</span>
+            <h2>Cada nivell té una nota fixa</h2>
+            <p>No s’utilitzen punts intermedis: cada resposta aporta el valor màxim indicat.</p>
+          </div>
+          <div className="assessment-scale" aria-label="Escala de puntuació">
+            <span className="excellent"><strong>10</strong> Excel·lent</span>
+            <span className="notable"><strong>8,5</strong> Notable</span>
+            <span className="satisfactory"><strong>7</strong> Satisfactori</span>
+            <span className="failed"><strong>0</strong> Suspès</span>
+          </div>
+          <div className="assessment-progress">
+            <div><span>Progrés</span><strong>{selectedAssessment.filter(Boolean).length + (selectedValidity ? 1 : 0)} / {assessmentGroups.length + 1}</strong></div>
+            <div className="assessment-progress-track"><span style={{ width: `${((selectedAssessment.filter(Boolean).length + (selectedValidity ? 1 : 0)) / (assessmentGroups.length + 1)) * 100}%` }} /></div>
+          </div>
+        </div>
+        <div className="assessment-stack">
+          {assessmentGroups.map((group, groupIndex) => (
+            <article className="assessment-card" key={group.key}>
+              <div className="assessment-heading"><span>{String(groupIndex + 1).padStart(2, "0")}</span><div><h2>{group.title}</h2><p>{group.subtitle}</p></div></div>
+              {group.hint && <div className="assessment-hint">{group.hint}</div>}
+              <h3>{group.question}</h3>
+              <div className="assessment-options">
+                {group.options.map((option, index) => (
+                  <button type="button" className={`${assessmentAnswers[group.key] === index ? "selected" : ""} ${option.tone}`} onClick={() => { setAssessmentAnswers((previous) => ({ ...previous, [group.key]: index })); setAssessmentSaved(false); }} key={option.level}>
+                    <span className="assessment-option-copy"><strong>{option.level}</strong><span>{option.description}</span></span>
+                    <span className="assessment-option-score">{String(option.value).replace(".", ",")}</span>
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+          <article className="assessment-card validity-card">
+            <div className="assessment-heading"><span>{String(assessmentGroups.length + 1).padStart(2, "0")}</span><div><h2>Arribada a taula i intent</h2><p>Validesa reglamentària</p></div></div>
+            <div className="assessment-unscored-note"><strong>No modifica la nota final</strong><span>Aquesta resposta només genera una indicació de millora.</span></div>
+            <h3>L’intent és vàlid o nul?</h3>
+            <div className="validity-options">
+              {validityOptions.map((option, index) => (
+                <button type="button" className={validityAnswer === index ? "selected" : ""} onClick={() => { setValidityAnswer(index); setAssessmentSaved(false); }} key={option.key}>
+                  <span><strong>{option.level}</strong><small>{option.description}</small></span>
+                  {validityAnswer === index && <Check size={18} />}
+                </button>
+              ))}
+            </div>
+            {selectedValidity && <div className="validity-improvement"><span>Millora proposada</span><p>{selectedValidity.improvement}</p></div>}
+          </article>
+        </div>
+        {assessmentComplete && <section className="assessment-result"><div><span className="eyebrow">Nota final del salt</span><h2>{assessmentAverage?.toFixed(1).replace(".", ",")} / 10</h2><p>Mitjana dels {assessmentGroups.length} criteris tècnics. La validesa de l’intent no forma part de la puntuació.</p>{selectedValidity && <div className="assessment-result-improvement"><strong>Millora prioritària</strong><span>{selectedValidity.improvement}</span></div>}</div><button className="button-primary" onClick={saveAssessment} disabled={assessmentSaved}><Check size={16} /> {assessmentSaved ? "Valoració guardada" : "Guardar anàlisi"}</button></section>}
       </section>
     );
     if (page === "escalfament") return (

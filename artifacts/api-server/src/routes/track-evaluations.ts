@@ -14,16 +14,34 @@ router.get("/track-evaluations", requireAuth, async (request, response) => {
 
 router.post("/track-evaluations", requireAuth, async (request, response) => {
   const body = request.body && typeof request.body === "object" ? request.body as Record<string, unknown> : {};
-  const answers = ["approach", "rhythm", "landing"].map((key) => body[`${key}Answer`]);
-  if (answers.some((answer) => typeof answer !== "string" || !answer)) {
-    response.status(400).json({ message: "Respon les tres preguntes abans de guardar la valoració." });
+  const criteria = Array.isArray(body.criteria) ? body.criteria : [];
+  const validScores = new Set([0, 7, 8.5, 10]);
+  const parsedCriteria = criteria.map((item) => {
+    const criterion = item && typeof item === "object" ? item as Record<string, unknown> : {};
+    return {
+      key: typeof criterion.key === "string" ? criterion.key : "",
+      question: typeof criterion.question === "string" ? criterion.question : "",
+      level: typeof criterion.level === "string" ? criterion.level : "",
+      criterion: typeof criterion.criterion === "string" ? criterion.criterion : "",
+      score: Number(criterion.score),
+    };
+  });
+  if (parsedCriteria.length !== 9 || parsedCriteria.some((criterion) =>
+    !criterion.key || !criterion.question || !criterion.level || !criterion.criterion || !validScores.has(criterion.score)
+  )) {
+    response.status(400).json({ message: "Respon els nou criteris tècnics abans de guardar l’anàlisi." });
     return;
   }
-  const scores = ["approach", "rhythm", "landing"].map((key) => Number(body[`${key}Score`]));
-  if (scores.some((score) => !Number.isFinite(score) || score < 0 || score > 10)) {
-    response.status(400).json({ message: "Les puntuacions de la valoració no són vàlides." });
+  const validity = body.validity && typeof body.validity === "object" ? body.validity as Record<string, unknown> : {};
+  const validityKey = typeof validity.key === "string" ? validity.key : "";
+  const validityLevel = typeof validity.level === "string" ? validity.level : "";
+  const validityDescription = typeof validity.description === "string" ? validity.description : "";
+  const improvement = typeof validity.improvement === "string" ? validity.improvement : "";
+  if (!["valid", "far", "foul"].includes(validityKey) || !validityLevel || !validityDescription || !improvement) {
+    response.status(400).json({ message: "Indica si l’intent és vàlid o nul abans de guardar l’anàlisi." });
     return;
   }
+  const finalScore = parsedCriteria.reduce((sum, criterion) => sum + criterion.score, 0) / parsedCriteria.length;
   const athleteId = typeof body.athleteId === "string" && body.athleteId ? body.athleteId : null;
   const competitionId = typeof body.competitionId === "string" && body.competitionId ? body.competitionId : null;
   const [athlete] = athleteId
@@ -49,12 +67,22 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     userId: request.user!.id,
     athleteId,
     competitionId,
-    approachScore: scores[0].toFixed(2),
-    rhythmScore: scores[1].toFixed(2),
-    landingScore: scores[2].toFixed(2),
-    approachAnswer: answers[0] as string,
-    rhythmAnswer: answers[1] as string,
-    landingAnswer: answers[2] as string,
+    approachScore: parsedCriteria[0].score.toFixed(2),
+    rhythmScore: parsedCriteria[6].score.toFixed(2),
+    landingScore: parsedCriteria[3].score.toFixed(2),
+    approachAnswer: `${parsedCriteria[0].level}: ${parsedCriteria[0].criterion}`,
+    rhythmAnswer: `${parsedCriteria[6].level}: ${parsedCriteria[6].criterion}`,
+    landingAnswer: `${parsedCriteria[3].level}: ${parsedCriteria[3].criterion}`,
+    finalScore: finalScore.toFixed(2),
+    assessmentData: {
+      criteria: parsedCriteria,
+      validity: {
+        key: validityKey,
+        level: validityLevel,
+        description: validityDescription,
+        improvement,
+      },
+    },
   }).returning();
   response.status(201).json({ evaluation });
 });
