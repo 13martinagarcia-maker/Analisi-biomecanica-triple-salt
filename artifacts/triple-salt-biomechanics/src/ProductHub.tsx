@@ -196,6 +196,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "5",
     title: "FINAL DE LA COMPETICIÓ - TORNADA A LA CALMA",
+    videoSrc: `${import.meta.env.BASE_URL}videos/tornada-calma.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/tornada-calma-poster.jpg`,
     items: [
       { title: "Foam Roller", description: "Utilitzar el rodet lentament sobre quàdriceps, isquiotibials, glutis i bessons." },
       { title: "Estirament de torsió espinal", description: "Asseure’s amb les cames esteses, flexionar una cama i passar-la per sobre de l’altra. Girar suaument el tronc cap al costat de la cama flexionada." },
