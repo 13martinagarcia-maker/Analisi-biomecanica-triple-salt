@@ -160,6 +160,8 @@ const warmupSections: WarmupSection[] = [
   {
     number: "2",
     title: "ESCALFAMENT ESPECÍFIC",
+    videoSrc: `${import.meta.env.BASE_URL}videos/escalfament-especific.mp4`,
+    posterSrc: `${import.meta.env.BASE_URL}videos/escalfament-especific-poster.jpg`,
     items: [
       { title: "Salts horitzontals", description: "Realitzar 5 salts, flexionant moderadament els genolls i els malucs, impulsant-se cap endavant amb l’ajuda dels braços i aterrant al fossat amb els dos peus. L’aterratge ha de ser controlat.", note: "5 salts" },
       { title: "Salts horitzontals a una cama (5 per cama)", description: "Realitzar un salt horitzontal impulsant-se amb una sola cama i aterrar amb els dos peus al fossat. Alternar les cames i mantenir el tronc estable.", note: "5 per cama" },
