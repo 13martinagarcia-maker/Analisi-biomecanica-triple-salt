@@ -2676,6 +2676,131 @@ button {
   align-items: start;
 }
 
+.competition-progress-card {
+  overflow: hidden;
+  margin-top: 1.5rem;
+  padding: 1.75rem;
+  border: 1px solid hsl(var(--card-border));
+  border-radius: 1rem;
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-md);
+}
+
+.competition-progress-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.competition-progress-heading h2 {
+  margin: .25rem 0 .35rem;
+  font-family: var(--app-font-serif);
+  font-size: 1.65rem;
+}
+
+.competition-progress-heading p {
+  color: hsl(var(--muted-foreground));
+  font-size: .9rem;
+}
+
+.progress-legend {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  color: hsl(var(--muted-foreground));
+  font-size: .75rem;
+  white-space: nowrap;
+}
+
+.progress-legend > span {
+  width: .8rem;
+  height: .8rem;
+  border-radius: .2rem;
+  background: hsl(var(--primary));
+}
+
+.competition-chart-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .25rem 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.competition-chart-tooltip {
+  display: grid;
+  gap: .3rem;
+  min-width: 11rem;
+  padding: .85rem 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .65rem;
+  background: hsl(var(--popover));
+  box-shadow: var(--shadow-md);
+}
+
+.competition-chart-tooltip strong {
+  font-family: var(--app-font-serif);
+  font-size: 1rem;
+}
+
+.competition-chart-tooltip span,
+.competition-chart-tooltip small {
+  color: hsl(var(--muted-foreground));
+  font-size: .75rem;
+}
+
+.competition-chart-tooltip b {
+  color: hsl(var(--primary));
+  font-size: 1.2rem;
+}
+
+.competition-progress-table {
+  margin-top: 1rem;
+}
+
+.competition-progress-table-head,
+.competition-progress-table-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.2fr) 100px 70px 115px minmax(180px, 1.5fr);
+  align-items: center;
+  gap: .8rem;
+}
+
+.competition-progress-table-head {
+  padding: .5rem .75rem;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: .66rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.competition-progress-table-row {
+  padding: .85rem .75rem;
+  border-top: 1px solid hsl(var(--border));
+  font-size: .82rem;
+}
+
+.competition-progress-table-row > b {
+  color: hsl(var(--primary));
+}
+
+.competition-progress-table-row .goal-achieved::before,
+.competition-progress-table-row .goal-pending::before {
+  display: inline-block;
+  width: .45rem;
+  height: .45rem;
+  margin-right: .45rem;
+  border-radius: 50%;
+  background: hsl(151 50% 42%);
+  content: "";
+}
+
+.competition-progress-table-row .goal-pending::before {
+  background: hsl(35 88% 52%);
+}
+
 .athlete-profile-card {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--card-border));
@@ -3771,6 +3896,25 @@ button {
   .hub-title-row .button-primary,
   .assessment-result button {
     width: 100%;
+  }
+
+  .competition-progress-card {
+    margin-top: 1rem;
+    padding: 1.1rem;
+  }
+
+  .competition-progress-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .competition-progress-table {
+    overflow-x: auto;
+  }
+
+  .competition-progress-table-head,
+  .competition-progress-table-row {
+    min-width: 720px;
   }
 
   .assessment-overview {

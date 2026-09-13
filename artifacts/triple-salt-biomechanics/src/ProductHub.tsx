@@ -26,6 +26,7 @@ import {
   Video,
   X,
 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type Page = "inici" | "historial" | "competició" | "detall-competició" | "pista" | "casa" | "tècnica" | "escalfament";
 type User = { id: string; firstName: string; lastName: string; email: string };
@@ -41,6 +42,18 @@ type Competition = {
   achieved: boolean | null;
   resultNote: string | null;
   jumps: Array<{ id?: string; jumpNumber: number; mark: string | null; isFoul: boolean }>;
+};
+type CompetitionProgressPoint = {
+  id: string;
+  location: string;
+  fullDate: string;
+  shortDate: string;
+  chartLabel: string;
+  bestMark: number | null;
+  bestLabel: string;
+  jumpsDone: number;
+  objective: string;
+  achieved: boolean | null;
 };
 type TrackEvaluation = {
   id: string;
@@ -417,6 +430,14 @@ const formatJumpMark = (jump: Competition["jumps"][number]) => {
   return "Sense marca";
 };
 
+const getCompetitionBest = (competition: Competition) => {
+  const validMarks = competition.jumps
+    .filter((jump) => !jump.isFoul && jump.mark !== null && jump.mark !== "")
+    .map((jump) => Number(jump.mark))
+    .filter((mark) => Number.isFinite(mark));
+  return validMarks.length ? Math.max(...validMarks) : null;
+};
+
 function CompetitionFields({ athletes, competition, defaultAthleteId }: { athletes: Athlete[]; competition?: Competition; defaultAthleteId: string }) {
   const jumps = Array.from({ length: 6 }, (_, index) => competition?.jumps.find((jump) => jump.jumpNumber === index + 1));
   return <>
@@ -682,6 +703,26 @@ function ProductHub({ analysisWorkspace }: Props) {
       .filter((mark) => Number.isFinite(mark));
     return marks.length ? Math.max(...marks) : null;
   }, [athleteCompetitions]);
+  const competitionProgressData = useMemo<CompetitionProgressPoint[]>(() => (
+    [...athleteCompetitions]
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate))
+      .map((competition) => {
+        const bestMark = getCompetitionBest(competition);
+        const competitionDate = new Date(`${competition.eventDate}T12:00:00`);
+        return {
+          id: competition.id,
+          location: competition.location,
+          fullDate: competitionDate.toLocaleDateString("ca-ES"),
+          shortDate: competitionDate.toLocaleDateString("ca-ES", { day: "2-digit", month: "short" }),
+          chartLabel: `${competition.location} · ${competitionDate.toLocaleDateString("ca-ES", { day: "2-digit", month: "short" })}`,
+          bestMark,
+          bestLabel: bestMark === null ? "" : `${bestMark.toFixed(2).replace(".", ",")} m`,
+          jumpsDone: competition.jumps.filter((jump) => jump.isFoul || (jump.mark !== null && jump.mark !== "")).length,
+          objective: competition.objective,
+          achieved: competition.achieved,
+        };
+      })
+  ), [athleteCompetitions]);
   const selectedAthleteIndex = athletes.findIndex((athlete) => athlete.id === selectedAthleteId);
   const moveAthlete = (direction: -1 | 1) => {
     if (athletes.length < 2) return;
@@ -742,6 +783,50 @@ function ProductHub({ analysisWorkspace }: Props) {
         <div className="hub-title-row"><div><span className="eyebrow">Seguiment de temporada</span><h1>Historial</h1><p>Entra a qualsevol competició per revisar i corregir totes les dades de la jornada.</p></div><button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={16} /> Afegir atleta</button></div>
         {!athletes.length ? <EmptyState title="Encara no hi ha atletes registrats." description="Crea la primera fitxa per començar a relacionar competicions, salts i valoracions." action={<button className="button-primary" onClick={() => setAthleteFormOpen(true)}><Plus size={15} /> Crear atleta</button>} /> : <>
           <div className="athlete-switcher"><button type="button" onClick={() => moveAthlete(-1)} disabled={athletes.length < 2} aria-label="Atleta anterior"><ArrowLeft size={17} /></button><select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)} aria-label="Canviar d’atleta">{athletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select><button type="button" onClick={() => moveAthlete(1)} disabled={athletes.length < 2} aria-label="Atleta següent"><ArrowRight size={17} /></button></div>
+          {competitionProgressData.length > 0 && (
+            <section className="competition-progress-card">
+              <div className="competition-progress-heading">
+                <div><span className="eyebrow">Evolució de marques</span><h2>Progrés per competició</h2><p>Millor marca vàlida aconseguida entre els salts registrats a cada competició.</p></div>
+                <div className="progress-legend"><span /><strong>Millor marca (m)</strong></div>
+              </div>
+              <div className="competition-chart-scroll">
+                <div style={{ width: `${Math.max(720, competitionProgressData.length * 165)}px` }}>
+                  <ResponsiveContainer width="100%" height={340}>
+                    <BarChart data={competitionProgressData} margin={{ top: 32, right: 24, left: 0, bottom: 58 }} accessibilityLayer>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="4 4" />
+                      <XAxis dataKey="chartLabel" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} dy={12} angle={-12} textAnchor="end" interval={0} height={62} />
+                      <YAxis axisLine={false} tickLine={false} width={48} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} tickFormatter={(value) => `${String(value).replace(".", ",")} m`} />
+                      <Tooltip
+                        cursor={{ fill: "hsl(var(--primary) / .05)" }}
+                        content={({ active, payload }) => {
+                          const point = payload?.[0]?.payload as CompetitionProgressPoint | undefined;
+                          if (!active || !point) return null;
+                          return <div className="competition-chart-tooltip"><strong>{point.location}</strong><span>{point.fullDate}</span><b>{point.bestMark === null ? "Sense marca vàlida" : `${point.bestMark.toFixed(2).replace(".", ",")} m`}</b><small>{point.jumpsDone} salt{point.jumpsDone === 1 ? "" : "s"} registrat{point.jumpsDone === 1 ? "" : "s"}</small></div>;
+                        }}
+                      />
+                      <Bar dataKey="bestMark" fill="hsl(var(--primary))" maxBarSize={62} radius={[8, 8, 2, 2]}>
+                        <LabelList dataKey="bestLabel" position="top" fill="hsl(var(--foreground))" fontSize={12} fontWeight={700} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="competition-progress-table" role="table" aria-label="Resum de progrés per competició">
+                <div className="competition-progress-table-head" role="row">
+                  <span role="columnheader">Competició</span><span role="columnheader">Data</span><span role="columnheader">Salts</span><span role="columnheader">Millor marca</span><span role="columnheader">Objectiu</span>
+                </div>
+                {competitionProgressData.map((point) => (
+                  <div className="competition-progress-table-row" role="row" key={point.id}>
+                    <strong role="cell">{point.location}</strong>
+                    <span role="cell">{point.fullDate}</span>
+                    <span role="cell">{point.jumpsDone}</span>
+                    <b role="cell">{point.bestMark === null ? "Sense marca" : `${point.bestMark.toFixed(2).replace(".", ",")} m`}</b>
+                    <span role="cell" className={point.achieved === true ? "goal-achieved" : point.achieved === false ? "goal-pending" : ""}>{point.objective}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {selectedAthlete && <div className="athlete-history-grid">
             <article className="athlete-profile-card">
               <div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div>
@@ -753,11 +838,12 @@ function ProductHub({ analysisWorkspace }: Props) {
                 <button type="button" className="competition-history-row" onClick={() => void openCompetition(competition)}>
                   <div>
                     <strong>{competition.location}</strong>
-                    <span>{competition.eventDate} · Objectiu: {competition.objective}</span>
+                    <span>{new Date(`${competition.eventDate}T12:00:00`).toLocaleDateString("ca-ES")} · Objectiu: {competition.objective}</span>
                     {competition.seasonGoal && <span>Objectiu final de temporada: {competition.seasonGoal.replace(".", ",")} m</span>}
+                    {competition.resultNote && <span>Notes: {competition.resultNote}</span>}
                     <div className="competition-marks">{competition.jumps.map((jump) => <span key={jump.jumpNumber}>S{jump.jumpNumber}: {formatJumpMark(jump)}</span>)}</div>
                   </div>
-                  <div className="competition-result-control"><span>{competition.achieved === null ? "Resultat pendent" : competition.achieved ? "Objectiu assolit" : "Objectiu no assolit"}</span><strong>Veure i editar <ChevronRight size={14} /></strong></div>
+                  <div className="competition-result-control"><b>{getCompetitionBest(competition) === null ? "Sense marca" : `Millor: ${getCompetitionBest(competition)?.toFixed(2).replace(".", ",")} m`}</b><span>{competition.achieved === null ? "Resultat pendent" : competition.achieved ? "Objectiu assolit" : "Objectiu no assolit"}</span><strong>Veure i editar <ChevronRight size={14} /></strong></div>
                 </button>
                 <button type="button" className="competition-delete-button" onClick={() => setCompetitionToDelete(competition)} aria-label={`Esborrar la competició de ${competition.location}`}><Trash2 size={16} /> Esborrar</button>
               </div>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}
