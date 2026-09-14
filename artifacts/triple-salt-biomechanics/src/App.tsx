@@ -286,6 +286,7 @@ export function AnalysisWorkspace() {
   const poseRef = useRef<PoseInstance | null>(null);
   const multiPoseRef = useRef<PoseLandmarkerInstance | null>(null);
   const trackedPoseRef = useRef<Landmark[] | null>(null);
+  const trackingSignatureRef = useRef<TrackingSignature | null>(null);
   const athleteLockedRef = useRef(false);
   const selectedPoseIndexRef = useRef<number | null>(null);
   const poseEngineLoadingRef = useRef(false);
@@ -313,6 +314,7 @@ export function AnalysisWorkspace() {
   const [athleteLocked, setAthleteLocked] = useState(false);
   const [athleteSelectionMode, setAthleteSelectionMode] = useState(false);
   const [trackingWarning, setTrackingWarning] = useState('');
+  const [showSkeleton, setShowSkeleton] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [frameCorrections, setFrameCorrections] = useState<Record<number, Partial<Record<PointKey, ManualPoint>>>>({});
   const [confidence, setConfidence] = useState<number | null>(null);
@@ -446,8 +448,11 @@ export function AnalysisWorkspace() {
       });
     };
 
-    if (candidates.length) candidates.forEach((candidate, index) => drawPose(candidate, index === selectedIndex));
-    else if (poseLandmarks && poseLandmarks.length > 32) drawPose(poseLandmarks, true);
+    const shouldDrawPose = showSkeleton || athleteSelectionMode;
+    if (shouldDrawPose) {
+      if (candidates.length) candidates.forEach((candidate, index) => drawPose(candidate, index === selectedIndex));
+      else if (poseLandmarks && poseLandmarks.length > 32) drawPose(poseLandmarks, true);
+    }
 
     const selectedAnglePoints = frameSlots[activeClipPhase][activeFrameSlot]?.points ?? [];
     if (selectedAnglePoints.length) {
@@ -497,7 +502,7 @@ export function AnalysisWorkspace() {
       const manualPosition = point({ x: position.x, y: position.y });
       context.fillText(key.toUpperCase(), manualPosition.x + 9, manualPosition.y + 3);
     });
-  }, [activeClipPhase, activeFrameSlot, frameSlots, guides, manualPoints, poseCandidates, selectedPoseIndex]);
+  }, [activeClipPhase, activeFrameSlot, athleteSelectionMode, frameSlots, guides, manualPoints, poseCandidates, selectedPoseIndex, showSkeleton]);
 
   useEffect(() => {
     drawOverlay(landmarks);
