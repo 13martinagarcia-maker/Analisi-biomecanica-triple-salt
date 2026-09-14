@@ -58,6 +58,14 @@ type Landmark = {
   visibility?: number;
 };
 
+type TrackingSignature = {
+  center: { x: number; y: number };
+  scale: number;
+  torso: number;
+  shoulderWidth: number;
+  landmarks: Array<{ x: number; y: number } | null>;
+};
+
 type PoseResult = {
   poseLandmarks?: Landmark[];
 };
@@ -99,6 +107,64 @@ type Measurement = {
 type ManualPoint = {
   x: number;
   y: number;
+};
+
+const createTrackingSignature = (pose: Landmark[]): TrackingSignature | null => {
+  const visible = pose.filter((landmark) => (landmark.visibility ?? 1) >= .25);
+  if (visible.length < 8) return null;
+  const minX = Math.min(...visible.map((landmark) => landmark.x));
+  const maxX = Math.max(...visible.map((landmark) => landmark.x));
+  const minY = Math.min(...visible.map((landmark) => landmark.y));
+  const maxY = Math.max(...visible.map((landmark) => landmark.y));
+  const leftHip = pose[23];
+  const rightHip = pose[24];
+  const leftShoulder = pose[11];
+  const rightShoulder = pose[12];
+  const hips = leftHip && rightHip
+    ? { x: (leftHip.x + rightHip.x) / 2, y: (leftHip.y + rightHip.y) / 2 }
+    : { x: (minX + maxX) / 2, y: minY + (maxY - minY) * .65 };
+  const shoulders = leftShoulder && rightShoulder
+    ? { x: (leftShoulder.x + rightShoulder.x) / 2, y: (leftShoulder.y + rightShoulder.y) / 2 }
+    : { x: (minX + maxX) / 2, y: minY + (maxY - minY) * .3 };
+  const torso = Math.max(.02, Math.hypot(hips.x - shoulders.x, hips.y - shoulders.y));
+  const shoulderWidth = leftShoulder && rightShoulder
+    ? Math.max(.02, Math.hypot(leftShoulder.x - rightShoulder.x, leftShoulder.y - rightShoulder.y))
+    : torso;
+  const scale = Math.max(.04, Math.max(maxX - minX, maxY - minY));
+  return {
+    center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+    scale,
+    torso,
+    shoulderWidth,
+    landmarks: pose.map((landmark) => (
+      (landmark.visibility ?? 1) >= .25 ? { x: landmark.x, y: landmark.y } : null
+    )),
+  };
+};
+
+const trackingCost = (previous: TrackingSignature, next: TrackingSignature) => {
+  const normalizedScale = Math.max(.04, previous.scale);
+  const positionCost = Math.hypot(
+    next.center.x - previous.center.x,
+    next.center.y - previous.center.y,
+  ) / normalizedScale;
+  const sizeCost = Math.abs(Math.log(next.scale / previous.scale));
+  const torsoCost = Math.abs(Math.log(next.torso / previous.torso));
+  const shoulderCost = Math.abs(Math.log(next.shoulderWidth / previous.shoulderWidth));
+  const jointDistances = previous.landmarks
+    .map((landmark, index) => {
+      const current = next.landmarks[index];
+      return landmark && current
+        ? Math.hypot(current.x - landmark.x, current.y - landmark.y) / normalizedScale
+        : null;
+    })
+    .filter((value): value is number => value !== null)
+    .sort((a, b) => a - b);
+  const stableJointCost = jointDistances.length
+    ? jointDistances.slice(0, Math.max(1, Math.ceil(jointDistances.length * .8)))
+      .reduce((sum, value) => sum + value, 0) / Math.max(1, Math.ceil(jointDistances.length * .8))
+    : 1;
+  return positionCost * .9 + stableJointCost * 1.25 + sizeCost * .55 + torsoCost * .35 + shoulderCost * .25;
 };
 
 const makePointId = () => `angle-point-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
