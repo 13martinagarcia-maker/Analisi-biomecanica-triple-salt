@@ -4465,6 +4465,19 @@ button {
   accent-color: hsl(var(--primary));
 }
 
+.crop-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: .45rem !important;
+  align-items: center;
+}
+
+.crop-actions .button-primary,
+.crop-actions .button-outline {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
 .active-card-container .video-panel,
 .active-card-container .angle-mode-selector,
 .active-card-container .inline-comparison,

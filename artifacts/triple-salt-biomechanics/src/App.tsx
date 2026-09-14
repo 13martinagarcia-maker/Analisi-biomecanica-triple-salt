@@ -35,6 +35,7 @@ type PhaseKey = 'HOP' | 'STEP' | 'JUMP';
 type PointKey = 'hip' | 'knee' | 'ankle';
 type GuideKey = 'horizontal' | 'vertical' | 'grid';
 type AngleMode = 'vertex' | 'segments';
+type CropRect = { left: number; top: number; width: number; height: number };
 type AnglePoint = {
   id: string;
   x: number;
@@ -299,6 +300,7 @@ export function AnalysisWorkspace() {
   const objectUrlRef = useRef<string | null>(null);
   const suppressCanvasClickRef = useRef(false);
   const focusedPoseCropRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
+  const cropStartRef = useRef<{ x: number; y: number } | null>(null);
   const [athletes, setAthletes] = useState(['Maya Carter', 'Noah Williams', 'Inez Bell']);
   const [athlete, setAthlete] = useState('Maya Carter');
   const [createAthleteOpen, setCreateAthleteOpen] = useState(false);
@@ -336,6 +338,8 @@ export function AnalysisWorkspace() {
   const [selectedPoint, setSelectedPoint] = useState<PointKey>('knee');
   const [manualPoints, setManualPoints] = useState<Partial<Record<PointKey, ManualPoint>>>({});
   const [angleSelectionMode, setAngleSelectionMode] = useState(false);
+  const [cropMode, setCropMode] = useState(false);
+  const [cropRect, setCropRect] = useState<CropRect | null>(null);
   const [draggingAnglePointId, setDraggingAnglePointId] = useState<string | null>(null);
   const [activeClipPhase, setActiveClipPhase] = useState<PhaseKey>('HOP');
   const [activeFrameSlot, setActiveFrameSlot] = useState(0);
@@ -506,7 +510,23 @@ export function AnalysisWorkspace() {
       const manualPosition = point({ x: position.x, y: position.y });
       context.fillText(key.toUpperCase(), manualPosition.x + 9, manualPosition.y + 3);
     });
-  }, [activeClipPhase, activeFrameSlot, athleteSelectionMode, frameSlots, guides, manualPoints, poseCandidates, selectedPoseIndex, showSkeleton]);
+    if (activeFrameImage && cropRect) {
+      const cropLeft = offsetX + cropRect.left * videoWidth * scale;
+      const cropTop = offsetY + cropRect.top * videoHeight * scale;
+      const cropWidth = cropRect.width * videoWidth * scale;
+      const cropHeight = cropRect.height * videoHeight * scale;
+      context.fillStyle = 'rgba(4, 10, 20, .56)';
+      context.fillRect(offsetX, offsetY, videoWidth * scale, cropTop - offsetY);
+      context.fillRect(offsetX, cropTop + cropHeight, videoWidth * scale, offsetY + videoHeight * scale - cropTop - cropHeight);
+      context.fillRect(offsetX, cropTop, cropLeft - offsetX, cropHeight);
+      context.fillRect(cropLeft + cropWidth, cropTop, offsetX + videoWidth * scale - cropLeft - cropWidth, cropHeight);
+      context.strokeStyle = '#f24a2e';
+      context.lineWidth = 3;
+      context.setLineDash([9, 6]);
+      context.strokeRect(cropLeft, cropTop, cropWidth, cropHeight);
+      context.setLineDash([]);
+    }
+  }, [activeClipPhase, activeFrameImage, activeFrameSlot, athleteSelectionMode, cropRect, frameSlots, guides, manualPoints, poseCandidates, selectedPoseIndex, showSkeleton]);
 
   useEffect(() => {
     drawOverlay(landmarks);
@@ -893,6 +913,8 @@ export function AnalysisWorkspace() {
     setZoom(1);
     setPanX(0);
     setPanY(0);
+    setCropMode(false);
+    setCropRect(null);
     const selectedSlot = frameSlots[phase][slot];
     if (selectedSlot.frame !== null) {
       setLandmarks(null);
@@ -960,6 +982,8 @@ export function AnalysisWorkspace() {
     setZoom(1);
     setPanX(0);
     setPanY(0);
+    setCropMode(false);
+    setCropRect(null);
     setLandmarkCache((previous) => landmarks ? { ...previous, [exactFrame]: landmarks } : previous);
     if (image) {
       setFrameImages((previous) => ({
@@ -971,6 +995,7 @@ export function AnalysisWorkspace() {
   };
 
   const focusedCrop = () => {
+    if (cropRect) return cropRect;
     const stage = stageRef.current;
     const effectiveZoom = Math.max(1, zoom);
     const width = 1 / effectiveZoom;
@@ -999,6 +1024,9 @@ export function AnalysisWorkspace() {
     const image = new Image();
     image.src = activeFrameImage;
     try {
+      setPoseCandidates([]);
+      setLandmarks(null);
+      setConfidence(null);
       await image.decode();
       const crop = focusedCrop();
       const input = document.createElement('canvas');
@@ -1025,11 +1053,25 @@ export function AnalysisWorkspace() {
           x: crop.left + landmark.x * crop.width,
           y: crop.top + landmark.y * crop.height,
         })));
+        const target = candidates
+          .map((candidate) => {
+            const visible = candidate.filter((point) => (point.visibility ?? 1) >= .35);
+            const xs = visible.map((point) => point.x);
+            const ys = visible.map((point) => point.y);
+            const area = xs.length
+              ? (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys))
+              : 0;
+            return { candidate, area };
+          })
+          .sort((first, second) => second.area - first.area)[0]?.candidate ?? null;
         focusedPoseCropRef.current = null;
-        setPoseCandidates(candidates);
-        setLandmarks(candidates[0] ?? null);
-        setConfidence(candidates[0]?.length
-          ? candidates[0].reduce((sum, point) => sum + (point.visibility ?? 0), 0) / candidates[0].length
+        setPoseCandidates(target ? [target] : []);
+        setSelectedPoseIndex(target ? 0 : null);
+        selectedPoseIndexRef.current = target ? 0 : null;
+        trackedPoseRef.current = target;
+        setLandmarks(target);
+        setConfidence(target?.length
+          ? target.reduce((sum, point) => sum + (point.visibility ?? 0), 0) / target.length
           : null);
       } else if (poseRef.current) {
         await poseRef.current.send({ image: input });
@@ -1046,6 +1088,8 @@ export function AnalysisWorkspace() {
   const clearActiveFrameSlot = () => {
     updateActiveFrameSlot({ frame: null, time: null, points: [], label: '', referenceId: '' });
     setAngleSelectionMode(false);
+    setCropMode(false);
+    setCropRect(null);
     setFrameImages((previous) => ({
       ...previous,
       [activeClipPhase]: previous[activeClipPhase].map((image, index) => index === activeFrameSlot ? null : image),
@@ -1076,6 +1120,7 @@ export function AnalysisWorkspace() {
 
   const handleCanvasClick = (event: MouseEvent<HTMLCanvasElement>) => {
     if (suppressCanvasClickRef.current) return;
+    if (cropMode) return;
     const stage = stageRef.current;
     const video = videoRef.current;
     if (!stage || !video) return;
@@ -1206,6 +1251,15 @@ export function AnalysisWorkspace() {
   };
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (cropMode && activeFrameImage) {
+      const click = getCanvasPoint(event);
+      if (!click) return;
+      cropStartRef.current = { x: click.x, y: click.y };
+      setCropRect({ left: click.x, top: click.y, width: 0, height: 0 });
+      event.currentTarget.setPointerCapture(event.pointerId);
+      event.preventDefault();
+      return;
+    }
     if (activeSlot.frame !== currentFrame || !activeSlot.points.length) return;
     const click = getCanvasPoint(event);
     if (!click) return;
@@ -1222,6 +1276,18 @@ export function AnalysisWorkspace() {
   };
 
   const handleCanvasPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (cropMode && cropStartRef.current) {
+      const click = getCanvasPoint(event);
+      if (!click) return;
+      const start = cropStartRef.current;
+      setCropRect({
+        left: Math.min(start.x, click.x),
+        top: Math.min(start.y, click.y),
+        width: Math.abs(click.x - start.x),
+        height: Math.abs(click.y - start.y),
+      });
+      return;
+    }
     if (!draggingAnglePointId) return;
     const click = getCanvasPoint(event);
     if (!click) return;
@@ -1234,6 +1300,18 @@ export function AnalysisWorkspace() {
   };
 
   const handleCanvasPointerUp = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (cropMode && cropStartRef.current) {
+      cropStartRef.current = null;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+      if (!cropRect || cropRect.width < .05 || cropRect.height < .05) {
+        setCropRect(null);
+        showToast('La zona de retall és massa petita. Dibuixa un rectangle més gran.');
+      } else {
+        setCropMode(false);
+        showToast('Retall definit. MediaPipe només analitzarà aquesta zona.');
+      }
+      return;
+    }
     if (!draggingAnglePointId) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     setDraggingAnglePointId(null);
@@ -1454,8 +1532,8 @@ export function AnalysisWorkspace() {
                         onPointerCancel={handleCanvasPointerUp}
                         style={{
                           transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-                           pointerEvents: athleteSelectionMode || manualPointMode || angleSelectionMode || (activeSlot.frame === currentFrame && activeSlot.points.length > 0) ? 'auto' : 'none',
-                           cursor: draggingAnglePointId ? 'grabbing' : athleteSelectionMode || manualPointMode || angleSelectionMode ? 'crosshair' : activeSlot.points.length ? 'grab' : 'default',
+                           pointerEvents: cropMode || athleteSelectionMode || manualPointMode || angleSelectionMode || (activeSlot.frame === currentFrame && activeSlot.points.length > 0) ? 'auto' : 'none',
+                           cursor: cropMode ? 'crosshair' : draggingAnglePointId ? 'grabbing' : athleteSelectionMode || manualPointMode || angleSelectionMode ? 'crosshair' : activeSlot.points.length ? 'grab' : 'default',
                         }}
                         data-testid="canvas-pose-overlay"
                       />
@@ -1516,7 +1594,7 @@ export function AnalysisWorkspace() {
                     <div className="captured-frame-edit-controls">
                       <div>
                         <span className="eyebrow">Fotograma fix seleccionat</span>
-                        <strong>Amplia i centra l’atleta abans de detectar l’esquelet</strong>
+                        <strong>{cropRect ? 'Zona retallada preparada per a MediaPipe' : 'Retalla al voltant de l’atleta que vols analitzar'}</strong>
                       </div>
                       <label>
                         Mida
@@ -1530,9 +1608,19 @@ export function AnalysisWorkspace() {
                         Vertical
                         <input type="range" min="-240" max="240" step="2" value={panY} onChange={(event) => setPanY(Number(event.target.value))} aria-label="Posició vertical del fotograma" />
                       </label>
-                      <button type="button" className="button-primary" onClick={detectPoseOnFocusedFrame} data-testid="button-detect-focused-pose">
-                        <ScanLine size={14} /> Aplicar enfocament i detectar esquelet
-                      </button>
+                      <div className="crop-actions">
+                        <button type="button" className={`button-outline ${cropMode ? 'active-button' : ''}`} onClick={() => {
+                          setCropMode((value) => !value);
+                          setAngleSelectionMode(false);
+                          setManualPointMode(false);
+                        }} data-testid="button-start-crop">
+                          <Crosshair size={14} /> {cropMode ? 'Cancel·lar retall' : cropRect ? 'Redibuixar retall' : 'Retallar zona'}
+                        </button>
+                        {cropRect && <button type="button" className="button-outline" onClick={() => setCropRect(null)}><RotateCcw size={14} /> Treure retall</button>}
+                        <button type="button" className="button-primary" onClick={detectPoseOnFocusedFrame} data-testid="button-detect-focused-pose">
+                          <ScanLine size={14} /> Detectar persona dins del retall
+                        </button>
+                      </div>
                     </div>
                   )}
                    <div className="tool-strip">
