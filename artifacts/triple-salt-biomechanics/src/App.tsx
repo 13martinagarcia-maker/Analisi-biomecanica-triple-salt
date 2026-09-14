@@ -1308,7 +1308,7 @@ export function AnalysisWorkspace() {
                         }}
                         data-testid="canvas-pose-overlay"
                       />
-                      <div className="video-overlay-chip"><span className="status-dot live-dot" />{athleteSelectionMode ? 'SELECCIONA UNA PERSONA' : athleteLocked ? 'ATLETA BLOQUEJAT' : poseLabel}{poseCandidates.length > 1 && !athleteSelectionMode ? ` · ${poseCandidates.length} PERSONES` : ''}</div>
+                      <div className="video-overlay-chip"><span className="status-dot live-dot" />{athleteSelectionMode ? 'SELECCIONA UNA PERSONA' : trackingWarning || (athleteLocked ? 'ATLETA SELECCIONAT · SEGUINT' : poseLabel)}{poseCandidates.length > 1 && !athleteSelectionMode ? ` · ${poseCandidates.length} PERSONES` : ''}</div>
                     </>
                   ) : (
                     <div className="video-empty">
@@ -1362,7 +1362,9 @@ export function AnalysisWorkspace() {
                        </select>
                      </label>
                   </div>
-                  <div className="tool-strip">
+                   <div className="tool-strip">
+                     <button className={`tool-toggle ${showSkeleton ? 'active' : ''}`} onClick={() => setShowSkeleton((value) => !value)} disabled={!videoSrc} data-testid="button-toggle-skeleton"><ScanLine size={13} /> {showSkeleton ? 'Amagar esquelet' : 'Mostrar esquelet'}</button>
+                     {athleteLocked && <button className="tool-toggle" onClick={changeAthlete} data-testid="button-change-athlete"><UserRound size={13} /> Canviar atleta</button>}
                     <button className={`tool-toggle ${guides.horizontal ? 'active' : ''}`} onClick={() => setGuide('horizontal')} data-testid="button-guide-horizontal"><Minus size={13} /> Horitzontal</button>
                     <button className={`tool-toggle ${guides.vertical ? 'active' : ''}`} onClick={() => setGuide('vertical')} data-testid="button-guide-vertical"><Minus size={13} style={{ transform: 'rotate(90deg)' }} /> Vertical</button>
                     <button className={`tool-toggle ${guides.grid ? 'active' : ''}`} onClick={() => setGuide('grid')} data-testid="button-guide-grid"><Grid3X3 size={13} /> Quadrícula</button>
@@ -1580,55 +1582,91 @@ export function AnalysisWorkspace() {
 
           <section className="workspace">
             {!analysisStarted ? (
-              <div className="temps-workspace">
-                <div className="temps-main">
-                  <div className="section-caption mb-4">
-                    <h2>1. TEMPS: Defineix les fases del salt</h2>
-                    <div className="small-note">Puja un vídeo i marca l'inici i final de cada fase (Batuda 1, 2, 3) usant els controls de sota.</div>
+              <div className="phase-setup-flow">
+                <div className="section-caption phase-setup-heading">
+                  <div>
+                    <span className="eyebrow">Pas 1 de 2</span>
+                    <h2>Marca les fases del triple salt</h2>
+                    <div className="small-note">Mou el vídeo al punt exacte i marca l’inici i el final de HOP, STEP i JUMP.</div>
                   </div>
-                  {videoEditorContent}
+                  <span className="phase-setup-counter">{(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).filter((phase) => phases[phase].start && phases[phase].end).length} / 3 fases</span>
                 </div>
-                <div className="temps-sidebar stack" style={{ marginTop: '3.5rem' }}>
-                  <div className="panel">
-                    <div className="panel-header">
-                      <div className="panel-title"><Target size={17} /> Talls de temps</div>
+                {videoEditorContent}
+                <section className="panel phase-marker-panel">
+                  <div className="panel-header">
+                    <div className="panel-title"><Target size={17} /> Fases del salt</div>
+                    <span className="phase-current-time">Fotograma {currentFrame} · {formatTime(currentTime)}</span>
+                  </div>
+                  <div className="panel-body">
+                    <div className="phase-marker-grid">
+                      {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase, phaseIndex) => {
+                        const complete = Boolean(phases[phase].start && phases[phase].end);
+                        return (
+                          <article className={`phase-marker-card ${phase.toLowerCase()} ${activePhase === phase ? 'active' : ''} ${complete ? 'complete' : ''}`} key={phase} onClick={() => setActivePhase(phase)}>
+                            <header>
+                              <span className="phase-marker-number">{phaseIndex + 1}</span>
+                              <div><strong>{phase}</strong><small>{phaseTitle(phase)}</small></div>
+                              {complete && <Check size={17} />}
+                            </header>
+                            <div className="phase-marker-range" data-testid={`readout-${phase.toLowerCase()}-range`}>{phaseBounds(phase)}</div>
+                            <div className="phase-marker-actions">
+                              <button type="button" className={phases[phase].start ? 'set' : ''} onClick={(event) => { event.stopPropagation(); markPhase(phase, 'start'); }} disabled={!videoSrc} data-testid={`button-mark-${phase.toLowerCase()}-start`}>Inici</button>
+                              <button type="button" className={phases[phase].end ? 'set' : ''} onClick={(event) => { event.stopPropagation(); markPhase(phase, 'end'); }} disabled={!videoSrc || !phases[phase].start} data-testid={`button-mark-${phase.toLowerCase()}-end`}>Final</button>
+                              <button type="button" className="clear" onClick={(event) => { event.stopPropagation(); clearPhase(phase); }} disabled={!phases[phase].start && !phases[phase].end} data-testid={`button-clear-${phase.toLowerCase()}`} aria-label={`Esborrar ${phase}`}><X size={13} /></button>
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
-                    <div className="panel-body">
-                      <div className="phase-list">
-                        {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => (
-                          <div className={`phase-row ${activePhase === phase ? 'active' : ''}`} key={phase}>
-                            <button className="phase-chip" onClick={() => setActivePhase(phase)} data-testid={`button-phase-${phase.toLowerCase()}`}>{phase}</button>
-                            <div className="phase-time phase-time-readout" data-testid={`readout-${phase.toLowerCase()}-range`}>{phaseBounds(phase)}</div>
-                            <button className="phase-action" onClick={() => markPhase(phase, phases[phase].start ? 'end' : 'start')} data-testid={`button-mark-${phase.toLowerCase()}`} disabled={!videoSrc}>
-                              {phases[phase].start ? `Final ${phase}` : `Inici ${phase}`} <ChevronDown size={12} style={{ transform: 'rotate(-90deg)', verticalAlign: 'middle' }} />
-                            </button>
-                              {(phases[phase].start || phases[phase].end) && <button className="phase-action phase-clear" onClick={() => clearPhase(phase)} data-testid={`button-clear-${phase.toLowerCase()}`}>Esborrar</button>}
-                          </div>
-                        ))}
+                    <div className="phase-analyze-row">
+                      <div>
+                        <strong>{allPhasesValid ? 'Les tres fases estan preparades' : 'Completa els sis punts de tall'}</strong>
+                        <span>{allPhasesValid ? 'Ja pots obrir les targetes i seleccionar els 9 fotogrames.' : 'Marca inici i final de cada fase abans de continuar.'}</span>
                       </div>
-                      <div className="mt-6 pt-4 border-t border-border">
-                        <button className="button-primary w-full" onClick={startAnalysis} disabled={!videoSrc || !allPhasesValid} data-testid="button-start-analysis">
-                          <Activity size={14} /> Anar a l'anàlisi biomecànica
-                        </button>
-                        {!allPhasesValid && videoSrc && <div className="small-note text-center mt-2">Cal definir inici i final de les tres fases per continuar.</div>}
-                      </div>
+                      <button className="button-primary phase-analyze-button" onClick={startAnalysis} disabled={!videoSrc || !allPhasesValid} data-testid="button-start-analysis"><Activity size={15} /> Analitzar</button>
                     </div>
                   </div>
-                </div>
+                </section>
               </div>
             ) : (
               <div className="phases-workspace stack">
-                <div className="flex justify-between items-center mb-6">
+                <div className="analysis-flow-heading">
                   <div>
-                    <h2 style={{ fontFamily: 'var(--app-font-serif)', fontSize: '1.8rem' }}>2. FASES: Anàlisi Fotograma a Fotograma</h2>
-                    <p className="small-note text-muted-foreground mt-1">Escull 3 fotogrames manuals per cada fase, ajusta els punts i avalua l'angle de referència.</p>
+                    <span className="eyebrow">Pas 2 de 2</span>
+                    <h2>Anàlisi fotograma a fotograma</h2>
+                    <p>Selecciona tres fotogrames de cada fase i ajusta els punts biomecànics.</p>
                   </div>
                   <button className="button-outline" onClick={() => setAnalysisStarted(false)}>
                     <RotateCcw size={14} /> Tornar als talls de temps
                   </button>
                 </div>
 
-                {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
+                <div className="analysis-phase-tabs" role="tablist" aria-label="Fases d’anàlisi">
+                  {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
+                    const selectedCount = frameSlots[phase].filter((slot) => slot.frame !== null).length;
+                    return (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeClipPhase === phase}
+                        className={`${phase.toLowerCase()} ${activeClipPhase === phase ? 'active' : ''}`}
+                        onClick={() => {
+                          setActiveClipPhase(phase);
+                          setActiveFrameSlot(0);
+                          setAngleSelectionMode(false);
+                          if (phases[phase].start) seekTo(Number(phases[phase].start) / fps);
+                        }}
+                        key={phase}
+                        data-testid={`tab-analysis-${phase.toLowerCase()}`}
+                      >
+                        <span>{phase}</span>
+                        <small>{selectedCount} / 3 fotogrames</small>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {[activeClipPhase].map((phase) => {
                   return (
                       <div key={phase} className={`phase-section ${phase.toLowerCase()}`}>
                       <div className="phase-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -1636,6 +1674,22 @@ export function AnalysisWorkspace() {
                         <div className="phase-times" style={{ fontFamily: 'var(--app-font-mono)', fontSize: '.85rem', color: 'hsl(var(--muted-foreground))', background: 'hsl(var(--muted))', padding: '.3rem .6rem', borderRadius: '.3rem' }}>
                           {formatTime(Number(phases[phase].start) / fps)} — {formatTime(Number(phases[phase].end) / fps)}
                         </div>
+                      </div>
+
+                      <div className="analysis-frame-card-tabs">
+                        {[0, 1, 2].map((slotIndex) => {
+                          const slot = frameSlots[phase][slotIndex];
+                          const image = frameImages[phase][slotIndex];
+                          const isActive = activeFrameSlot === slotIndex;
+                          return (
+                            <button type="button" className={isActive ? 'active' : ''} onClick={() => focusAnalysisCard(phase, slotIndex)} key={`preview-${slotIndex}`}>
+                              <span className="analysis-frame-preview">
+                                {image ? <img src={image} alt="" /> : <Video size={20} />}
+                              </span>
+                              <span><strong>Angle {slotIndex + 1}</strong><small>{slot.frame === null ? 'Per seleccionar' : `F ${slot.frame}`}</small></span>
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <div className="cards-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

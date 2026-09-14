@@ -4078,6 +4078,294 @@ button {
 }
 
 /* Estic a casa — flux per fases i targetes de fotograma */
+.phase-setup-flow {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.phase-setup-heading,
+.analysis-flow-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.phase-setup-heading h2,
+.analysis-flow-heading h2 {
+  margin: .25rem 0 .3rem;
+  font-family: var(--app-font-serif);
+  font-size: clamp(1.55rem, 2.8vw, 2.1rem);
+  letter-spacing: -.035em;
+}
+
+.phase-setup-counter,
+.phase-current-time {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: .68rem;
+}
+
+.phase-setup-counter {
+  padding: .5rem .7rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  background: hsl(var(--card));
+}
+
+.phase-marker-panel {
+  overflow: hidden;
+}
+
+.phase-marker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.phase-marker-card {
+  position: relative;
+  display: grid;
+  gap: .8rem;
+  min-width: 0;
+  padding: .9rem;
+  border: 1px solid hsl(var(--border));
+  border-top: 3px solid var(--color-hop);
+  border-radius: .65rem;
+  background: hsl(var(--background));
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.phase-marker-card.step { border-top-color: var(--color-step); }
+.phase-marker-card.jump { border-top-color: var(--color-jump); }
+
+.phase-marker-card:hover,
+.phase-marker-card.active {
+  border-color: hsl(var(--primary) / .65);
+  background: hsl(var(--primary) / .045);
+  transform: translateY(-1px);
+}
+
+.phase-marker-card.complete {
+  box-shadow: inset 0 0 0 1px hsl(146 46% 42% / .22);
+}
+
+.phase-marker-card header {
+  display: flex;
+  align-items: center;
+  gap: .58rem;
+}
+
+.phase-marker-card header > svg {
+  margin-left: auto;
+  color: hsl(146 46% 42%);
+}
+
+.phase-marker-number {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: .4rem;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: .65rem;
+}
+
+.phase-marker-card header strong,
+.phase-marker-card header small {
+  display: block;
+}
+
+.phase-marker-card header strong {
+  font-family: var(--app-font-mono);
+  font-size: .76rem;
+  letter-spacing: .06em;
+}
+
+.phase-marker-card header small {
+  margin-top: .12rem;
+  color: hsl(var(--muted-foreground));
+  font-size: .64rem;
+}
+
+.phase-marker-range {
+  min-height: 1.1rem;
+  color: hsl(var(--foreground));
+  font-family: var(--app-font-mono);
+  font-size: .66rem;
+}
+
+.phase-marker-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: .35rem;
+}
+
+.phase-marker-actions button {
+  min-height: 2rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .4rem;
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: .67rem;
+  font-weight: 750;
+}
+
+.phase-marker-actions button:hover:not(:disabled),
+.phase-marker-actions button.set {
+  border-color: hsl(var(--primary) / .65);
+  background: hsl(var(--primary) / .1);
+  color: hsl(var(--primary));
+}
+
+.phase-marker-actions button.clear {
+  width: 2rem;
+  color: hsl(8 65% 50%);
+}
+
+.phase-analyze-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.phase-analyze-row strong,
+.phase-analyze-row span {
+  display: block;
+}
+
+.phase-analyze-row strong {
+  margin-bottom: .2rem;
+  font-family: var(--app-font-serif);
+  font-size: 1rem;
+}
+
+.phase-analyze-row span {
+  color: hsl(var(--muted-foreground));
+  font-size: .72rem;
+}
+
+.phase-analyze-button {
+  min-width: 9rem;
+}
+
+.analysis-flow-heading p {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: .78rem;
+}
+
+.analysis-phase-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+  padding: .35rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .65rem;
+  background: hsl(var(--muted) / .4);
+}
+
+.analysis-phase-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 3rem;
+  padding: .6rem .8rem;
+  border: 1px solid transparent;
+  border-radius: .48rem;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+}
+
+.analysis-phase-tabs button span {
+  font-family: var(--app-font-mono);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.analysis-phase-tabs button small {
+  font-size: .61rem;
+}
+
+.analysis-phase-tabs button.active {
+  border-color: hsl(var(--border));
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  box-shadow: 0 5px 16px hsl(216 31% 11% / .08);
+}
+
+.analysis-phase-tabs button.hop.active { box-shadow: inset 0 3px var(--color-hop), 0 5px 16px hsl(216 31% 11% / .08); }
+.analysis-phase-tabs button.step.active { box-shadow: inset 0 3px var(--color-step), 0 5px 16px hsl(216 31% 11% / .08); }
+.analysis-phase-tabs button.jump.active { box-shadow: inset 0 3px var(--color-jump), 0 5px 16px hsl(216 31% 11% / .08); }
+
+.analysis-frame-card-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .65rem;
+  margin-bottom: 1rem;
+}
+
+.analysis-frame-card-tabs > button {
+  display: grid;
+  grid-template-columns: 4.3rem 1fr;
+  align-items: center;
+  gap: .7rem;
+  min-width: 0;
+  padding: .55rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .55rem;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  text-align: left;
+}
+
+.analysis-frame-card-tabs > button.active {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / .12);
+}
+
+.analysis-frame-preview {
+  display: grid;
+  width: 4.3rem;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  place-items: center;
+  border-radius: .35rem;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.analysis-frame-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.analysis-frame-card-tabs strong,
+.analysis-frame-card-tabs small {
+  display: block;
+}
+
+.analysis-frame-card-tabs strong {
+  font-family: var(--app-font-serif);
+  font-size: .85rem;
+}
+
+.analysis-frame-card-tabs small {
+  margin-top: .15rem;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: .58rem;
+}
+
 .temps-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -4286,6 +4574,27 @@ button {
 }
 
 @media (max-width: 640px) {
+  .phase-setup-heading,
+  .analysis-flow-heading,
+  .phase-analyze-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .phase-marker-grid,
+  .analysis-frame-card-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-phase-tabs button {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .phase-analyze-button {
+    width: 100%;
+  }
+
   .phase-header,
   .inactive-card-content {
     align-items: flex-start !important;
