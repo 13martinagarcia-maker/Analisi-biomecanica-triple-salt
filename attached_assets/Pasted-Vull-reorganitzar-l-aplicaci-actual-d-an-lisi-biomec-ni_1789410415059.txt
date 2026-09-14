@@ -1,0 +1,76 @@
+Vull reorganitzar l’aplicació actual d’anàlisi biomecànica del triple salt perquè el flux de treball sigui més senzill, visual i controlable.
+Important: no eliminis ni trenquis cap funcionalitat que ja existeixi. Mantén les funcions actuals de detecció de MediaPipe Pose, dibuix de l’esquelet, selecció de punts, correcció manual, càlcul d’angles i informació de l’atleta. La feina consisteix a reorganitzar i millorar la interfície i el flux d’anàlisi.
+Nou flux de treball
+1. Carregar i reproduir el vídeo
+L’usuari ha de poder:
+Carregar un vídeo.
+Reproduir-lo, pausar-lo i avançar o retrocedir fotograma a fotograma.
+Veure la línia temporal.
+Saltar a un instant concret.
+Fer tot el que ja estava per`com a NOVA COSA → ha de poder Activar o desactivar l’opció de detecció de MediaPipe Pose.
+L’opció de detecció ha de tenir un interruptor clar:
+Detectar esquelet: activat
+Detectar esquelet: desactivat
+Quan estigui desactivada, el vídeo s’ha de veure net, sense dibuixar l’esquelet a sobre.
+La detecció pot continuar guardant internament les dades si ja s’han calculat, però l’usuari ha de poder decidir si vol veure o no la superposició.
+2. Seleccionar les fases del triple salt
+Cal preguntar com es feia ara i es fara l’inci i final de cada fase amb opció d’esborrar:
+Hop
+Step
+Jump
+Per a cada fase, l’usuari ha de poder selecionar els tres fotogrames per marcar els 3 angles de cada fase.
+La interfície podria mostrar tres blocs o pestanyes amb les seves desprectives targetes de cada angle de cada fase com estan ara.
+Hop
+Step
+Jump
+3. Seleccionar tres fotogrames per cada fase
+L’objectiu final és seleccionar tres fotogrames importants de cada fase:
+3 fotogrames del Hop.
+3 fotogrames del Step.
+3 fotogrames del Jump.
+En total:
+3 fases × 3 fotogrames = 9 fotogrames d’anàlisi.
+L’usuari ha de poder seleccionar un fotograma directament des del minivideo de cada fase (hop,step o jump) que ja s’haurà seleccionat previament i estarà en la pestanya que li toca amb 3 les targetes a sota dels fotogrames que seleccionara la persona. les tarjetes com son ara.
+4. Vista neta del vídeo
+La vista principal de selecció ha de mostrar el vídeo sense esquelet per defecte, perquè sigui més fàcil identificar visualment els moments importants.
+L’usuari ha de poder activar temporalment l’esquelet amb un botó:
+Mostrar esquelet
+Amagar esquelet
+Així l’esquelet serveix com a eina d’ajuda, però no interfereix constantment en la visualització del vídeo.
+5. Vista d’anàlisi ampliada per a cada fotograma
+Quan l’usuari seleccioni un dels nou fotogrames, s’ha d’obrir una vista d’anàlisi més gran.
+Aquesta vista ha d’incloure:
+El fotograma seleccionat en gran.
+El vídeo o fotograma original.
+Una versió ampliada o retallada de la zona de l’atleta.
+Controls de zoom.
+Controls per moure i centrar la imatge.
+Opció de retallar la regió d’interès.
+Botó per mostrar o amagar l’esquelet.
+Eines per seleccionar o corregir els landmarks.
+Càlcul dels angles biomecànics.
+Informació de la fase i del fotograma.
+La imatge ampliada ha de servir per veure millor l’atleta quan el vídeo original és llunyà o té poca resolució.
+Important: el zoom i el retall han de millorar la visualització, però no han d’inventar detalls que no existeixen en el vídeo original.
+6. Selecció de la regió de l’atleta
+Quan sigui possible, el programa ha de proposar automàticament una regió al voltant de l’atleta detectat.
+L’usuari ha de poder modificar aquesta regió manualment:
+Ampliar-la.
+Fer-la més estreta.
+Moure-la.
+Centrar-la.
+Tornar a la imatge original.
+Si hi ha altres persones o objectes al fons, el sistema no ha de canviar automàticament d’atleta sense avisar.
+La selecció de l’atleta ha de mantenir-se associada al fotograma i a la regió escollida per l’usuari.
+7. Esquelet i correcció manual
+Per cada fotograma seleccionat:
+MediaPipe Pose ha de detectar els punts del cos.
+L’esquelet s’ha de poder activar o desactivar.
+Els punts detectats s’han de poder corregir manualment.
+Les correccions han de quedar guardades només per aquell fotograma.
+Si MediaPipe no detecta bé un punt, l’usuari ha de poder moure’l.
+Les dades corregides han de ser les que s’utilitzin per calcular els angles.
+És important conservar les coordenades originals dels landmarks encara que es faci zoom o retall. Les coordenades de la imatge ampliada s’han de convertir correctament a les coordenades del fotograma original perquè els càlculs siguin geomètricament correctes.
+8. Càlcul dels tres angles
+Cada fotograma ha de permetre calcular els tres angles biomecànics que ja estaven previstos a l’aplicació.
+
