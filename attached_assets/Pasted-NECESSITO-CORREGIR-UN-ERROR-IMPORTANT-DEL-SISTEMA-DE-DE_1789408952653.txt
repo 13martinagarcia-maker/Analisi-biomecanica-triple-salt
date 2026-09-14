@@ -1,0 +1,108 @@
+NECESSITO CORREGIR UN ERROR IMPORTANT DEL SISTEMA DE DETECCIÓ AMB MEDIAPIPE POSE.
+
+T'explico exactament què està passant:
+
+La meva app és d'anàlisi biomecànica de triple salt. L'usuari selecciona una atleta del vídeo i l'app li dibuixa automàticament l'esquelet amb MediaPipe.
+
+El problema apareix durant el moviment, especialment en el moment de la batuda:
+
+* Jo selecciono una atleta concreta.
+* L'app comença a detectar el seu esquelet.
+* En un moment determinat, hi ha una altra persona, objecte o element del fons darrere de l'atleta.
+* MediaPipe perd o confon alguns landmarks.
+* L'esquelet deixa de correspondre a l'atleta seleccionada i salta cap a una altra persona o element.
+* A partir d'aquí, l'app continua analitzant una persona que jo NO he seleccionat.
+
+AIXÒ ÉS EL QUE VULL CORREGIR.
+
+IMPORTANTÍSSIM:
+NO vull bloquejar la possibilitat de seleccionar altres persones.
+NO vull que només es pugui seleccionar una persona.
+NO vull que l'usuari quedi atrapat amb un únic esquelet.
+Vull que l'usuari pugui seleccionar QUALSEVOL atleta, però que el sistema no canviï automàticament d'atleta durant el seguiment.
+
+COMPORTAMENT CORRECTE:
+
+1. SELECCIÓ LLIURE
+
+* L'usuari pot seleccionar qualsevol persona del vídeo.
+* Ha de poder canviar d'atleta quan vulgui.
+* El botó "Canviar atleta" ha de desbloquejar la selecció i permetre seleccionar una persona diferent.
+* No bloquegis la interfície de manera que no es pugui seleccionar cap altre esquelet.
+
+2. IDENTITAT DE L'ATLETA SELECCIONAT
+   Quan l'usuari selecciona una persona, guarda una referència persistent d'aquell atleta.
+   Aquesta referència ha d'incloure, sempre que sigui possible:
+
+* Posició.
+* Bounding box.
+* Mida de la persona.
+* Landmarks corporals.
+* Continuïtat del moviment.
+* Informació que permeti distingir-la d'altres persones del fons.
+
+3. SEGUIMENT PERSISTENT
+   Després de seleccionar l'atleta:
+
+* El sistema ha de seguir aquella mateixa persona entre fotogrames.
+* No ha d'escollir la persona més visible de cada fotograma.
+* No ha de canviar a una altra persona perquè tingui una detecció amb més confiança.
+* No ha de tornar a seleccionar automàticament una persona diferent quan MediaPipe perdi temporalment l'atleta.
+
+4. CAS ESPECÍFIC DE LA BATUDA
+   Durant la batuda del triple salt, si una persona o objecte apareix darrere de l'atleta i MediaPipe confon els punts:
+
+* NO canviïs l'esquelet a la persona del darrere.
+* Comprova la continuïtat de la posició i del moviment de l'atleta seleccionat.
+* Comprova si els landmarks detectats són compatibles amb l'esquelet anterior.
+* Si la detecció és incompatible, marca-la com a sospitosa.
+* Intenta recuperar l'atleta original.
+* Si no es pot confirmar, mostra "Atleta no detectat" o "Revisió necessària".
+
+ÉS PREFERIBLE PERDRE TEMPORALMENT L'ESQUELET QUE ANALITZAR LA PERSONA EQUIVOCADA.
+
+5. VALIDACIÓ DE LANDMARKS
+   Abans d'acceptar els punts de cada fotograma:
+
+* Comprova la distància respecte dels fotogrames anteriors.
+* Comprova la coherència de les connexions anatòmiques.
+* Comprova que maluc, genoll i turmell continuïn formant una estructura corporal coherent.
+* Detecta salts sobtats dels punts.
+* Si un punt és incompatible, no el substitueixis automàticament per un punt d'una altra persona.
+
+6. CORRECCIÓ MANUAL
+   Mantén el botó "Corregir punts".
+   Si l'usuari corregeix un genoll, maluc o turmell:
+
+* La correcció ha de tenir prioritat en aquell fotograma.
+* No ha de ser substituïda immediatament per MediaPipe.
+* L'angle s'ha de recalcular a partir dels punts corregits.
+* Cal indicar quins punts són automàtics i quins són corregits.
+
+7. ESTATS VISIBLES
+   Mostra clarament:
+
+* "Atleta seleccionat".
+* "Seguint atleta".
+* "Detecció dubtosa".
+* "Atleta perdut temporalment".
+* "Revisió necessària".
+* Botó "Canviar atleta".
+
+8. REVISIÓ DEL CODI ACTUAL
+   Abans de modificar, revisa:
+
+* Com es guarda actualment la persona seleccionada.
+* Si MediaPipe detecta una o diverses persones.
+* Si el sistema fa tracking real o detecta cada fotograma de manera independent.
+* Si el botó de canviar atleta funciona correctament.
+* Per què els landmarks poden saltar a una persona o objecte del fons.
+* Si el problema és que es reutilitza una detecció nova sense validar-la amb l'atleta seleccionat.
+
+No vull una solució superficial que simplement posi un botó de bloqueig.
+Vull corregir el problema real de seguiment.
+
+RESUM DEL QUE NECESSITO:
+"Seleccionar qualsevol atleta → guardar-lo com a atleta seleccionat → seguir sempre aquell atleta → no canviar automàticament a altres persones o objectes → poder canviar d'atleta manualment quan jo vulgui."
+
+Si MediaPipe Pose no és suficient per fer aquest seguiment de manera fiable, explica quina capa de tracking o quin altre model cal afegir, però no eliminis la selecció lliure d'atletes.
