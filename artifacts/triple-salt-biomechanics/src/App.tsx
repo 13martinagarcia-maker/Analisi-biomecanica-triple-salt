@@ -213,10 +213,12 @@ const INITIAL_MEASUREMENTS: Record<PhaseKey, Measurement> = {
 };
 
 const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
-  HOP: [0, 1, 2].map(() => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
-  STEP: [0, 1, 2].map(() => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
-  JUMP: [0, 1, 2].map(() => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
+  HOP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId })),
+  STEP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId })),
+  JUMP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId })),
 });
+
+const ANGLE_LABELS = ['Cama davantera', 'Cama posterior', 'Angle intern'] as const;
 
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds)) return '00:00.000';
@@ -369,7 +371,7 @@ export function AnalysisWorkspace() {
     .every((phase) => frameSlots[phase].every((slot) => slot.frame !== null));
   const phaseTitle = (phase: PhaseKey) => `Batuda ${phase === 'HOP' ? 1 : phase === 'STEP' ? 2 : 3}`;
   const slotTitle = (phase: PhaseKey, slot: FrameSlot, index: number) =>
-    slot.label.trim() || `${phaseTitle(phase)} — Angle ${index + 1}`;
+    slot.label.trim() || `${phaseTitle(phase)} — ${ANGLE_LABELS[index]}`;
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -1108,7 +1110,7 @@ export function AnalysisWorkspace() {
   };
 
   const clearActiveFrameSlot = () => {
-    updateActiveFrameSlot({ frame: null, time: null, points: [], label: '', referenceId: '' });
+    updateActiveFrameSlot({ frame: null, time: null, points: [], label: '' });
     setAngleSelectionMode(false);
     setCropMode(false);
     setCropRect(null);
@@ -1391,6 +1393,9 @@ export function AnalysisWorkspace() {
       return { phase, slot, index, value };
     }))
   ), [frameSlots]);
+  const completedChartPhases = (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).filter((phase) =>
+    resultRows.filter((row) => row.phase === phase).every((row) => row.value !== null && Boolean(row.slot.referenceId)),
+  );
 
   const updateMeasurement = (phase: PhaseKey, key: keyof Measurement, value: string) => {
     setMeasurements((previous) => ({
@@ -1691,6 +1696,53 @@ export function AnalysisWorkspace() {
                 <div><h2>Targetes d’anàlisi per batuda</h2><div className="small-note">Cada fotograma triat manualment es compara visualment amb la secció corresponent de Jonathan Edwards.</div></div>
                 <button className="button-quiet" onClick={() => { setFrameSlots(createEmptyFrameSlots()); setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }); }} data-testid="button-clear-measurements"><X size={14} /> Restablir anàlisi</button>
               </div>
+              {completedChartPhases.length > 0 && (
+                <div className="phase-comparison-charts" data-testid="phase-comparison-charts">
+                  {completedChartPhases.map((phase) => {
+                    const rows = resultRows.filter((row) => row.phase === phase);
+                    return (
+                      <section className={`phase-comparison-chart ${phase.toLowerCase()}`} key={`chart-${phase}`}>
+                        <header>
+                          <div><span className="eyebrow">Comparació dels 3 angles</span><h3>{phase}</h3></div>
+                          <span className="phase-chart-legend"><i className="athlete" /> Atleta <i className="jonathan" /> Jonathan Edwards</span>
+                        </header>
+                        <div className="phase-chart-angles">
+                          {rows.map((row) => {
+                            const referenceText = referenceTextForSlot(phase, row.slot);
+                            const reference = parseReferenceRange(referenceText);
+                            const athleteValue = row.value ?? 0;
+                            const referenceValue = reference?.target ?? 0;
+                            const difference = athleteValue - referenceValue;
+                            const percentage = referenceValue ? (difference / referenceValue) * 100 : 0;
+                            const maximum = Math.max(athleteValue, referenceValue, 1) * 1.12;
+                            return (
+                              <article className="phase-chart-angle" key={`${phase}-bar-${row.index}`}>
+                                <div className="phase-chart-angle-title">
+                                  <div><span>Angle {row.index + 1}</span><strong>{ANGLE_LABELS[row.index]}</strong></div>
+                                  <div className={difference > 0 ? 'positive' : difference < 0 ? 'negative' : ''}>
+                                    <strong>{difference >= 0 ? '+' : ''}{difference.toFixed(1)}°</strong>
+                                    <span>{percentage >= 0 ? '+' : ''}{percentage.toFixed(1)}%</span>
+                                  </div>
+                                </div>
+                                <div className="comparison-bar-row">
+                                  <span>Atleta</span>
+                                  <div><i className="athlete-bar" style={{ width: `${(athleteValue / maximum) * 100}%` }} /></div>
+                                  <strong>{athleteValue.toFixed(1)}°</strong>
+                                </div>
+                                <div className="comparison-bar-row">
+                                  <span>Jonathan</span>
+                                  <div><i className="jonathan-bar" style={{ width: `${(referenceValue / maximum) * 100}%` }} /></div>
+                                  <strong>{referenceValue.toFixed(1)}°</strong>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
               {allFramesSelected ? (
                 <div className="analysis-card-groups" data-testid="analysis-card-groups">
                   {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => (
@@ -1942,8 +1994,10 @@ export function AnalysisWorkspace() {
                         key={phase}
                         data-testid={`tab-analysis-${phase.toLowerCase()}`}
                       >
-                        <span>{phase}</span>
-                        <small>{selectedCount} / 3 fotogrames</small>
+                        <figure className={`phase-tab-reference reference-crop-${phase.toLowerCase()}`}>
+                          <img src={referenceImage} alt={`Referència ${phase} de Jonathan Edwards`} />
+                        </figure>
+                        <span><strong>{phase}</strong><small>Jonathan Edwards · {selectedCount} / 3</small></span>
                       </button>
                     );
                   })}

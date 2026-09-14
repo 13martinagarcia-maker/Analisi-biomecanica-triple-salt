@@ -4273,11 +4273,11 @@ button {
 }
 
 .analysis-phase-tabs button {
-  display: flex;
+  display: grid;
+  grid-template-columns: 4.6rem 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: .5rem;
-  min-height: 3rem;
+  min-height: 4.6rem;
   padding: .6rem .8rem;
   border: 1px solid transparent;
   border-radius: .48rem;
@@ -4285,7 +4285,13 @@ button {
   color: hsl(var(--muted-foreground));
 }
 
-.analysis-phase-tabs button span {
+.analysis-phase-tabs button > span {
+  display: grid;
+  gap: .18rem;
+  text-align: left;
+}
+
+.analysis-phase-tabs button span strong {
   font-family: var(--app-font-mono);
   font-size: .72rem;
   font-weight: 800;
@@ -4305,6 +4311,150 @@ button {
 .analysis-phase-tabs button.hop.active { box-shadow: inset 0 3px var(--color-hop), 0 5px 16px hsl(216 31% 11% / .08); }
 .analysis-phase-tabs button.step.active { box-shadow: inset 0 3px var(--color-step), 0 5px 16px hsl(216 31% 11% / .08); }
 .analysis-phase-tabs button.jump.active { box-shadow: inset 0 3px var(--color-jump), 0 5px 16px hsl(216 31% 11% / .08); }
+
+.phase-tab-reference {
+  position: relative;
+  width: 4.6rem;
+  aspect-ratio: 4 / 3;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: .35rem;
+  background: hsl(var(--card));
+}
+
+.phase-tab-reference img {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: auto;
+  max-width: none;
+  height: 100%;
+}
+
+.phase-tab-reference.reference-crop-step img { transform: translateX(-33.33%); }
+.phase-tab-reference.reference-crop-jump img { transform: translateX(-66.66%); }
+
+.phase-comparison-charts {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 1.6rem;
+}
+
+.phase-comparison-chart {
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-top: 4px solid var(--color-hop);
+  border-radius: .7rem;
+  background: hsl(var(--card));
+}
+
+.phase-comparison-chart.step { border-top-color: var(--color-step); }
+.phase-comparison-chart.jump { border-top-color: var(--color-jump); }
+
+.phase-comparison-chart > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.phase-comparison-chart h3 {
+  margin: .15rem 0 0;
+  font-family: var(--app-font-serif);
+  font-size: 1.35rem;
+}
+
+.phase-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: hsl(var(--muted-foreground));
+  font-size: .68rem;
+}
+
+.phase-chart-legend i {
+  width: .8rem;
+  height: .8rem;
+  border-radius: .15rem;
+}
+
+.phase-chart-legend .athlete { background: #ef4b2f; }
+.phase-chart-legend .jonathan { background: #315a88; }
+
+.phase-chart-angles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.phase-chart-angle {
+  display: grid;
+  gap: .65rem;
+  padding: 1rem;
+  border-right: 1px solid hsl(var(--border));
+}
+
+.phase-chart-angle:last-child { border-right: 0; }
+
+.phase-chart-angle-title {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: .6rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.phase-chart-angle-title > div {
+  display: grid;
+  gap: .15rem;
+}
+
+.phase-chart-angle-title span {
+  color: hsl(var(--muted-foreground));
+  font-size: .64rem;
+}
+
+.phase-chart-angle-title > div:last-child {
+  text-align: right;
+}
+
+.phase-chart-angle-title .positive strong,
+.phase-chart-angle-title .positive span { color: #c4452f; }
+.phase-chart-angle-title .negative strong,
+.phase-chart-angle-title .negative span { color: #315a88; }
+
+.comparison-bar-row {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 3.2rem;
+  gap: .5rem;
+  align-items: center;
+  font-size: .66rem;
+}
+
+.comparison-bar-row > div {
+  height: .75rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: hsl(var(--muted));
+}
+
+.comparison-bar-row i {
+  display: block;
+  min-width: 2px;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.athlete-bar { background: #ef4b2f; }
+.jonathan-bar { background: #315a88; }
+
+.comparison-bar-row strong {
+  text-align: right;
+  font-family: var(--app-font-mono);
+  font-size: .67rem;
+}
 
 .analysis-frame-card-tabs {
   display: grid;
@@ -4616,6 +4766,19 @@ button {
 }
 
 @media (max-width: 1050px) {
+  .phase-chart-angles {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-chart-angle {
+    border-right: 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .phase-chart-angle:last-child {
+    border-bottom: 0;
+  }
+
   .captured-frame-edit-controls {
     grid-template-columns: 1fr;
   }
