@@ -1,0 +1,130 @@
+Vull canviar el funcionament actual de la selecció de fotogrames a “Estic a casa”, perquè ara els mini-vídeos estan donant problemes i es trenca la reproducció/àudio.
+
+IMPORTANT: NO vull que generis ni creïs físicament mini-vídeos nous. NO tallis ni exportis el vídeo original en clips independents.
+
+Vull que TOT continuï funcionant a partir del VÍDEO ORIGINAL.
+
+FUNCIONAMENT:
+
+1. PRIMER es manté el sistema actual on l’usuari marca al vídeo general:
+
+- Inici HOP + final HOP
+- Inici STEP + final STEP
+- Inici JUMP + final JUMP
+
+Aquests temps defineixen les tres fases.
+
+2. Quan l’usuari prem “ANALITZAR”, utilitza el vídeo ORIGINAL i aquests temps per crear visualment tres BLOCS DE TREBALL:
+
+HOP
+STEP
+JUMP
+
+NO són vídeos nous. Són tres zones independents de la interfície que simplement reprodueixen el fragment corresponent del vídeo original segons els temps seleccionats.
+
+3. DINS DE CADA BLOC vull 3 TARGETES DE FOTOGRAMA.
+
+Per exemple:
+
+HOP
+[ Targeta fotograma 1 ]
+[ Targeta fotograma 2 ]
+[ Targeta fotograma 3 ]
+
+STEP
+[ Targeta fotograma 1 ]
+[ Targeta fotograma 2 ]
+[ Targeta fotograma 3 ]
+
+JUMP
+[ Targeta fotograma 1 ]
+[ Targeta fotograma 2 ]
+[ Targeta fotograma 3 ]
+
+TOTAL: 9 targetes.
+
+4. CADA TARGETA ha de permetre seleccionar el fotograma directament des del vídeo original.
+
+El funcionament ha de ser:
+
+- La targeta mostra el vídeo corresponent a aquella fase.
+- El vídeo comença visualment en l’inici de la fase seleccionada.
+- No cal crear cap fitxer de vídeo nou.
+- L’usuari pot avançar i retrocedir fotograma a fotograma.
+- Quan troba el fotograma exacte que vol analitzar, prem “Seleccionar fotograma”.
+- Aquest fotograma queda guardat dins d’aquella targeta.
+
+Per tant, el mini vídeo/visor és només una VISTA DEL VÍDEO ORIGINAL LIMITADA AL RANG DE TEMPS DE LA FASE.
+
+5. MOLT IMPORTANT:
+
+NO vull que l’usuari pugui seleccionar fotogrames fora de la fase corresponent.
+
+Si estem dins del bloc HOP, només es poden seleccionar fotogrames entre Inici HOP i Final HOP.
+
+Si estem dins del bloc STEP, només entre Inici STEP i Final STEP.
+
+Si estem dins del bloc JUMP, només entre Inici JUMP i Final JUMP.
+
+6. DISSENY
+
+Vull que visualment quedi molt clar que són tres blocs diferents:
+
+🟦 HOP
+→ 3 targetes
+
+🟩 STEP
+→ 3 targetes
+
+🟧 JUMP
+→ 3 targetes
+
+Cada bloc ha de tenir:
+- títol gran
+- color identificatiu
+- imatge/fotograma visible
+- vídeo/reproductor de la fase
+- controls ← → per avançar i retrocedir fotograma a fotograma
+- botó “Seleccionar fotograma”
+- indicació del temps/fotograma actual
+
+Les targetes han de ser grans, modernes i molt visuals, amb un disseny semblant a Lovable.
+
+7. DESPRÉS DE SELECCIONAR EL FOTOGRAMA
+
+Una vegada seleccionat el fotograma, aquella mateixa targeta ha de continuar sent la targeta d’anàlisi.
+
+Allà s’ha de poder fer posteriorment:
+- veure el fotograma seleccionat
+- veure MediaPipe
+- seleccionar/corregir punts
+- seleccionar els angles
+- calcular els angles
+- veure la referència de Jonathan Edwards
+
+TOT dins de la mateixa targeta.
+
+RESUM DEL FUNCIONAMENT QUE VULL:
+
+VÍDEO ORIGINAL
+↓
+MARCAR INICI/FINAL HOP, STEP I JUMP
+↓
+ANALITZAR
+↓
+3 BLOCS VISUALS: HOP / STEP / JUMP
+↓
+3 TARGETES DINS DE CADA BLOC
+↓
+CADA TARGETA UTILITZA EL VÍDEO ORIGINAL EN EL RANG DE LA SEVA FASE
+↓
+AVANÇAR/RETROCEDIR FOTOGRAMA A FOTOGRAMA
+↓
+SELECCIONAR FOTOGRAMA
+↓
+ANÀLISI DEL FOTOGRAMA DINS DE LA MATEIXA TARGETA
+
+IMPORTANTÍSSIM:
+No creïs mini-vídeos ni fitxers nous. No separis l’àudio. No modifiquis el vídeo original. Utilitza sempre el vídeo original amb un rang temporal diferent per a cada bloc.
+
+No toquis la funcionalitat de MediaPipe Pose ni els càlculs biomecànics que ja funcionen. El canvi és principalment en l’estructura i la interfície de selecció dels 9 fotogrames.
