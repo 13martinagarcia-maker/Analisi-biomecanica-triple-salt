@@ -4417,6 +4417,54 @@ button {
   color: hsl(36 33% 94%);
 }
 
+.captured-frame-editor-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform-origin: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.captured-frame-edit-controls {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.25fr) repeat(3, minmax(115px, .75fr)) auto;
+  gap: .8rem;
+  align-items: end;
+  padding: .85rem 1rem;
+  border-top: 1px solid hsl(215 20% 30%);
+  background: hsl(216 27% 14%);
+}
+
+.captured-frame-edit-controls > div {
+  display: grid;
+  gap: .2rem;
+}
+
+.captured-frame-edit-controls > div strong {
+  max-width: 28rem;
+  color: hsl(36 33% 94%);
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.captured-frame-edit-controls label {
+  display: grid;
+  gap: .35rem;
+  color: hsl(215 14% 72%);
+  font-family: var(--app-font-mono);
+  font-size: .62rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.captured-frame-edit-controls input[type="range"] {
+  width: 100%;
+  accent-color: hsl(var(--primary));
+}
+
 .active-card-container .video-panel,
 .active-card-container .angle-mode-selector,
 .active-card-container .inline-comparison,
@@ -4555,6 +4603,10 @@ button {
 }
 
 @media (max-width: 1050px) {
+  .captured-frame-edit-controls {
+    grid-template-columns: 1fr;
+  }
+
   .temps-workspace,
   .active-card-layout {
     grid-template-columns: 1fr;

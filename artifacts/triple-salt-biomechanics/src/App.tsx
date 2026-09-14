@@ -78,12 +78,12 @@ type MultiPoseResult = {
 type PoseInstance = {
   setOptions: (options: Record<string, unknown>) => void;
   onResults: (callback: (results: PoseResult) => void) => void;
-  send: (payload: { image: HTMLVideoElement }) => Promise<void>;
+  send: (payload: { image: HTMLVideoElement | HTMLCanvasElement }) => Promise<void>;
   close?: () => void;
 };
 
 type PoseLandmarkerInstance = {
-  detectForVideo: (video: HTMLVideoElement, timestampMs: number) => MultiPoseResult;
+  detectForVideo: (video: HTMLVideoElement | HTMLCanvasElement, timestampMs: number) => MultiPoseResult;
   close?: () => void;
 };
 
@@ -298,6 +298,7 @@ export function AnalysisWorkspace() {
   const playbackLoopRef = useRef<number | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const suppressCanvasClickRef = useRef(false);
+  const focusedPoseCropRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const [athletes, setAthletes] = useState(['Maya Carter', 'Noah Williams', 'Inez Bell']);
   const [athlete, setAthlete] = useState('Maya Carter');
   const [createAthleteOpen, setCreateAthleteOpen] = useState(false);
@@ -353,6 +354,7 @@ export function AnalysisWorkspace() {
   const activeReference = REFERENCE_ROWS.find((row) => row.phase === activePhase)!;
   const activeMeasurement = measurements[activePhase];
   const activeSlot = frameSlots[activeClipPhase][activeFrameSlot];
+  const activeFrameImage = frameImages[activeClipPhase][activeFrameSlot];
   const requiredAnglePointCount = activeSlot.angleMode === 'segments' ? 4 : 3;
   const activeClipMark = phases[activeClipPhase];
   const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) : 0;
@@ -514,7 +516,16 @@ export function AnalysisWorkspace() {
   }, [drawOverlay, landmarks]);
 
   const handlePoseResults = useCallback((results: PoseResult) => {
-    const nextLandmarks = results.poseLandmarks ?? null;
+    const crop = focusedPoseCropRef.current;
+    const detectedLandmarks = results.poseLandmarks ?? null;
+    const nextLandmarks = detectedLandmarks && crop
+      ? detectedLandmarks.map((landmark) => ({
+        ...landmark,
+        x: crop.left + landmark.x * crop.width,
+        y: crop.top + landmark.y * crop.height,
+      }))
+      : detectedLandmarks;
+    focusedPoseCropRef.current = null;
     setLandmarks(nextLandmarks);
     setPoseCandidates(nextLandmarks ? [nextLandmarks] : []);
     if (nextLandmarks) setLandmarkCache((previous) => ({ ...previous, [frameForTime(videoRef.current?.currentTime ?? 0, fps)]: nextLandmarks }));
@@ -879,6 +890,9 @@ export function AnalysisWorkspace() {
     setActiveClipPhase(phase);
     setActiveFrameSlot(slot);
     setAngleSelectionMode(false);
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
     const selectedSlot = frameSlots[phase][slot];
     if (selectedSlot.frame !== null) {
       setLandmarks(null);
@@ -943,6 +957,9 @@ export function AnalysisWorkspace() {
       return;
     }
     updateActiveFrameSlot({ frame: exactFrame, time: exactTime, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
     setLandmarkCache((previous) => landmarks ? { ...previous, [exactFrame]: landmarks } : previous);
     if (image) {
       setFrameImages((previous) => ({
@@ -951,6 +968,79 @@ export function AnalysisWorkspace() {
       }));
     }
     showToast(`${activeClipPhase} — Fotograma ${activeFrameSlot + 1} seleccionat: F ${currentFrame}.`);
+  };
+
+  const focusedCrop = () => {
+    const stage = stageRef.current;
+    const effectiveZoom = Math.max(1, zoom);
+    const width = 1 / effectiveZoom;
+    const height = 1 / effectiveZoom;
+    const stageWidth = Math.max(1, stage?.clientWidth ?? 1);
+    const stageHeight = Math.max(1, stage?.clientHeight ?? 1);
+    const centerX = .5 - panX / (stageWidth * effectiveZoom);
+    const centerY = .5 - panY / (stageHeight * effectiveZoom);
+    return {
+      left: Math.min(1 - width, Math.max(0, centerX - width / 2)),
+      top: Math.min(1 - height, Math.max(0, centerY - height / 2)),
+      width,
+      height,
+    };
+  };
+
+  const detectPoseOnFocusedFrame = async () => {
+    if (!activeFrameImage || activeSlot.frame === null) {
+      showToast('Primer has de capturar un fotograma.');
+      return;
+    }
+    if (!poseRef.current && !multiPoseRef.current) {
+      showToast('MediaPipe Pose encara no està preparat.');
+      return;
+    }
+    const image = new Image();
+    image.src = activeFrameImage;
+    try {
+      await image.decode();
+      const crop = focusedCrop();
+      const input = document.createElement('canvas');
+      input.width = Math.max(320, Math.round(image.naturalWidth * crop.width));
+      input.height = Math.max(240, Math.round(image.naturalHeight * crop.height));
+      const context = input.getContext('2d');
+      if (!context) throw new Error('Canvas unavailable');
+      context.drawImage(
+        image,
+        crop.left * image.naturalWidth,
+        crop.top * image.naturalHeight,
+        crop.width * image.naturalWidth,
+        crop.height * image.naturalHeight,
+        0,
+        0,
+        input.width,
+        input.height,
+      );
+      focusedPoseCropRef.current = crop;
+      if (multiPoseRef.current) {
+        const result = multiPoseRef.current.detectForVideo(input, Math.round((activeSlot.time ?? 0) * 1000));
+        const candidates = (result.landmarks ?? []).map((candidate) => candidate.map((landmark) => ({
+          ...landmark,
+          x: crop.left + landmark.x * crop.width,
+          y: crop.top + landmark.y * crop.height,
+        })));
+        focusedPoseCropRef.current = null;
+        setPoseCandidates(candidates);
+        setLandmarks(candidates[0] ?? null);
+        setConfidence(candidates[0]?.length
+          ? candidates[0].reduce((sum, point) => sum + (point.visibility ?? 0), 0) / candidates[0].length
+          : null);
+      } else if (poseRef.current) {
+        await poseRef.current.send({ image: input });
+      }
+      setShowSkeleton(true);
+      setAngleSelectionMode(false);
+      showToast('Esquelet detectat sobre la zona enfocada. Ara pots corregir-lo o seleccionar els 3 punts.');
+    } catch {
+      focusedPoseCropRef.current = null;
+      showToast('No s’ha pogut analitzar la zona enfocada del fotograma.');
+    }
   };
 
   const clearActiveFrameSlot = () => {
@@ -1327,7 +1417,10 @@ export function AnalysisWorkspace() {
                       <video
                         ref={videoRef}
                         src={videoSrc}
-                        style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})` }}
+                        style={{
+                          transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+                          visibility: analysisStarted && activeFrameImage ? 'hidden' : 'visible',
+                        }}
                         onLoadedMetadata={onVideoLoaded}
                         onTimeUpdate={onVideoTimeUpdate}
                         onSeeked={() => {
@@ -1342,6 +1435,16 @@ export function AnalysisWorkspace() {
                         muted
                         data-testid="video-source"
                       />
+                      {analysisStarted && activeFrameImage && (
+                        <img
+                          className="captured-frame-editor-image"
+                          src={activeFrameImage}
+                          alt={`Fotograma capturat de ${activeClipPhase}`}
+                          style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})` }}
+                          draggable={false}
+                          data-testid="captured-frame-editor-image"
+                        />
+                      )}
                       <canvas
                         ref={canvasRef}
                         onClick={handleCanvasClick}
@@ -1369,7 +1472,7 @@ export function AnalysisWorkspace() {
                   )}
                 </div>
                 <div className="video-controls">
-                  <div className="timeline">
+                  {!activeFrameImage && <div className="timeline">
                     <input
                       type="range"
                       min={analysisStarted ? activeClipStart : 0}
@@ -1389,8 +1492,8 @@ export function AnalysisWorkspace() {
                       if (!mark.start || !mark.end || !duration) return null;
                       return <span key={`segment-${phase}`} className={`timeline-segment timeline-segment-${phase.toLowerCase()}`} style={{ left: `${(Number(mark.start) / duration) * 100}%`, width: `${((Number(mark.end) - Number(mark.start)) / duration) * 100}%` }} title={`${phase}: ${phaseBounds(phase)}`} />;
                     })}
-                  </div>
-                  <div className="control-row">
+                  </div>}
+                  {!activeFrameImage ? <div className="control-row">
                     <div className="control-group">
                       <button className="control-icon" onClick={() => stepFrame(-1)} disabled={!videoSrc} data-testid="button-step-back" aria-label="Fotograma anterior"><SkipBack size={15} /></button>
                       <button className="control-icon" onClick={togglePlay} disabled={!videoSrc} data-testid="button-play-pause" aria-label={isPlaying ? 'Pausa' : 'Reproducció'}>{isPlaying ? <Pause size={16} /> : <Play size={16} />}</button>
@@ -1409,7 +1512,29 @@ export function AnalysisWorkspace() {
                          {[.25, .5, .75, 1, 1.25, 1.5, 1.75, 2].map((speed) => <option key={speed} value={speed}>{speed}×</option>)}
                        </select>
                      </label>
-                  </div>
+                  </div> : (
+                    <div className="captured-frame-edit-controls">
+                      <div>
+                        <span className="eyebrow">Fotograma fix seleccionat</span>
+                        <strong>Amplia i centra l’atleta abans de detectar l’esquelet</strong>
+                      </div>
+                      <label>
+                        Mida
+                        <input type="range" min="1" max="3.5" step=".05" value={Math.max(1, zoom)} onChange={(event) => setZoom(Number(event.target.value))} aria-label="Ampliació del fotograma" />
+                      </label>
+                      <label>
+                        Horitzontal
+                        <input type="range" min="-360" max="360" step="2" value={panX} onChange={(event) => setPanX(Number(event.target.value))} aria-label="Posició horitzontal del fotograma" />
+                      </label>
+                      <label>
+                        Vertical
+                        <input type="range" min="-240" max="240" step="2" value={panY} onChange={(event) => setPanY(Number(event.target.value))} aria-label="Posició vertical del fotograma" />
+                      </label>
+                      <button type="button" className="button-primary" onClick={detectPoseOnFocusedFrame} data-testid="button-detect-focused-pose">
+                        <ScanLine size={14} /> Aplicar enfocament i detectar esquelet
+                      </button>
+                    </div>
+                  )}
                    <div className="tool-strip">
                      <button className={`tool-toggle ${showSkeleton ? 'active' : ''}`} onClick={() => setShowSkeleton((value) => !value)} disabled={!videoSrc} data-testid="button-toggle-skeleton"><ScanLine size={13} /> {showSkeleton ? 'Amagar esquelet' : 'Mostrar esquelet'}</button>
                      {athleteLocked && <button className="tool-toggle" onClick={changeAthlete} data-testid="button-change-athlete"><UserRound size={13} /> Canviar atleta</button>}
@@ -1420,8 +1545,8 @@ export function AnalysisWorkspace() {
                     <select className="select-field" style={{ width: '8rem', padding: '.35rem', background: 'hsl(216 27% 20%)', color: 'hsl(36 33% 94%)', borderColor: 'hsl(36 33% 94% / .2)' }} value={selectedPoint} onChange={(event) => setSelectedPoint(event.target.value as PointKey)} disabled={!manualPointMode} data-testid="select-manual-point">
                       <option value="hip">Maluc</option><option value="knee">Genoll</option><option value="ankle">Turmell</option>
                     </select>
-                     <button className="control-icon" onClick={() => setZoom((value) => Math.max(.7, value - .1))} disabled={!videoSrc} data-testid="button-zoom-out" aria-label="Allunyar"><ZoomOut size={14} /></button>
-                     <button className="control-icon" onClick={() => setZoom((value) => Math.min(2.4, value + .1))} disabled={!videoSrc} data-testid="button-zoom-in" aria-label="Apropar"><ZoomIn size={14} /></button>
+                      <button className="control-icon" onClick={() => setZoom((value) => Math.max(activeFrameImage ? 1 : .7, value - .1))} disabled={!videoSrc} data-testid="button-zoom-out" aria-label="Allunyar"><ZoomOut size={14} /></button>
+                      <button className="control-icon" onClick={() => setZoom((value) => Math.min(activeFrameImage ? 3.5 : 2.4, value + .1))} disabled={!videoSrc} data-testid="button-zoom-in" aria-label="Apropar"><ZoomIn size={14} /></button>
                      <button className="control-icon" onClick={resetView} data-testid="button-reset-view" aria-label="Restablir la vista"><RotateCcw size={14} /></button>
                   </div>
                 </div>
