@@ -1,0 +1,105 @@
+Vull que milloris el sistema actual de detecció d'esquelet de la meva aplicació d'anàlisi biomecànica de triple salt, que utilitza MediaPipe Pose.
+
+IMPORTANT: No vull simplement bloquejar la selecció ni limitar l'usuari a una única persona. Vull que l'usuari pugui seleccionar QUALSEVOL persona del vídeo i que, un cop seleccionada, el sistema segueixi NOMÉS aquella persona.
+
+OBJECTIU PRINCIPAL:
+
+Quan l'usuari faci clic sobre una persona del vídeo, l'aplicació ha d'entendre que aquella és l'atleta que vol analitzar. Ha de guardar aquesta selecció i mantenir la identitat d'aquell atleta durant els fotogrames següents.
+
+Exemple:
+
+* Hi ha diverses persones al vídeo.
+* L'usuari clica sobre l'atleta que fa el triple salt.
+* L'app detecta el seu esquelet.
+* A partir d'aquell moment, l'esquelet ha de continuar corresponent a aquella mateixa persona.
+* Si hi ha altres persones, objectes, tanques o elements del fons, l'esquelet NO s'ha de transferir a aquests elements.
+* Si el sistema perd temporalment l'atleta, ha de mostrar "Atleta no detectat" o "Revisió necessària", però NO ha de canviar silenciosament a una altra persona.
+
+FUNCIONALITATS QUE VULL IMPLEMENTAR:
+
+1. SELECCIÓ LLIURE DE PERSONA
+
+* Permetre seleccionar qualsevol atleta visible fent clic sobre ell.
+* No limitar la selecció a una persona predeterminada.
+* No bloquejar la possibilitat de seleccionar altres persones.
+* Afegir un botó "Canviar atleta" que permeti reiniciar la selecció quan l'usuari ho decideixi.
+
+2. IDENTIFICACIÓ DE L'ATLETA SELECCIONAT
+   Quan l'usuari seleccioni una persona, guarda una referència de l'atleta:
+
+* Posició inicial.
+* Bounding box o regió de la persona.
+* Mida i proporcions corporals.
+* Landmarks detectats per MediaPipe.
+* Informació necessària per distingir-lo d'altres persones del fons.
+
+No vull que el sistema esculli simplement la persona amb més confiança de cada fotograma.
+
+3. TRACKING PERSISTENT
+   Implementa un sistema de seguiment de l'atleta seleccionat entre fotogrames.
+
+* Utilitza tracking temporal.
+* Utilitza la posició i la continuïtat del moviment.
+* Si és possible, utilitza una ROI al voltant de l'atleta seleccionat.
+* Actualitza la ROI seguint el moviment de l'atleta.
+* No permetis que la ROI salti automàticament a una altra persona.
+* Si hi ha diverses persones, mantén el seguiment de la persona seleccionada.
+
+4. EVITAR QUE L'ESQUELET SALTI A ALTRES PERSONES O OBJECTES
+   Abans d'acceptar els landmarks de cada fotograma:
+
+* Comprova que la detecció correspon a la zona i trajectòria de l'atleta seleccionat.
+* Comprova la continuïtat amb els fotogrames anterior i posterior.
+* Comprova que les proporcions corporals i les connexions anatòmiques siguin coherents.
+* Detecta salts sobtats de les coordenades.
+* Si la detecció no coincideix amb l'atleta seleccionat, rebutja-la o marca-la com a dubtosa.
+* MAI substitueixis automàticament l'atleta seleccionat per una altra persona del fons.
+
+5. PÈRDUA TEMPORAL DE L'ATLETA
+   Si l'atleta queda tapat, surt parcialment de la imatge o MediaPipe perd els punts:
+
+* No canviïs a una altra persona.
+* Mostra l'estat "Atleta perdut temporalment".
+* Conserva l'última detecció fiable durant un temps limitat, sense inventar nous punts.
+* Intenta recuperar el mateix atleta quan torni a ser visible.
+* Si no es pot recuperar amb prou confiança, demana revisió manual.
+
+6. CORRECCIÓ MANUAL
+   Mantén el sistema de correcció manual dels landmarks.
+
+* L'usuari ha de poder corregir un punt concret.
+* Una correcció manual ha de tenir prioritat sobre la detecció automàtica en aquell fotograma.
+* No substitueixis immediatament el punt corregit amb una nova predicció de MediaPipe.
+* Recalcula l'angle a partir dels punts corregits.
+* Permet tornar al mode automàtic quan l'usuari ho decideixi.
+
+7. INTERFÍCIE
+   Mostra clarament:
+
+* "Atleta seleccionat".
+* Estat del seguiment: "Seguint atleta", "Detecció dubtosa" o "Atleta perdut".
+* Botó "Canviar atleta".
+* Botó "Corregir punts".
+* Indicador de confiança dels landmarks.
+* Diferenciació visual entre punts automàtics i punts corregits manualment.
+
+8. PRECISIÓ I TRANSPARÈNCIA
+   No vull que l'app doni una falsa sensació de precisió.
+
+* L'angle s'ha de calcular matemàticament a partir dels landmarks.
+* Si els punts no són fiables, mostra "Revisió necessària".
+* No calculis un angle com si fos exacte quan el sistema ha perdut l'atleta o ha detectat punts sospitosos.
+
+ABANS DE FER CANVIS:
+Analitza el codi actual i explica:
+
+* Com funciona ara la selecció de persona.
+* Si MediaPipe està detectant una o diverses persones.
+* Si actualment hi ha tracking.
+* Per què l'esquelet pot saltar a una altra persona o objecte.
+* Quina solució proposes per mantenir la identitat de l'atleta seleccionat.
+
+IMPORTANT:
+No vull una solució que impedeixi seleccionar persones.
+Vull exactament això:
+"Seleccionar qualsevol atleta → guardar la seva identitat → seguir només aquell atleta → no canviar automàticament a altres persones → poder canviar d'atleta manualment quan vulgui."
