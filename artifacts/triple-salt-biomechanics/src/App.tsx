@@ -296,6 +296,7 @@ export function AnalysisWorkspace() {
   const poseLoadingRef = useRef(false);
   const poseBusyRef = useRef(false);
   const lastInferenceAtRef = useRef(0);
+  const lastPoseTimestampRef = useRef(0);
   const playbackLoopRef = useRef<number | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const suppressCanvasClickRef = useRef(false);
@@ -548,6 +549,13 @@ export function AnalysisWorkspace() {
     focusedPoseCropRef.current = null;
     setLandmarks(nextLandmarks);
     setPoseCandidates(nextLandmarks ? [nextLandmarks] : []);
+    if (crop) {
+      setSelectedPoseIndex(nextLandmarks ? 0 : null);
+      selectedPoseIndexRef.current = nextLandmarks ? 0 : null;
+      trackedPoseRef.current = nextLandmarks;
+      setAthleteLocked(Boolean(nextLandmarks));
+      athleteLockedRef.current = Boolean(nextLandmarks);
+    }
     if (nextLandmarks) setLandmarkCache((previous) => ({ ...previous, [frameForTime(videoRef.current?.currentTime ?? 0, fps)]: nextLandmarks }));
     if (nextLandmarks?.length) {
       const visible = nextLandmarks
@@ -568,7 +576,9 @@ export function AnalysisWorkspace() {
     poseBusyRef.current = true;
     try {
       if (multiPoseRef.current) {
-        const result = multiPoseRef.current.detectForVideo(video, Math.round(video.currentTime * 1000));
+        const timestamp = Math.max(lastPoseTimestampRef.current + 1, Math.round(performance.now()));
+        lastPoseTimestampRef.current = timestamp;
+        const result = multiPoseRef.current.detectForVideo(video, timestamp);
         const nextCandidates = result.landmarks ?? [];
         setPoseCandidates(nextCandidates);
         if (!nextCandidates.length) {
@@ -1024,6 +1034,14 @@ export function AnalysisWorkspace() {
     const image = new Image();
     image.src = activeFrameImage;
     try {
+      videoRef.current?.pause();
+      setIsPlaying(false);
+      setAthleteLocked(false);
+      athleteLockedRef.current = false;
+      setSelectedPoseIndex(null);
+      selectedPoseIndexRef.current = null;
+      trackedPoseRef.current = null;
+      trackingSignatureRef.current = null;
       setPoseCandidates([]);
       setLandmarks(null);
       setConfidence(null);
@@ -1047,7 +1065,9 @@ export function AnalysisWorkspace() {
       );
       focusedPoseCropRef.current = crop;
       if (multiPoseRef.current) {
-        const result = multiPoseRef.current.detectForVideo(input, Math.round((activeSlot.time ?? 0) * 1000));
+        const timestamp = Math.max(lastPoseTimestampRef.current + 1, Math.round(performance.now()));
+        lastPoseTimestampRef.current = timestamp;
+        const result = multiPoseRef.current.detectForVideo(input, timestamp);
         const candidates = (result.landmarks ?? []).map((candidate) => candidate.map((landmark) => ({
           ...landmark,
           x: crop.left + landmark.x * crop.width,
@@ -1069,6 +1089,8 @@ export function AnalysisWorkspace() {
         setSelectedPoseIndex(target ? 0 : null);
         selectedPoseIndexRef.current = target ? 0 : null;
         trackedPoseRef.current = target;
+        setAthleteLocked(Boolean(target));
+        athleteLockedRef.current = Boolean(target);
         setLandmarks(target);
         setConfidence(target?.length
           ? target.reduce((sum, point) => sum + (point.visibility ?? 0), 0) / target.length
@@ -1078,7 +1100,7 @@ export function AnalysisWorkspace() {
       }
       setShowSkeleton(true);
       setAngleSelectionMode(false);
-      showToast('Esquelet detectat sobre la zona enfocada. Ara pots corregir-lo o seleccionar els 3 punts.');
+      showToast('Detecció anterior eliminada. Esquelet recalculat només amb la persona dins del retall.');
     } catch {
       focusedPoseCropRef.current = null;
       showToast('No s’ha pogut analitzar la zona enfocada del fotograma.');
@@ -1165,8 +1187,8 @@ export function AnalysisWorkspace() {
       return;
     }
     if (angleSelectionMode) {
-      if (activeSlot.frame !== currentFrame) {
-        showToast('Torna al fotograma seleccionat abans de definir l’angle.');
+      if (!activeFrameImage) {
+        showToast('Primer has de capturar el fotograma abans de definir l’angle.');
         return;
       }
       if (activeSlot.points.length >= requiredAnglePointCount) {
@@ -1219,7 +1241,7 @@ export function AnalysisWorkspace() {
       },
     }));
     const correctionIndex: Record<PointKey, number> = { hip: 23, knee: 25, ankle: 27 };
-    if (activeSlot.frame === currentFrame) {
+    if (activeFrameImage) {
       updateActiveFrameSlot({
         points: activeSlot.points.map((point) => point.source === 'landmark' && point.landmarkIndex === correctionIndex[selectedPoint]
           ? { ...point, x, y, corrected: true }
@@ -1260,7 +1282,7 @@ export function AnalysisWorkspace() {
       event.preventDefault();
       return;
     }
-    if (activeSlot.frame !== currentFrame || !activeSlot.points.length) return;
+    if (!activeFrameImage || !activeSlot.points.length) return;
     const click = getCanvasPoint(event);
     if (!click) return;
     const nearest = activeSlot.points.reduce((best, point, index) => {
@@ -1532,7 +1554,7 @@ export function AnalysisWorkspace() {
                         onPointerCancel={handleCanvasPointerUp}
                         style={{
                           transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-                           pointerEvents: cropMode || athleteSelectionMode || manualPointMode || angleSelectionMode || (activeSlot.frame === currentFrame && activeSlot.points.length > 0) ? 'auto' : 'none',
+                           pointerEvents: cropMode || athleteSelectionMode || manualPointMode || angleSelectionMode || (Boolean(activeFrameImage) && activeSlot.points.length > 0) ? 'auto' : 'none',
                            cursor: cropMode ? 'crosshair' : draggingAnglePointId ? 'grabbing' : athleteSelectionMode || manualPointMode || angleSelectionMode ? 'crosshair' : activeSlot.points.length ? 'grab' : 'default',
                         }}
                         data-testid="canvas-pose-overlay"
@@ -2003,8 +2025,12 @@ export function AnalysisWorkspace() {
                                           <option value="vertex">3 punts · angle amb vèrtex</option>
                                           <option value="segments">4 punts · entre dos segments</option>
                                         </select>
-                                        <button className={`button-outline w-full ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => { setManualPointMode(false); setAngleSelectionMode((value) => !value); }} disabled={slot.points.length >= requiredAnglePointCount} style={{ borderColor: angleSelectionMode ? 'hsl(var(--primary))' : undefined, color: angleSelectionMode ? 'hsl(var(--primary))' : undefined }}>
-                                          <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció de punts' : 'Seleccionar punts manuals'}
+                                        <button className={`button-outline w-full ${angleSelectionMode ? 'active-button' : ''}`} onClick={() => {
+                                          setCropMode(false);
+                                          setManualPointMode(false);
+                                          setAngleSelectionMode((value) => !value);
+                                        }} disabled={!activeFrameImage || slot.points.length >= requiredAnglePointCount} style={{ borderColor: angleSelectionMode ? 'hsl(var(--primary))' : undefined, color: angleSelectionMode ? 'hsl(var(--primary))' : undefined }}>
+                                          <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció' : `Seleccionar ${requiredAnglePointCount} punts sobre la foto`}
                                         </button>
                                         <div className="angle-point-progress"><span>Punts seleccionats</span><strong>{slot.points.length} / {requiredAnglePointCount}</strong></div>
                                         <button type="button" className="button-outline w-full" onClick={() => { updateActiveFrameSlot({ points: [] }); setAngleSelectionMode(true); }} disabled={!slot.points.length} data-testid="button-reset-angle-points"><RotateCcw size={14} /> Repetir selecció</button>
