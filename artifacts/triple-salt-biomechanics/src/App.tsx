@@ -45,6 +45,7 @@ type AnglePoint = {
 };
 type FrameSlot = {
   frame: number | null;
+  time: number | null;
   points: AnglePoint[];
   angleMode: AngleMode;
   label: string;
@@ -211,9 +212,9 @@ const INITIAL_MEASUREMENTS: Record<PhaseKey, Measurement> = {
 };
 
 const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
-  HOP: [0, 1, 2].map(() => ({ frame: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
-  STEP: [0, 1, 2].map(() => ({ frame: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
-  JUMP: [0, 1, 2].map(() => ({ frame: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
+  HOP: [0, 1, 2].map(() => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
+  STEP: [0, 1, 2].map(() => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
+  JUMP: [0, 1, 2].map(() => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId: '' })),
 });
 
 const formatTime = (seconds: number) => {
@@ -353,8 +354,8 @@ export function AnalysisWorkspace() {
   const activeSlot = frameSlots[activeClipPhase][activeFrameSlot];
   const requiredAnglePointCount = activeSlot.angleMode === 'segments' ? 4 : 3;
   const activeClipMark = phases[activeClipPhase];
-  const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) / fps : 0;
-  const activeClipEnd = activeClipMark.end ? Number(activeClipMark.end) / fps : duration;
+  const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) : 0;
+  const activeClipEnd = activeClipMark.end ? Number(activeClipMark.end) : duration;
   const allPhasesValid = (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).every((phase) => phases[phase].start && phases[phase].end);
   const allFramesSelected = (['HOP', 'STEP', 'JUMP'] as PhaseKey[])
     .every((phase) => frameSlots[phase].every((slot) => slot.frame !== null));
@@ -823,19 +824,25 @@ export function AnalysisWorkspace() {
       showToast('Load a video before marking frames.');
       return;
     }
+    const exactTime = videoRef.current?.currentTime ?? currentTime;
+    if (edge === 'end' && phases[phase].start && exactTime < Number(phases[phase].start)) {
+      showToast(`El final de ${phase} ha de ser posterior al seu inici.`);
+      return;
+    }
     setPhases((previous) => ({
       ...previous,
-      [phase]: { ...previous[phase], [edge]: String(currentFrame) },
+      [phase]: { ...previous[phase], [edge]: exactTime.toFixed(6) },
     }));
     setActivePhase(phase);
+    showToast(`${phase}: ${edge === 'start' ? 'inici' : 'final'} fixat exactament a ${formatTime(exactTime)}.`);
   };
 
   const phaseBounds = (phase: PhaseKey) => {
     const mark = phases[phase];
     return mark.start && mark.end
-      ? `${formatTime(Number(mark.start) / fps)} — ${formatTime(Number(mark.end) / fps)}`
+      ? `${formatTime(Number(mark.start))} — ${formatTime(Number(mark.end))}`
       : mark.start
-        ? `Inici: ${formatTime(Number(mark.start) / fps)}`
+        ? `Inici: ${formatTime(Number(mark.start))}`
         : 'Encara no definit';
   };
 
@@ -850,7 +857,7 @@ export function AnalysisWorkspace() {
     setActiveClipPhase('HOP');
     setActiveFrameSlot(0);
     setAnalysisStarted(true);
-    seekTo(Number(phases.HOP.start) / fps);
+    seekTo(Number(phases.HOP.start));
     showToast(athleteLocked
       ? 'Clip HOP obert. Selecciona manualment el primer fotograma.'
       : 'Clip HOP obert. Revisa la detecció i selecciona manualment el primer fotograma.');
@@ -868,13 +875,13 @@ export function AnalysisWorkspace() {
     setActiveClipPhase(phase);
     setActiveFrameSlot(slot);
     setAngleSelectionMode(false);
-    const frame = frameSlots[phase][slot].frame;
-    if (frame !== null) {
+    const selectedSlot = frameSlots[phase][slot];
+    if (selectedSlot.frame !== null) {
       setLandmarks(null);
       setConfidence(null);
-      seekTo(frame / fps);
+      seekTo(selectedSlot.time ?? selectedSlot.frame / fps);
     } else if (phases[phase].start) {
-      seekTo(Number(phases[phase].start) / fps);
+      seekTo(Number(phases[phase].start));
     }
   };
 
@@ -903,7 +910,8 @@ export function AnalysisWorkspace() {
       showToast(`Mou-te dins del fragment ${activeClipPhase} abans de seleccionar el fotograma.`);
       return;
     }
-    updateActiveFrameSlot({ frame: currentFrame, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
+    const exactTime = videoRef.current?.currentTime ?? currentTime;
+    updateActiveFrameSlot({ frame: currentFrame, time: exactTime, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
     setLandmarkCache((previous) => landmarks ? { ...previous, [currentFrame]: landmarks } : previous);
     const image = captureCurrentVideoFrame();
     if (image) {
@@ -916,7 +924,7 @@ export function AnalysisWorkspace() {
   };
 
   const clearActiveFrameSlot = () => {
-    updateActiveFrameSlot({ frame: null, points: [], label: '', referenceId: '' });
+    updateActiveFrameSlot({ frame: null, time: null, points: [], label: '', referenceId: '' });
     setAngleSelectionMode(false);
     setFrameImages((previous) => ({
       ...previous,
@@ -1238,7 +1246,7 @@ export function AnalysisWorkspace() {
     selectFrameSlot(phase, index);
     setFrameSlots((previous) => ({
       ...previous,
-      [phase]: previous[phase].map((slot, slotIndex) => slotIndex === index ? { ...slot, frame: null, points: [] } : slot),
+      [phase]: previous[phase].map((slot, slotIndex) => slotIndex === index ? { ...slot, frame: null, time: null, points: [] } : slot),
     }));
     setFrameImages((previous) => ({
       ...previous,
@@ -1333,13 +1341,13 @@ export function AnalysisWorkspace() {
                        aria-label="Línia de temps del vídeo"
                       data-testid="input-video-timeline"
                     />
-                    {Object.values(phases).flatMap((mark) => mark.start ? [mark.start] : []).map((frame) => (
-                      <span key={frame} className="timeline-marker" style={{ left: `${duration ? (Number(frame) / (duration * fps)) * 100 : 0}%` }} />
+                    {Object.values(phases).flatMap((mark) => mark.start ? [mark.start] : []).map((time) => (
+                      <span key={time} className="timeline-marker" style={{ left: `${duration ? (Number(time) / duration) * 100 : 0}%` }} />
                     ))}
                     {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
                       const mark = phases[phase];
                       if (!mark.start || !mark.end || !duration) return null;
-                      return <span key={`segment-${phase}`} className={`timeline-segment timeline-segment-${phase.toLowerCase()}`} style={{ left: `${(Number(mark.start) / (duration * fps)) * 100}%`, width: `${((Number(mark.end) - Number(mark.start)) / (duration * fps)) * 100}%` }} title={`${phase}: ${phaseBounds(phase)}`} />;
+                      return <span key={`segment-${phase}`} className={`timeline-segment timeline-segment-${phase.toLowerCase()}`} style={{ left: `${(Number(mark.start) / duration) * 100}%`, width: `${((Number(mark.end) - Number(mark.start)) / duration) * 100}%` }} title={`${phase}: ${phaseBounds(phase)}`} />;
                     })}
                   </div>
                   <div className="control-row">
@@ -1654,7 +1662,7 @@ export function AnalysisWorkspace() {
                           setActiveClipPhase(phase);
                           setActiveFrameSlot(0);
                           setAngleSelectionMode(false);
-                          if (phases[phase].start) seekTo(Number(phases[phase].start) / fps);
+                          if (phases[phase].start) seekTo(Number(phases[phase].start));
                         }}
                         key={phase}
                         data-testid={`tab-analysis-${phase.toLowerCase()}`}
@@ -1672,7 +1680,7 @@ export function AnalysisWorkspace() {
                       <div className="phase-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                         <h2 style={{ fontSize: '1.6rem', fontFamily: 'var(--app-font-serif)', margin: 0, textTransform: 'uppercase' }}>{phaseTitle(phase)}</h2>
                         <div className="phase-times" style={{ fontFamily: 'var(--app-font-mono)', fontSize: '.85rem', color: 'hsl(var(--muted-foreground))', background: 'hsl(var(--muted))', padding: '.3rem .6rem', borderRadius: '.3rem' }}>
-                          {formatTime(Number(phases[phase].start) / fps)} — {formatTime(Number(phases[phase].end) / fps)}
+                          {formatTime(Number(phases[phase].start))} — {formatTime(Number(phases[phase].end))}
                         </div>
                       </div>
 
@@ -1716,7 +1724,7 @@ export function AnalysisWorkspace() {
                                     <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg border border-border mt-2">
                                        <div>
                                           <div className="eyebrow">Acció</div>
-                                          <strong>{slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.frame / fps)}` : 'Clica per capturar el fotograma actual'}</strong>
+                                          <strong>{slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.time ?? slot.frame / fps)}` : 'Clica per capturar el fotograma actual'}</strong>
                                        </div>
                                        {!hasCaptured ? (
                                           <button className="button-primary" onClick={selectCurrentFrameForSlot} disabled={!videoSrc || currentTime < activeClipStart || currentTime > activeClipEnd} data-testid="button-select-analysis-frame">
@@ -1758,7 +1766,6 @@ export function AnalysisWorkspace() {
                                           </div>
                                         </div>
                                       </div>
-                                      {referenceContent}
                                       <div className="panel inline-comparison">
                                         <div className="panel-header"><div className="panel-title"><Layers3 size={16} /> Comparació directa</div></div>
                                         <div className="panel-body">
@@ -1809,7 +1816,7 @@ export function AnalysisWorkspace() {
                                   <div className="inactive-card-info grow">
                                     <h4 className="font-bold text-lg m-0 mb-1 font-serif">{slotTitle(phase, slot, slotIndex)}</h4>
                                     <p className="text-sm text-muted-foreground m-0">
-                                      {slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.frame / fps)}` : 'Clica per activar i capturar'}
+                                      {slot.frame !== null ? `Fotograma capturat a ${formatTime(slot.time ?? slot.frame / fps)}` : 'Clica per activar i capturar'}
                                     </p>
                                   </div>
                                   <div className="inactive-card-action shrink-0 px-4">
