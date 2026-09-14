@@ -282,6 +282,7 @@ const initials = (name: string) =>
 
 export function AnalysisWorkspace() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sourceVideoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const poseRef = useRef<PoseInstance | null>(null);
@@ -761,10 +762,13 @@ export function AnalysisWorkspace() {
     showToast('Video loaded locally. Pose will run in your browser.');
   };
 
-  const seekTo = (time: number) => {
+  const seekTo = (time: number, phase: PhaseKey = activeClipPhase) => {
     const video = videoRef.current;
     if (!video || !duration) return;
-    const nextTime = Math.min(duration, Math.max(0, time));
+    const phaseMark = phases[phase];
+    const minimum = analysisStarted && phaseMark.start ? Number(phaseMark.start) : 0;
+    const maximum = analysisStarted && phaseMark.end ? Number(phaseMark.end) : duration;
+    const nextTime = Math.min(maximum, Math.max(minimum, time));
     video.currentTime = nextTime;
     setCurrentTime(nextTime);
     window.setTimeout(() => sendFrameToPose(true), 60);
@@ -857,10 +861,10 @@ export function AnalysisWorkspace() {
     setActiveClipPhase('HOP');
     setActiveFrameSlot(0);
     setAnalysisStarted(true);
-    seekTo(Number(phases.HOP.start));
+    window.setTimeout(() => seekTo(Number(phases.HOP.start), 'HOP'), 0);
     showToast(athleteLocked
-      ? 'Clip HOP obert. Selecciona manualment el primer fotograma.'
-      : 'Clip HOP obert. Revisa la detecció i selecciona manualment el primer fotograma.');
+      ? 'Fase HOP oberta sobre el vídeo original. Selecciona manualment el primer fotograma.'
+      : 'Fase HOP oberta sobre el vídeo original. Revisa la detecció i selecciona manualment el primer fotograma.');
   };
 
   const clearPhase = (phase: PhaseKey) => {
@@ -879,9 +883,9 @@ export function AnalysisWorkspace() {
     if (selectedSlot.frame !== null) {
       setLandmarks(null);
       setConfidence(null);
-      seekTo(selectedSlot.time ?? selectedSlot.frame / fps);
+      seekTo(selectedSlot.time ?? selectedSlot.frame / fps, phase);
     } else if (phases[phase].start) {
-      seekTo(Number(phases[phase].start));
+      seekTo(Number(phases[phase].start), phase);
     }
   };
 
@@ -892,9 +896,24 @@ export function AnalysisWorkspace() {
     }));
   };
 
-  const captureCurrentVideoFrame = () => {
-    const video = videoRef.current;
-    if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return null;
+  const captureOriginalVideoFrame = async (time: number) => {
+    const video = sourceVideoRef.current;
+    if (!video || !videoSrc) return null;
+    if (video.readyState < 1) {
+      await new Promise<void>((resolve, reject) => {
+        video.addEventListener('loadedmetadata', () => resolve(), { once: true });
+        video.addEventListener('error', () => reject(new Error('No s’ha pogut carregar el vídeo original.')), { once: true });
+      });
+    }
+    const safeTime = Math.min(video.duration || duration, Math.max(0, time));
+    if (Math.abs(video.currentTime - safeTime) > .0005 || video.readyState < 2) {
+      await new Promise<void>((resolve, reject) => {
+        video.addEventListener('seeked', () => resolve(), { once: true });
+        video.addEventListener('error', () => reject(new Error('No s’ha pogut llegir el fotograma original.')), { once: true });
+        video.currentTime = safeTime;
+      });
+    }
+    if (!video.videoWidth || !video.videoHeight) return null;
     const capture = document.createElement('canvas');
     capture.width = video.videoWidth;
     capture.height = video.videoHeight;
@@ -904,16 +923,27 @@ export function AnalysisWorkspace() {
     return capture.toDataURL('image/jpeg', .9);
   };
 
-  const selectCurrentFrameForSlot = () => {
+  const selectCurrentFrameForSlot = async () => {
     if (!analysisStarted || !videoSrc) return;
-    if (currentTime < activeClipStart || currentTime > activeClipEnd) {
+    const exactTime = videoRef.current?.currentTime ?? currentTime;
+    if (exactTime < activeClipStart || exactTime > activeClipEnd) {
       showToast(`Mou-te dins del fragment ${activeClipPhase} abans de seleccionar el fotograma.`);
       return;
     }
-    const exactTime = videoRef.current?.currentTime ?? currentTime;
-    updateActiveFrameSlot({ frame: currentFrame, time: exactTime, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
-    setLandmarkCache((previous) => landmarks ? { ...previous, [currentFrame]: landmarks } : previous);
-    const image = captureCurrentVideoFrame();
+    const exactFrame = frameForTime(exactTime, fps);
+    let image: string | null = null;
+    try {
+      image = await captureOriginalVideoFrame(exactTime);
+    } catch {
+      showToast('No s’ha pogut extreure aquest fotograma del vídeo original.');
+      return;
+    }
+    if (!image) {
+      showToast('El fotograma original encara no està disponible.');
+      return;
+    }
+    updateActiveFrameSlot({ frame: exactFrame, time: exactTime, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
+    setLandmarkCache((previous) => landmarks ? { ...previous, [exactFrame]: landmarks } : previous);
     if (image) {
       setFrameImages((previous) => ({
         ...previous,
@@ -1269,7 +1299,7 @@ export function AnalysisWorkspace() {
   const videoEditorContent = (
     <div className="panel video-panel">
                 <div className="panel-header">
-                  <div className="panel-title"><Video size={17} /> {analysisStarted ? `Mini vídeo · ${activeClipPhase}` : 'Vídeo complet · Definició de temps'}</div>
+                  <div className="panel-title"><Video size={17} /> {analysisStarted ? `Vídeo original · rang ${activeClipPhase}` : 'Vídeo original · Definició de temps'}</div>
                   <div className="eyebrow" style={{ color: 'hsl(216 13% 43%)' }}>{fileName || 'Sense vídeo'}</div>
                 </div>
                 <div
@@ -1284,6 +1314,16 @@ export function AnalysisWorkspace() {
                 >
                   {videoSrc ? (
                     <>
+                      <video
+                        ref={sourceVideoRef}
+                        src={videoSrc}
+                        preload="auto"
+                        muted
+                        playsInline
+                        aria-hidden="true"
+                        style={{ display: 'none' }}
+                        data-testid="video-original-frame-source"
+                      />
                       <video
                         ref={videoRef}
                         src={videoSrc}
@@ -1336,7 +1376,7 @@ export function AnalysisWorkspace() {
                       max={analysisStarted ? (activeClipEnd || duration || 1) : (duration || 1)}
                       step={1 / fps}
                       value={Math.min(Math.max(currentTime, analysisStarted ? activeClipStart : 0), analysisStarted ? (activeClipEnd || duration || 1) : (duration || 1))}
-                      onChange={(event) => seekTo(Number(event.target.value))}
+                       onChange={(event) => seekTo(Number(event.target.value), activeClipPhase)}
                       disabled={!videoSrc}
                        aria-label="Línia de temps del vídeo"
                       data-testid="input-video-timeline"
@@ -1662,7 +1702,7 @@ export function AnalysisWorkspace() {
                           setActiveClipPhase(phase);
                           setActiveFrameSlot(0);
                           setAngleSelectionMode(false);
-                          if (phases[phase].start) seekTo(Number(phases[phase].start));
+                           if (phases[phase].start) window.setTimeout(() => seekTo(Number(phases[phase].start), phase), 0);
                         }}
                         key={phase}
                         data-testid={`tab-analysis-${phase.toLowerCase()}`}
@@ -1717,7 +1757,7 @@ export function AnalysisWorkspace() {
                                   <div className="active-card-editor" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     {!hasCaptured && (
                                       <div className="selection-callout" style={{ marginBottom: '.5rem' }}>
-                                        <strong>Mode captura:</strong> Busca el moment exacte en aquest clip i clica "Capturar". El vídeo està limitat a la fase actual.
+                                         <strong>Mode captura:</strong> Busca el moment exacte al vídeo original i clica “Capturar”. La navegació està limitada a la fase actual.
                                       </div>
                                     )}
                                     {videoEditorContent}
