@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   Activity,
   ArrowLeft,
@@ -19,6 +19,7 @@ import {
   MapPin,
   Plus,
   Pencil,
+  Play,
   Save,
   Target,
   Trash2,
@@ -374,6 +375,18 @@ function WarmupItemRow({ item }: { item: WarmupItem }) {
 }
 
 function WarmupSectionCard({ section }: { section: WarmupSection }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoStarted, setVideoStarted] = useState(false);
+
+  const playVideo = async () => {
+    if (!videoRef.current) return;
+    try {
+      await videoRef.current.play();
+    } catch {
+      videoRef.current.controls = true;
+    }
+  };
+
   return (
     <article className="warmup-section-card">
       <div className="warmup-section-heading">
@@ -410,7 +423,27 @@ function WarmupSectionCard({ section }: { section: WarmupSection }) {
           {section.imageSrc ? (
             <img src={section.imageSrc} alt={section.imageAlt ?? ""} className="warmup-section-image" />
           ) : section.videoSrc ? (
-            <video src={section.videoSrc} poster={section.posterSrc} controls preload="metadata" playsInline className="exercise-video" />
+            <>
+              <video
+                ref={videoRef}
+                poster={section.posterSrc}
+                controls
+                preload={section.number === "1" ? "auto" : "metadata"}
+                playsInline
+                className="exercise-video"
+                onPlay={() => setVideoStarted(true)}
+                onEnded={() => setVideoStarted(false)}
+              >
+                <source src={section.videoSrc} type="video/mp4" />
+                El teu navegador no pot reproduir aquest vídeo.
+              </video>
+              {!videoStarted && (
+                <button type="button" className="warmup-video-play" onClick={playVideo} aria-label={`Reproduir ${section.title.toLocaleLowerCase("ca-ES")}`}>
+                  <Play size={24} fill="currentColor" />
+                  <span>Reproduir vídeo</span>
+                </button>
+              )}
+            </>
           ) : (
             <div className="exercise-video-pending">
               <div className="pending-icon-wrapper">

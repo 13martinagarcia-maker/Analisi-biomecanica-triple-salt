@@ -5140,6 +5140,7 @@ button {
 }
 
 .warmup-section-video {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5152,6 +5153,32 @@ button {
   background:
     radial-gradient(circle at 50% 25%, hsl(var(--primary) / .17), transparent 38%),
     hsl(216 27% 14%);
+}
+
+.warmup-video-play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .8rem 1rem;
+  transform: translate(-50%, -50%);
+  border: 1px solid hsl(0 0% 100% / .35);
+  border-radius: 999px;
+  background: hsl(216 31% 11% / .88);
+  color: white;
+  box-shadow: 0 8px 24px hsl(216 31% 5% / .35);
+  backdrop-filter: blur(7px);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.warmup-video-play:hover,
+.warmup-video-play:focus-visible {
+  background: hsl(var(--primary));
+  outline: 3px solid hsl(var(--primary) / .28);
+  outline-offset: 3px;
 }
 
 .warmup-section-video .exercise-video {
