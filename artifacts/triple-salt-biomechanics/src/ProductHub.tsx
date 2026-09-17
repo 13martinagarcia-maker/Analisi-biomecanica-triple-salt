@@ -11,6 +11,8 @@ import {
   CircleGauge,
   ClipboardList,
   Dumbbell,
+  Eye,
+  EyeOff,
   Flag,
   Home,
   LogOut,
@@ -472,6 +474,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [loadingSession, setLoadingSession] = useState(true);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authError, setAuthError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [page, setPage] = useState<Page>("inici");
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -747,7 +750,20 @@ function ProductHub({ analysisWorkspace }: Props) {
           <form className="hub-form" onSubmit={submitAuth}>
             {authMode === "register" && <div className="auth-name-grid"><label>Nom<input name="firstName" required autoComplete="given-name" /></label><label>Cognom<input name="lastName" required autoComplete="family-name" /></label></div>}
             <label>Correu electrònic<input type="email" name="email" required autoComplete="email" /></label>
-            <label>Contrasenya<input type="password" name="password" minLength={8} required autoComplete={authMode === "login" ? "current-password" : "new-password"} /></label>
+            <label>Contrasenya
+              <span className="password-input-wrap">
+                <input type={showPassword ? "text" : "password"} name="password" minLength={8} required autoComplete={authMode === "login" ? "current-password" : "new-password"} />
+                <button
+                  type="button"
+                  className="password-visibility"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? "Ocultar la contrasenya" : "Veure la contrasenya"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </span>
+            </label>
             {authError && <div className="form-error" role="alert">{authError}</div>}
             <button className="button-primary auth-submit" type="submit">{authMode === "login" ? "Entrar" : "Crear compte"} <ArrowRight size={15} /></button>
           </form>
