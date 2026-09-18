@@ -72,6 +72,8 @@ export const trackEvaluationsTable = pgTable("ts_track_evaluations", {
   userId: uuid("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   athleteId: uuid("athlete_id").references(() => athletesTable.id, { onDelete: "set null" }),
   competitionId: uuid("competition_id").references(() => competitionsTable.id, { onDelete: "set null" }),
+  location: text("location"),
+  evaluationDate: date("evaluation_date", { mode: "string" }),
   approachScore: numeric("approach_score", { precision: 4, scale: 2 }).notNull(),
   rhythmScore: numeric("rhythm_score", { precision: 4, scale: 2 }).notNull(),
   landingScore: numeric("landing_score", { precision: 4, scale: 2 }).notNull(),
@@ -80,5 +82,15 @@ export const trackEvaluationsTable = pgTable("ts_track_evaluations", {
   landingAnswer: text("landing_answer").notNull(),
   finalScore: numeric("final_score", { precision: 4, scale: 2 }),
   assessmentData: jsonb("assessment_data"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const homeAnalysesTable = pgTable("ts_home_analyses", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  athleteId: uuid("athlete_id").references(() => athletesTable.id, { onDelete: "set null" }),
+  location: text("location").notNull(),
+  analysisDate: date("analysis_date", { mode: "string" }).notNull(),
+  analysisData: jsonb("analysis_data").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

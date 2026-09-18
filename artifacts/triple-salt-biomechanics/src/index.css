@@ -5441,3 +5441,156 @@ button {
     font-size: .82rem;
   }
 }
+
+.session-record-fields,
+.home-analysis-save-card {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1fr) minmax(10rem, .55fr) minmax(13rem, .7fr);
+  align-items: end;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-left: 4px solid hsl(var(--primary));
+  border-radius: .65rem;
+  background: hsl(var(--card));
+}
+
+.session-record-fields { margin-bottom: 1rem; }
+
+.session-record-fields h2,
+.home-analysis-save-card h3 {
+  margin: .18rem 0 0;
+  font-family: var(--app-font-serif);
+}
+
+.session-record-fields label,
+.home-analysis-save-fields label {
+  display: grid;
+  gap: .35rem;
+  color: hsl(var(--muted-foreground));
+  font-size: .69rem;
+  font-weight: 700;
+}
+
+.session-record-fields input,
+.home-analysis-save-fields input {
+  min-height: 2.65rem;
+  padding: 0 .75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .4rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font: inherit;
+}
+
+.home-analysis-save-card {
+  grid-template-columns: minmax(16rem, 1fr) minmax(18rem, 1.15fr) auto;
+  margin: 0 0 1.25rem;
+}
+
+.home-analysis-save-card p {
+  margin: .3rem 0 0;
+  color: hsl(var(--muted-foreground));
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.home-analysis-save-fields {
+  display: grid;
+  grid-template-columns: minmax(8rem, .7fr) minmax(10rem, 1fr);
+  gap: .7rem;
+}
+
+.technical-history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.technical-history-section {
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-top: 4px solid hsl(var(--primary));
+  border-radius: .7rem;
+  background: hsl(var(--card));
+}
+
+.technical-history-section.home { border-top-color: var(--color-hop); }
+
+.technical-history-section > .section-card-heading {
+  padding: 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.technical-history-item {
+  display: grid;
+  gap: .55rem;
+  padding: 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.technical-history-item:last-child { border-bottom: 0; }
+
+.technical-history-item > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+.technical-history-item > div:first-child span {
+  margin-left: auto;
+  color: hsl(var(--muted-foreground));
+  font-size: .69rem;
+}
+
+.technical-history-item > b {
+  color: hsl(var(--primary));
+  font-family: var(--app-font-serif);
+  font-size: 1.35rem;
+}
+
+.technical-history-item > small {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+.home-analysis-phase-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+}
+
+.home-analysis-phase-summary > span {
+  display: grid;
+  gap: .2rem;
+  padding: .55rem;
+  border-radius: .4rem;
+  background: hsl(var(--muted) / .5);
+  color: hsl(var(--muted-foreground));
+  font-size: .62rem;
+}
+
+.home-analysis-phase-summary strong {
+  color: hsl(var(--foreground));
+  font-size: .7rem;
+}
+
+@media (max-width: 900px) {
+  .session-record-fields,
+  .home-analysis-save-card,
+  .technical-history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-analysis-save-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-analysis-save-fields,
+  .home-analysis-phase-summary {
+    grid-template-columns: 1fr;
+  }
+}

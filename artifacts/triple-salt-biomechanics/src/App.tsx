@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import referenceImage from '@assets/IMG-20260708-WA0000_1787472726299.jpg';
-import ProductHub from './ProductHub';
+import ProductHub, { type HomeAnalysisPayload } from './ProductHub';
 import {
   Activity,
   ArrowDownToLine,
@@ -324,7 +324,14 @@ const parseReferenceRange = (value: string) => {
 const initials = (name: string) =>
   name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
-export function AnalysisWorkspace() {
+type AnalysisWorkspaceProps = {
+  athletes: Array<{ id: string; firstName: string; lastName: string }>;
+  selectedAthleteId: string;
+  onAthleteChange: (athleteId: string) => void;
+  onSave: (payload: HomeAnalysisPayload) => Promise<void>;
+};
+
+export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange, onSave }: AnalysisWorkspaceProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sourceVideoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -345,10 +352,6 @@ export function AnalysisWorkspace() {
   const suppressCanvasClickRef = useRef(false);
   const focusedPoseCropRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const cropStartRef = useRef<{ x: number; y: number } | null>(null);
-  const [athletes, setAthletes] = useState(['Maya Carter', 'Noah Williams', 'Inez Bell']);
-  const [athlete, setAthlete] = useState('Maya Carter');
-  const [createAthleteOpen, setCreateAthleteOpen] = useState(false);
-  const [newAthlete, setNewAthlete] = useState('');
   const [toast, setToast] = useState('');
   const [videoSrc, setVideoSrc] = useState('');
   const [fileName, setFileName] = useState('');
@@ -397,7 +400,13 @@ export function AnalysisWorkspace() {
   const [angleDefinition, setAngleDefinition] = useState<'internal' | 'segment-horizontal' | 'trajectory-horizontal'>('internal');
   const [measurements, setMeasurements] = useState<Record<PhaseKey, Measurement>>(INITIAL_MEASUREMENTS);
   const [analysisStarted, setAnalysisStarted] = useState(false);
+  const [recordLocation, setRecordLocation] = useState('');
+  const [recordDate, setRecordDate] = useState(() => new Date().toLocaleDateString('en-CA'));
+  const [savingAnalysis, setSavingAnalysis] = useState(false);
+  const [analysisSaved, setAnalysisSaved] = useState(false);
 
+  const selectedAthlete = athletes.find((item) => item.id === selectedAthleteId);
+  const athlete = selectedAthlete ? `${selectedAthlete.firstName} ${selectedAthlete.lastName}` : 'Atleta';
   const currentFrame = frameForTime(currentTime, fps);
   const activeReference = REFERENCE_ROWS.find((row) => row.phase === activePhase)!;
   const activeMeasurement = measurements[activePhase];
@@ -1438,22 +1447,54 @@ export function AnalysisWorkspace() {
     resultRows.filter((row) => row.phase === phase).every((row) => row.value !== null && Boolean(row.slot.referenceId)),
   );
 
+  const saveAnalysisToHistory = async () => {
+    if (!selectedAthleteId || !recordDate || !recordLocation.trim() || completedChartPhases.length !== 3) {
+      showToast('Completa els tres angles de HOP, STEP i JUMP i indica el dia i el lloc.');
+      return;
+    }
+    const payload: HomeAnalysisPayload = {
+      athleteId: selectedAthleteId,
+      location: recordLocation.trim(),
+      analysisDate: recordDate,
+      analysisData: {
+        phases: (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
+          const phaseRows = resultRows.filter((row) => row.phase === phase);
+          const angles = phaseRows.map((row) => {
+            const reference = parseReferenceRange(referenceTextForSlot(phase, row.slot))!;
+            const athleteValue = row.value!;
+            return {
+              label: ANGLE_LABELS[row.index],
+              athleteValue,
+              referenceValue: reference.target,
+              difference: athleteValue - reference.target,
+            };
+          });
+          const significantDeviationCount = phaseRows.filter((row) => {
+            const reference = parseReferenceRange(referenceTextForSlot(phase, row.slot))!;
+            const threshold = Math.max(reference.tolerance + 3, reference.target * .05);
+            return Math.abs(row.value! - reference.target) > threshold;
+          }).length;
+          return { phase, angles, significantDeviationCount };
+        }),
+      },
+    };
+    setSavingAnalysis(true);
+    try {
+      await onSave(payload);
+      setAnalysisSaved(true);
+      showToast('Anàlisi guardada a l’historial.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'No s’ha pogut guardar l’anàlisi.');
+    } finally {
+      setSavingAnalysis(false);
+    }
+  };
+
   const updateMeasurement = (phase: PhaseKey, key: keyof Measurement, value: string) => {
     setMeasurements((previous) => ({
       ...previous,
       [phase]: { ...previous[phase], [key]: value },
     }));
-  };
-
-  const addAthlete = (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = newAthlete.trim();
-    if (!trimmed) return;
-    if (!athletes.includes(trimmed)) setAthletes((previous) => [...previous, trimmed]);
-    setAthlete(trimmed);
-    setNewAthlete('');
-    setCreateAthleteOpen(false);
-    showToast(`${trimmed} is ready for a new local session.`);
   };
 
   const downloadReport = () => {
@@ -1822,6 +1863,22 @@ export function AnalysisWorkspace() {
                   })}
                 </div>
               )}
+              {completedChartPhases.length === 3 && (
+                <section className="home-analysis-save-card">
+                  <div>
+                    <span className="eyebrow">Guardar a l’historial</span>
+                    <h3>Registra aquesta anàlisi de casa</h3>
+                    <p>Es guardaran els angles, les diferències i els avisos de HOP, STEP i JUMP per a l’atleta seleccionat.</p>
+                  </div>
+                  <div className="home-analysis-save-fields">
+                    <label>Dia<input type="date" value={recordDate} onChange={(event) => { setRecordDate(event.target.value); setAnalysisSaved(false); }} /></label>
+                    <label>Lloc<input value={recordLocation} onChange={(event) => { setRecordLocation(event.target.value); setAnalysisSaved(false); }} placeholder="Casa, gimnàs o instal·lació" /></label>
+                  </div>
+                  <button type="button" className="button-primary" onClick={() => void saveAnalysisToHistory()} disabled={savingAnalysis || analysisSaved}>
+                    <Check size={15} /> {savingAnalysis ? 'Guardant…' : analysisSaved ? 'Anàlisi guardada' : 'Guardar anàlisi'}
+                  </button>
+                </section>
+              )}
               {allFramesSelected ? (
                 <div className="analysis-card-groups" data-testid="analysis-card-groups">
                   {(['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => (
@@ -1986,10 +2043,9 @@ export function AnalysisWorkspace() {
             <div style={{ display: 'grid', gap: '.5rem', minWidth: '13rem' }}>
               <label className="field-label" htmlFor="athlete-select">Atleta</label>
               <div className="selector-row">
-                <select id="athlete-select" className="select-field" data-testid="select-athlete" value={athlete} onChange={(event) => setAthlete(event.target.value)}>
-                  {athletes.map((name) => <option key={name} value={name}>{name}</option>)}
+                <select id="athlete-select" className="select-field" data-testid="select-athlete" value={selectedAthleteId} onChange={(event) => { onAthleteChange(event.target.value); setAnalysisSaved(false); }}>
+                  {athletes.map((item) => <option key={item.id} value={item.id}>{item.firstName} {item.lastName}</option>)}
                 </select>
-                <button className="button-primary" style={{ paddingInline: '.65rem' }} data-testid="button-create-athlete" onClick={() => setCreateAthleteOpen(true)} aria-label="Create athlete"><Plus size={16} /></button>
               </div>
             </div>
           </section>
@@ -2252,22 +2308,6 @@ export function AnalysisWorkspace() {
           </section>
         </div>
       </main>
-      {createAthleteOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setCreateAthleteOpen(false); }}>
-          <form className="modal" onSubmit={addAthlete}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-              <div><h2>Crear atleta</h2><p>Mantén la sessió traçable sense enviar dades de l’atleta.</p></div>
-              <button type="button" className="button-quiet" style={{ minHeight: '2rem', padding: '.35rem' }} onClick={() => setCreateAthleteOpen(false)} data-testid="button-close-athlete-modal" aria-label="Close"><X size={15} /></button>
-            </div>
-            <div className="modal-form">
-              <label className="field-label" htmlFor="new-athlete-name">Nom de l’atleta</label>
-              <input id="new-athlete-name" className="text-field" autoFocus value={newAthlete} onChange={(event) => setNewAthlete(event.target.value)} placeholder="e.g. Jordan Lee" data-testid="input-new-athlete" />
-              <div className="modal-actions"><button type="button" className="button-outline" onClick={() => setCreateAthleteOpen(false)} data-testid="button-cancel-athlete">Cancel·lar</button><button type="submit" className="button-primary" data-testid="button-save-athlete"><Check size={14} /> Afegir atleta</button></div>
-            </div>
-          </form>
-        </div>
-      )}
-
       {toast && <div className="toast" role="status" data-testid="status-toast">{toast}</div>}
     </div>
   );
@@ -2275,7 +2315,7 @@ export function AnalysisWorkspace() {
 }
 
 function App() {
-  return <ProductHub analysisWorkspace={<AnalysisWorkspace />} />;
+  return <ProductHub analysisWorkspace={(options) => <AnalysisWorkspace {...options} />} />;
 }
 
 export default App;

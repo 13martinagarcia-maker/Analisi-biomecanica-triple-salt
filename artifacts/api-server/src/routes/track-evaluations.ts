@@ -33,6 +33,14 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     return;
   }
   const finalScore = parsedCriteria.reduce((sum, criterion) => sum + criterion.score, 0) / parsedCriteria.length;
+  const location = typeof body.location === "string" ? body.location.trim() : "";
+  const evaluationDate = typeof body.evaluationDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.evaluationDate)
+    ? body.evaluationDate
+    : "";
+  if (!location || !evaluationDate) {
+    response.status(400).json({ message: "Indica el dia i el lloc de la valoració." });
+    return;
+  }
   const athleteId = typeof body.athleteId === "string" && body.athleteId ? body.athleteId : null;
   const competitionId = typeof body.competitionId === "string" && body.competitionId ? body.competitionId : null;
   const [athlete] = athleteId
@@ -58,6 +66,8 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     userId: request.user!.id,
     athleteId,
     competitionId,
+    location,
+    evaluationDate,
     approachScore: parsedCriteria[0].score.toFixed(2),
     rhythmScore: parsedCriteria[1].score.toFixed(2),
     landingScore: parsedCriteria[3].score.toFixed(2),

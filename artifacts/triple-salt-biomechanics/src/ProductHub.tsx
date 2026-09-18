@@ -66,15 +66,37 @@ type TrackEvaluation = {
   rhythmScore: string;
   landingScore: string;
   finalScore: string | null;
+  location: string | null;
+  evaluationDate: string | null;
   createdAt: string;
 };
+export type HomeAnalysisPayload = {
+  athleteId: string;
+  location: string;
+  analysisDate: string;
+  analysisData: {
+    phases: Array<{
+      phase: "HOP" | "STEP" | "JUMP";
+      angles: Array<{ label: string; athleteValue: number; referenceValue: number; difference: number }>;
+      significantDeviationCount: number;
+    }>;
+  };
+};
+type HomeAnalysis = HomeAnalysisPayload & { id: string; createdAt: string };
 type AssessmentOption = { level: "Excel·lent" | "Notable" | "Satisfactori" | "Suspès"; description: string; value: 10 | 8.5 | 7 | 0; tone: "excellent" | "notable" | "satisfactory" | "failed" };
 type AssessmentGroup = { key: string; title: string; subtitle: string; question: string; hint?: string; options: AssessmentOption[] };
 type WarmupItem = { title?: string; description: string; note?: string };
 type WarmupSubsection = { title: string; intro?: string; items: WarmupItem[] };
 type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; posterSrc?: string; imageSrc?: string; imageAlt?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
 
-type Props = { analysisWorkspace: ReactNode };
+type Props = {
+  analysisWorkspace: (options: {
+    athletes: Athlete[];
+    selectedAthleteId: string;
+    onAthleteChange: (athleteId: string) => void;
+    onSave: (payload: HomeAnalysisPayload) => Promise<void>;
+  }) => ReactNode;
+};
 
 const navItems: Array<{ id: Page; label: string; icon: typeof Home }> = [
   { id: "inici", label: "Inici", icon: Home },
@@ -442,6 +464,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [evaluations, setEvaluations] = useState<TrackEvaluation[]>([]);
+  const [homeAnalyses, setHomeAnalyses] = useState<HomeAnalysis[]>([]);
   const [selectedAthleteId, setSelectedAthleteId] = useState("");
   const [athleteFormOpen, setAthleteFormOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -449,19 +472,23 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [assessmentSaved, setAssessmentSaved] = useState(false);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
   const [competitionToDelete, setCompetitionToDelete] = useState<Competition | null>(null);
+  const [trackLocation, setTrackLocation] = useState("");
+  const [trackDate, setTrackDate] = useState(() => new Date().toLocaleDateString("en-CA"));
 
   const selectedAthlete = athletes.find((athlete) => athlete.id === selectedAthleteId);
   const selectedCompetition = competitions.find((competition) => competition.id === selectedCompetitionId);
 
   const loadData = async () => {
-    const [athleteData, competitionData, evaluationData] = await Promise.all([
+    const [athleteData, competitionData, evaluationData, homeAnalysisData] = await Promise.all([
       api<{ athletes: Athlete[] }>("/athletes"),
       api<{ competitions: Competition[] }>("/competitions"),
       api<{ evaluations: TrackEvaluation[] }>("/track-evaluations"),
+      api<{ analyses: HomeAnalysis[] }>("/home-analyses"),
     ]);
     setAthletes(athleteData.athletes);
     setCompetitions(competitionData.competitions);
     setEvaluations(evaluationData.evaluations);
+    setHomeAnalyses(homeAnalysisData.analyses);
     setSelectedAthleteId((previous) => previous || athleteData.athletes[0]?.id || "");
   };
 
@@ -506,6 +533,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     setAthletes([]);
     setCompetitions([]);
     setEvaluations([]);
+    setHomeAnalyses([]);
     setSelectedAthleteId("");
     setPage("inici");
   };
@@ -628,12 +656,17 @@ function ProductHub({ analysisWorkspace }: Props) {
     : null;
 
   const saveAssessment = async () => {
-    if (!assessmentComplete) return;
+    if (!assessmentComplete || !trackLocation.trim() || !trackDate) {
+      notify("Indica el dia i el lloc abans de guardar la valoració.");
+      return;
+    }
     try {
       const result = await api<{ evaluation: TrackEvaluation }>("/track-evaluations", {
         method: "POST",
         body: JSON.stringify({
           athleteId: selectedAthleteId || null,
+          location: trackLocation,
+          evaluationDate: trackDate,
           criteria: assessmentGroups.map((group, index) => ({
             key: group.key,
             question: group.question,
@@ -651,6 +684,15 @@ function ProductHub({ analysisWorkspace }: Props) {
     }
   };
 
+  const saveHomeAnalysis = async (payload: HomeAnalysisPayload) => {
+    const result = await api<{ analysis: HomeAnalysis }>("/home-analyses", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    setHomeAnalyses((previous) => [result.analysis, ...previous]);
+    notify("Anàlisi de casa guardada a l’historial.");
+  };
+
   const athleteCompetitions = useMemo(
     () => selectedAthleteId ? competitions.filter((competition) => competition.athleteId === selectedAthleteId) : [],
     [competitions, selectedAthleteId],
@@ -658,6 +700,10 @@ function ProductHub({ analysisWorkspace }: Props) {
   const athleteEvaluations = useMemo(
     () => selectedAthleteId ? evaluations.filter((evaluation) => evaluation.athleteId === selectedAthleteId) : [],
     [evaluations, selectedAthleteId],
+  );
+  const athleteHomeAnalyses = useMemo(
+    () => selectedAthleteId ? homeAnalyses.filter((analysis) => analysis.athleteId === selectedAthleteId) : [],
+    [homeAnalyses, selectedAthleteId],
   );
   const athleteRecordedBest = useMemo(() => {
     const marks = athleteCompetitions.flatMap((competition) => competition.jumps)
@@ -733,7 +779,12 @@ function ProductHub({ analysisWorkspace }: Props) {
   }
 
   const renderPage = () => {
-    if (page === "casa") return <div className="analysis-embed">{analysisWorkspace}</div>;
+    if (page === "casa") return <div className="analysis-embed">{analysisWorkspace({
+      athletes,
+      selectedAthleteId,
+      onAthleteChange: setSelectedAthleteId,
+      onSave: saveHomeAnalysis,
+    })}</div>;
     if (page === "inici") return (
       <section className="hub-page">
         <div className="hub-hero"><div><span className="eyebrow">Espai de temporada</span><h1>Hola, {user.firstName}.</h1><p>Registra el que passa a pista i torna a l’anàlisi de casa quan ho necessitis.</p></div><button className="button-primary" onClick={() => setPage("competició")}><CalendarPlus size={16} /> Nova competició</button></div>
@@ -813,13 +864,14 @@ function ProductHub({ analysisWorkspace }: Props) {
               </div>
             </section>
           )}
-          {selectedAthlete && <div className="athlete-history-grid">
-            <article className="athlete-profile-card">
+          {selectedAthlete && <>
+            <div className="athlete-history-grid">
+              <article className="athlete-profile-card">
               <div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div>
-              <div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Valoracions de pista</span><strong>{athleteEvaluations.length ? `${athleteEvaluations.length} registrada${athleteEvaluations.length > 1 ? "s" : ""}` : "Encara no disponibles"}</strong></div></div>
-            </article>
-            <article className="history-competitions">
-              <div className="section-card-heading"><div><span className="eyebrow">Competicions</span><h2>Últims registres</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>
+              <div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Registres tècnics</span><strong>{athleteEvaluations.length + athleteHomeAnalyses.length || "Encara no disponibles"}</strong></div></div>
+              </article>
+              <article className="history-competitions history-data-section">
+              <div className="section-card-heading"><div><span className="eyebrow">Nova competició</span><h2>Competicions</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>
               {athleteCompetitions.length ? athleteCompetitions.map((competition) => <div className="competition-history-item" key={competition.id}>
                 <button type="button" className="competition-history-row" onClick={() => void openCompetition(competition)}>
                   <div>
@@ -833,9 +885,32 @@ function ProductHub({ analysisWorkspace }: Props) {
                 </button>
                 <button type="button" className="competition-delete-button" onClick={() => setCompetitionToDelete(competition)} aria-label={`Esborrar la competició de ${competition.location}`}><Trash2 size={16} /> Esborrar</button>
               </div>) : <EmptyState title="Encara no hi ha competicions registrades." description="Quan en guardis una, es mostrarà en aquesta fitxa." />}
-              {athleteEvaluations.length > 0 && <div className="track-history"><span className="eyebrow">Valoracions de pista</span>{athleteEvaluations.map((evaluation) => <div key={evaluation.id}><span>{new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span><strong>{Number(evaluation.finalScore ?? ((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3)).toFixed(1).replace(".", ",")} / 10</strong></div>)}</div>}
-            </article>
-          </div>}
+              </article>
+            </div>
+            <div className="technical-history-grid">
+              <section className="technical-history-section track">
+                <div className="section-card-heading"><div><span className="eyebrow">Estic a pista</span><h2>Valoracions de pista</h2></div><button className="button-outline" onClick={() => setPage("pista")}>Nova</button></div>
+                {athleteEvaluations.length ? athleteEvaluations.map((evaluation) => (
+                  <article className="technical-history-item" key={evaluation.id}>
+                    <div><MapPin size={15} /><strong>{evaluation.location || "Lloc no registrat"}</strong><span>{evaluation.evaluationDate ? new Date(`${evaluation.evaluationDate}T12:00:00`).toLocaleDateString("ca-ES") : new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span></div>
+                    <b>{Number(evaluation.finalScore ?? ((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3)).toFixed(1).replace(".", ",")} / 10</b>
+                    <small>Cursa {Number(evaluation.approachScore).toFixed(1).replace(".", ",")} · Ritme {Number(evaluation.rhythmScore).toFixed(1).replace(".", ",")} · Caiguda {Number(evaluation.landingScore).toFixed(1).replace(".", ",")}</small>
+                  </article>
+                )) : <EmptyState title="Encara no hi ha valoracions de pista." description="Quan guardis una valoració, apareixerà aquí amb el seu dia i lloc." />}
+              </section>
+              <section className="technical-history-section home">
+                <div className="section-card-heading"><div><span className="eyebrow">Estic a casa</span><h2>Anàlisis biomecàniques</h2></div><button className="button-outline" onClick={() => setPage("casa")}>Nova</button></div>
+                {athleteHomeAnalyses.length ? athleteHomeAnalyses.map((analysis) => (
+                  <article className="technical-history-item home-analysis-history" key={analysis.id}>
+                    <div><MapPin size={15} /><strong>{analysis.location}</strong><span>{new Date(`${analysis.analysisDate}T12:00:00`).toLocaleDateString("ca-ES")}</span></div>
+                    <div className="home-analysis-phase-summary">
+                      {analysis.analysisData.phases.map((phase) => <span key={phase.phase}><strong>{phase.phase}</strong>{phase.significantDeviationCount ? `${phase.significantDeviationCount} angle${phase.significantDeviationCount > 1 ? "s" : ""} a revisar` : "Dins diferència moderada"}</span>)}
+                    </div>
+                  </article>
+                )) : <EmptyState title="Encara no hi ha anàlisis de casa." description="Completa els angles de HOP, STEP i JUMP i guarda el resultat." />}
+              </section>
+            </div>
+          </>}
         </>}
       </section>
     );
@@ -867,6 +942,11 @@ function ProductHub({ analysisWorkspace }: Props) {
       <section className="hub-page track-assessment-page">
         <BackButton onClick={() => setPage("inici")} />
         <div className="hub-title-row"><div><span className="eyebrow">Anàlisi immediata del salt</span><h1>Estic a pista</h1><p>Valora cada aspecte observat i obtén una nota tècnica clara del salt.</p></div>{athletes.length > 0 && <label className="compact-select">Atleta<select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>}</div>
+        <section className="session-record-fields">
+          <div><span className="eyebrow">Dades del registre</span><h2>Dia i lloc de la valoració</h2></div>
+          <label>Dia<input type="date" required value={trackDate} onChange={(event) => { setTrackDate(event.target.value); setAssessmentSaved(false); }} /></label>
+          <label>Lloc<input required value={trackLocation} onChange={(event) => { setTrackLocation(event.target.value); setAssessmentSaved(false); }} placeholder="Pista, estadi o instal·lació" /></label>
+        </section>
         <div className="assessment-overview">
           <div>
             <span className="eyebrow">Escala de puntuació</span>

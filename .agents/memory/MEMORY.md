@@ -1,0 +1,1 @@
+- [Legacy track evaluation metadata](track-evaluation-metadata.md) — old pista records may lack date/place; preserve them while requiring metadata for new saves.
