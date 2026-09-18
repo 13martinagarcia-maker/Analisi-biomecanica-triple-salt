@@ -84,7 +84,16 @@ export type HomeAnalysisPayload = {
 };
 type HomeAnalysis = HomeAnalysisPayload & { id: string; createdAt: string };
 type AssessmentOption = { level: "Excel·lent" | "Notable" | "Satisfactori" | "Suspès"; description: string; value: 10 | 8.5 | 7 | 0; tone: "excellent" | "notable" | "satisfactory" | "failed" };
-type AssessmentGroup = { key: string; title: string; subtitle: string; question: string; hint?: string; options: AssessmentOption[] };
+type AssessmentGroup = {
+  key: string;
+  title: string;
+  subtitle: string;
+  question: string;
+  hint?: string;
+  possibleErrors: string[];
+  improvement: string;
+  options: AssessmentOption[];
+};
 type WarmupItem = { title?: string; description: string; note?: string };
 type WarmupSubsection = { title: string; intro?: string; items: WarmupItem[] };
 type WarmupSection = { number: string; title: string; intro?: string; videoSrc?: string; posterSrc?: string; imageSrc?: string; imageAlt?: string; subsections?: WarmupSubsection[]; items?: WarmupItem[] };
@@ -114,6 +123,12 @@ const assessmentGroups: AssessmentGroup[] = [
     title: "La cursa d’impuls",
     subtitle: "Velocitat i arribada a la taula",
     question: "Com ha corregut abans de saltar?",
+    possibleErrors: [
+      "Reducció de velocitat abans de la batuda o arribada massa ràpida i sense control.",
+      "Arribada lluny de la taula, provocant una batuda forçada o l’intent d’allargar els salts.",
+      "Cursa amb els malucs baixos, el cos trencat o la mirada fixada en la taula.",
+    ],
+    improvement: "Practica curses d’aproximació amb referències de pas estables, mirada al davant i acceleració progressiva fins a la taula.",
     options: [
       { level: "Excel·lent", description: "Ha tingut una línia recta, ràpida i fluida. Ha arribat a la taula amb tota la velocitat sense dubtar.", value: 10, tone: "excellent" },
       { level: "Notable", description: "Ha agafat bona velocitat, però ha fet un petit ajust de passos o dubte just abans d’arribar a la taula.", value: 8.5, tone: "notable" },
@@ -126,6 +141,12 @@ const assessmentGroups: AssessmentGroup[] = [
     title: "El ritme dels 3 salts",
     subtitle: "Continuïtat entre els salts",
     question: "Com ha sonat i com s’ha vist la continuïtat dels tres salts?",
+    possibleErrors: [
+      "HOP massa vertical o massa llarg, consumint l’energia necessària per a l’STEP i el JUMP.",
+      "Enfonsament del maluc en la recepció del HOP, que talla la continuïtat.",
+      "STEP massa curt o sense força, amb una pausa clara abans del JUMP.",
+    ],
+    improvement: "Treballa seqüències HOP–STEP–JUMP a intensitat controlada, prioritzant contactes ràpids i un ritme regular abans d’augmentar la distància.",
     options: [
       { level: "Excel·lent", description: "Un ritme continu i fluid («ta-ta-ta-ta»). Els tres salts s’han vist enllaçats de forma natural.", value: 10, tone: "excellent" },
       { level: "Notable", description: "Ha mantingut el ritme, però un dels salts ha estat bastant més curt o lent que els altres.", value: 8.5, tone: "notable" },
@@ -138,6 +159,12 @@ const assessmentGroups: AssessmentGroup[] = [
     title: "L’estabilitat i l’alçada",
     subtitle: "Control del cos durant el vol",
     question: "Com s’ha vist el cos de l’atleta durant el vol?",
+    possibleErrors: [
+      "Manca de verticalitat del tronc i pes desplaçat fora de la cama de suport.",
+      "Poc acompanyament de la cama lliure i dels braços.",
+      "Batuda o projecció desviada cap a un costat, dispersant la força.",
+    ],
+    improvement: "Practica salts encadenats amb el tronc alt, braços coordinats i recepcions alineades sobre una línia recta.",
     options: [
       { level: "Excel·lent", description: "Recte i ben equilibrat. Ha saltat cap endavant sense trontollar ni anar-se’n cap als costats.", value: 10, tone: "excellent" },
       { level: "Notable", description: "S’ha mantingut bastant estable, tot i fer algun xicotet gest amb els braços o el cos per no perdre l’equilibri.", value: 8.5, tone: "notable" },
@@ -150,6 +177,12 @@ const assessmentGroups: AssessmentGroup[] = [
     title: "La caiguda a la sorra",
     subtitle: "Finalització del salt",
     question: "Com ha acabat el salt al fossat?",
+    possibleErrors: [
+      "No portar les cames prou endavant abans del contacte amb la sorra.",
+      "Deixar marques posteriors amb les mans, els braços o el cul.",
+      "Caure desequilibrat o separar massa les cames durant la recepció.",
+    ],
+    improvement: "Treballa caigudes des de poca distància portant talons endavant i desplaçant el cos cap a un costat després del contacte.",
     options: [
       { level: "Excel·lent", description: "Ha llançat els peus ben endavant i el cos ha caigut sobre o per davant dels peus.", value: 10, tone: "excellent" },
       { level: "Notable", description: "Bona caiguda, però no ha aprofitat al màxim la distància: ha posat els peus un poc abans d’hora.", value: 8.5, tone: "notable" },
@@ -162,6 +195,12 @@ const assessmentGroups: AssessmentGroup[] = [
     title: "La taula i validesa",
     subtitle: "Precisió respecte a la línia de batuda",
     question: "On ha fet el primer salt respecte a la taula?",
+    possibleErrors: [
+      "Ajustar o frenar els últims passos abans de la taula.",
+      "Arribar massa lluny i regalar distància abans de la batuda.",
+      "Allargar l’últim pas o sobrepassar la línia per falta de regularitat en la cursa.",
+    ],
+    improvement: "Mesura la cursa i repeteix passades de control sense saltar fins que els últims passos arribin a la taula sense ajustos.",
     options: [
       { level: "Excel·lent", description: "Ha trepitjat la fusta de la taula de ple, aprofitant-la al màxim i sense tocar la línia vermella o plastilina.", value: 10, tone: "excellent" },
       { level: "Notable", description: "Salt vàlid, però ha ajustat una mica el pas i ha quedat lleugerament lluny de la línia.", value: 8.5, tone: "notable" },
@@ -654,6 +693,13 @@ function ProductHub({ analysisWorkspace }: Props) {
   const assessmentAverage = assessmentComplete
     ? selectedAssessment.reduce((sum, option) => sum + option.value, 0) / selectedAssessment.length
     : null;
+  const firstIssueIndex = assessmentComplete
+    ? selectedAssessment.findIndex((option) => option.value < 10)
+    : -1;
+  const firstIssueGroup = firstIssueIndex >= 0 ? assessmentGroups[firstIssueIndex] : null;
+  const affectedLaterGroups = firstIssueIndex >= 0
+    ? assessmentGroups.slice(firstIssueIndex + 1).filter((_, index) => selectedAssessment[firstIssueIndex + 1 + index].value < 10)
+    : [];
 
   const saveAssessment = async () => {
     if (!assessmentComplete || !trackLocation.trim() || !trackDate) {
@@ -981,7 +1027,41 @@ function ProductHub({ analysisWorkspace }: Props) {
             </article>
           ))}
         </div>
-        {assessmentComplete && <section className="assessment-result"><div><span className="eyebrow">Nota final del salt</span><h2>{assessmentAverage?.toFixed(1).replace(".", ",")} / 10</h2><p>Mitjana de les {assessmentGroups.length} preguntes, inclosa la taula i validesa.</p></div><button className="button-primary" onClick={saveAssessment} disabled={assessmentSaved}><Check size={16} /> {assessmentSaved ? "Valoració guardada" : "Guardar anàlisi"}</button></section>}
+        {assessmentComplete && <>
+          <section className="assessment-result"><div><span className="eyebrow">Nota final del salt</span><h2>{assessmentAverage?.toFixed(1).replace(".", ",")} / 10</h2><p>Mitjana de les {assessmentGroups.length} preguntes, inclosa la taula i validesa.</p></div><button className="button-primary" onClick={saveAssessment} disabled={assessmentSaved}><Check size={16} /> {assessmentSaved ? "Valoració guardada" : "Guardar anàlisi"}</button></section>
+          <section className={`assessment-diagnosis-report ${firstIssueGroup ? "has-issue" : "is-perfect"}`}>
+            {firstIssueGroup ? <>
+              <header>
+                <span className="eyebrow">Diagnòstic principal</span>
+                <h2>Primer punt a corregir: {firstIssueGroup.title}</h2>
+                <p>És la primera pregunta amb una puntuació inferior a 10. Per tant, és el possible origen principal de la pèrdua tècnica observada en aquesta valoració.</p>
+              </header>
+              <div className="assessment-diagnosis-grid">
+                <article>
+                  <span>Possibles errors comesos</span>
+                  <ul>{firstIssueGroup.possibleErrors.map((error) => <li key={error}>{error}</li>)}</ul>
+                </article>
+                <article>
+                  <span>Efecte dominó</span>
+                  <p>{affectedLaterGroups.length
+                    ? `Aquesta primera fallada pot haver condicionat també: ${affectedLaterGroups.map((group) => group.title).join(", ")}. Cal corregir primer l’origen abans d’interpretar aquestes fases com a problemes independents.`
+                    : "Les preguntes posteriors han obtingut un 10; no s’hi detecta una pèrdua afegida condicionada per aquest primer error."}</p>
+                </article>
+                <article>
+                  <span>Consell de millora</span>
+                  <p>{firstIssueGroup.improvement}</p>
+                </article>
+              </div>
+              <small>El resultat indica possibilitats tècniques, no confirma per si sol quin error s’ha produït. Contrasta’l amb l’observació del salt.</small>
+            </> : <>
+              <header>
+                <span className="eyebrow">Execució tècnica completa</span>
+                <h2>Totes les respostes han obtingut un 10</h2>
+                <p>Enhorabona: segons aquesta valoració, la cursa, el ritme, l’estabilitat, la caiguda i la precisió a la taula han estat excel·lents.</p>
+              </header>
+            </>}
+          </section>
+        </>}
       </section>
     );
     if (page === "escalfament") return (

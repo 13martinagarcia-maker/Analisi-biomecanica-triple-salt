@@ -5594,3 +5594,88 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.assessment-diagnosis-report {
+  overflow: hidden;
+  margin-top: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-top: 4px solid hsl(142 55% 42%);
+  border-radius: .7rem;
+  background: hsl(var(--card));
+}
+
+.assessment-diagnosis-report.has-issue {
+  border-top-color: hsl(25 84% 53%);
+}
+
+.assessment-diagnosis-report > header {
+  padding: 1.15rem;
+  background: hsl(var(--muted) / .35);
+}
+
+.assessment-diagnosis-report h2 {
+  margin: .2rem 0 .35rem;
+  font-family: var(--app-font-serif);
+  font-size: 1.35rem;
+}
+
+.assessment-diagnosis-report p {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+.assessment-diagnosis-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.assessment-diagnosis-grid article {
+  padding: 1rem 1.15rem;
+  border-right: 1px solid hsl(var(--border));
+}
+
+.assessment-diagnosis-grid article:last-child {
+  border-right: 0;
+}
+
+.assessment-diagnosis-grid article > span {
+  display: block;
+  margin-bottom: .55rem;
+  color: hsl(var(--foreground));
+  font-size: .69rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.assessment-diagnosis-grid ul {
+  display: grid;
+  gap: .45rem;
+  margin: 0;
+  padding-left: 1rem;
+  color: hsl(var(--muted-foreground));
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.assessment-diagnosis-report > small {
+  display: block;
+  padding: .7rem 1.15rem;
+  border-top: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-size: .64rem;
+}
+
+@media (max-width: 800px) {
+  .assessment-diagnosis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .assessment-diagnosis-grid article {
+    border-right: 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+}
