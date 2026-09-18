@@ -1,0 +1,43 @@
+1. La cursa d'impuls
+Com ha corregut abans de saltar?
+
+Excel·lent (10): Ha tingut una línia recta, ràpida i fluida. Ha arribat a la taula amb tota la velocitat sense dubtar.
+
+Notable (8.5): Ha agafat bona velocitat, però ha fet un petit ajust de passos o dubte just abans d'arribar a la taula.
+
+Satisfactori (7): Ha trotat o corregut sense molta velocitat, o ha canviat clarament el ritme per no passar-se de la taula.
+
+Suspès (0): Ha frenat fort abans de saltar, s'ha aturat o ha arribat gairebé caminant.
+
+2. El ritme dels 3 salts
+Com ha sonat i es va veure la continuïtat dels tres salts?
+
+Excel·lent (10): Un ritme continu i fluid («ta-ta-ta-ta»). Els tres salts s'han vist enllaçats de forma natural.
+
+Notable (8.5): Ha mantingut el ritme, però un dels salts ha estat bastant més curt o lent que els altres.
+
+Satisfactori (7): S'ha notat una pausa o frenada clara entre un salt i el següent, tot i aconseguir completar els tres.
+
+Suspès (0): Ha perdut l'impuls del tot, s'ha trobat gairebé aturat a mig salt o ha hagut de fer un pas caminant.
+
+3. L'estabilitat i l'alçada
+Com s'ha vist el cos de l'atleta durant el vol?
+
+Excel·lent (10): Recte i ben equilibrat. Ha saltar cap endavant sense trontollar ni anar-se'n cap als costats.
+
+Notable (8.5): S'ha mantingut bastant estable, tot i fer algun xicotet gest amb els braços o el cos per no perdre l'equilibri.
+
+Satisfactori (7): Se l'ha vist poc ferm: s'ha cotxat/s'ha inclinat molt cap endavant o ha trontollat cap a un costat.
+
+Suspès (0): Ha perdut totalment el control del cos, s'ha desequilibrat de forma perillosa o ha estat a punt de caure a mig salt.
+
+4. La caiguda a la sorra
+Com ha acabat el salt al fossat?
+
+Excel·lent (10): Ha llançat els peus ben endavant i el cos ha caigut sobre o per davant dels peus.
+
+Notable (8.5): Bona caiguda, però no ha aprofitat al màxim la distància (ha posat els peus un poc abans d'hora).
+
+Satisfactori (7): Ha caigut un mica cap enrere o li ha costat portar el cos endavant després del contacte amb la sorra.
+
+Suspès (0): Ha caigut clarament darrere dels peus, recolzant el cul o les mans a la sorra enrere.

@@ -26,19 +26,10 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
       score: Number(criterion.score),
     };
   });
-  if (parsedCriteria.length !== 9 || parsedCriteria.some((criterion) =>
+  if (parsedCriteria.length !== 5 || parsedCriteria.some((criterion) =>
     !criterion.key || !criterion.question || !criterion.level || !criterion.criterion || !validScores.has(criterion.score)
   )) {
-    response.status(400).json({ message: "Respon els nou criteris tècnics abans de guardar l’anàlisi." });
-    return;
-  }
-  const validity = body.validity && typeof body.validity === "object" ? body.validity as Record<string, unknown> : {};
-  const validityKey = typeof validity.key === "string" ? validity.key : "";
-  const validityLevel = typeof validity.level === "string" ? validity.level : "";
-  const validityDescription = typeof validity.description === "string" ? validity.description : "";
-  const improvement = typeof validity.improvement === "string" ? validity.improvement : "";
-  if (!["valid", "far", "foul"].includes(validityKey) || !validityLevel || !validityDescription || !improvement) {
-    response.status(400).json({ message: "Indica si l’intent és vàlid o nul abans de guardar l’anàlisi." });
+    response.status(400).json({ message: "Respon les cinc preguntes abans de guardar l’anàlisi." });
     return;
   }
   const finalScore = parsedCriteria.reduce((sum, criterion) => sum + criterion.score, 0) / parsedCriteria.length;
@@ -68,20 +59,15 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     athleteId,
     competitionId,
     approachScore: parsedCriteria[0].score.toFixed(2),
-    rhythmScore: parsedCriteria[6].score.toFixed(2),
+    rhythmScore: parsedCriteria[1].score.toFixed(2),
     landingScore: parsedCriteria[3].score.toFixed(2),
     approachAnswer: `${parsedCriteria[0].level}: ${parsedCriteria[0].criterion}`,
-    rhythmAnswer: `${parsedCriteria[6].level}: ${parsedCriteria[6].criterion}`,
+    rhythmAnswer: `${parsedCriteria[1].level}: ${parsedCriteria[1].criterion}`,
     landingAnswer: `${parsedCriteria[3].level}: ${parsedCriteria[3].criterion}`,
     finalScore: finalScore.toFixed(2),
     assessmentData: {
       criteria: parsedCriteria,
-      validity: {
-        key: validityKey,
-        level: validityLevel,
-        description: validityDescription,
-        improvement,
-      },
+      validity: parsedCriteria[4],
     },
   }).returning();
   response.status(201).json({ evaluation });
