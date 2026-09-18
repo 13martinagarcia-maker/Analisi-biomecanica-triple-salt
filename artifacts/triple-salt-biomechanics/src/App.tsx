@@ -220,6 +220,47 @@ const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
 
 const ANGLE_LABELS = ['Cama davantera', 'Cama posterior', 'Angle intern'] as const;
 
+const PHASE_DIAGNOSTICS: Record<PhaseKey, {
+  upstream: string;
+  errors: Array<{ name: string; effect: string }>;
+  cascade: string;
+}> = {
+  HOP: {
+    upstream: 'Abans de corregir el HOP, revisa la cursa i la batuda: reducció de velocitat, arribar massa ràpid o massa lluny de la taula, mirar a terra, entrar de taló, córrer amb el cos enrere o desalineat, o córrer massa assegut poden provocar un primer salt feble o descontrolat.',
+    errors: [
+      { name: 'Impuls vertical excessiu o paràbola massa alta', effect: 'Provoca un aterratge més dur, enfonsament i menys velocitat horitzontal per a l’STEP.' },
+      { name: 'Intentar aconseguir massa distància en el HOP', effect: 'Consumeix massa energia i genera una recepció pesada; l’STEP i el JUMP es fan amb menys força.' },
+      { name: 'No recuperar correctament la cama de batuda', effect: 'La cama no passa bé sota el maluc i es perd continuïtat i potència en les fases següents.' },
+      { name: 'No estendre prou la cama lliure', effect: 'Dificulta continuar el moviment i fa que el darrer salt s’executi de forma encongida.' },
+      { name: 'Aterrar principalment amb l’avantpeu', effect: 'Crea un contacte rígid, redueix l’impuls elàstic i deixa menys energia per al JUMP.' },
+      { name: 'Enfonsar-se durant la caiguda del HOP', effect: 'El maluc baixa massa, l’STEP queda elevat o frenat i el JUMP arriba gairebé sense velocitat.' },
+    ],
+    cascade: 'Si el HOP falla, l’STEP rep menys velocitat i més càrrega. Això limita la segona batuda, redueix el JUMP i pot acabar en una caiguda asseguda, prematura o desequilibrada.',
+  },
+  STEP: {
+    upstream: 'Un STEP alterat pot ser conseqüència directa del HOP: massa vertical, massa llarg, recepció rígida, enfonsament del maluc o mala recuperació de la cama de batuda.',
+    errors: [
+      { name: 'Caure de punta a la batuda', effect: 'Redueix la capacitat d’impulsar-se amb força i porta a un JUMP alt, lluny o poc controlat.' },
+      { name: 'Obrir massa la cama abans del contacte', effect: 'El peu aterra massa lluny del cos o cap a un costat, amb pèrdua de velocitat i control.' },
+      { name: 'No acompanyar amb la cama lliure i els braços', effect: 'Produeix un JUMP curt i una caiguda menys equilibrada.' },
+      { name: 'Fer un STEP massa curt', effect: 'Limita directament el JUMP i redueix la distància final.' },
+      { name: 'Saltar massa cap amunt', effect: 'Desestabilitza la tercera batuda i provoca una caiguda forta i pesada.' },
+      { name: 'Perdre la verticalitat del tronc', effect: 'Desplaça el pes respecte a la cama de suport i desequilibra l’enlairament del JUMP.' },
+      { name: 'Fer un STEP sense força', effect: 'Deixa l’últim salt curt i afavoreix una caiguda prematura.' },
+    ],
+    cascade: 'Quan l’STEP falla, el JUMP comença amb menys força, menys velocitat o una postura descompensada. El resultat habitual és un últim salt curt i una caiguda prematura o desequilibrada.',
+  },
+  JUMP: {
+    upstream: 'Abans d’atribuir el problema només al JUMP, revisa el HOP i l’STEP: una pèrdua de velocitat, un STEP curt o vertical, l’enfonsament del maluc o una mala coordinació poden deixar l’atleta sense impuls final.',
+    errors: [
+      { name: 'JUMP massa vertical', effect: 'Genera una caiguda picada en vertical i redueix la distància final.' },
+      { name: 'JUMP sense força', effect: 'Fa que l’últim salt sigui curt i que la caiguda sigui prematura.' },
+      { name: 'Projectar-se cap a terra i no cap a l’horitzó', effect: 'Fa tocar la sorra immediatament i provoca una pèrdua directa de distància.' },
+    ],
+    cascade: 'El JUMP és l’última expressió de tota la cadena. Un error visible aquí pot haver començat en la cursa, la batuda, el HOP o l’STEP; cal revisar les fases anteriors abans de corregir només el final.',
+  },
+};
+
 const formatTime = (seconds: number) => {
   if (!Number.isFinite(seconds)) return '00:00.000';
   const minutes = Math.floor(seconds / 60);
@@ -1700,6 +1741,13 @@ export function AnalysisWorkspace() {
                 <div className="phase-comparison-charts" data-testid="phase-comparison-charts">
                   {completedChartPhases.map((phase) => {
                     const rows = resultRows.filter((row) => row.phase === phase);
+                    const diagnostic = PHASE_DIAGNOSTICS[phase];
+                    const significantRows = rows.filter((row) => {
+                      const reference = parseReferenceRange(referenceTextForSlot(phase, row.slot));
+                      if (row.value === null || !reference) return false;
+                      const significantThreshold = Math.max(reference.tolerance + 3, reference.target * .05);
+                      return Math.abs(row.value - reference.target) > significantThreshold;
+                    });
                     return (
                       <section className={`phase-comparison-chart ${phase.toLowerCase()}`} key={`chart-${phase}`}>
                         <header>
@@ -1738,6 +1786,37 @@ export function AnalysisWorkspace() {
                             );
                           })}
                         </div>
+                        <aside className={`phase-diagnosis ${significantRows.length ? 'has-alert' : 'is-aligned'}`}>
+                          <div className="phase-diagnosis-heading">
+                            <span>{significantRows.length ? 'Desviació angular important' : 'Angles dins d’una diferència moderada'}</span>
+                            <strong>
+                              {significantRows.length
+                                ? `${significantRows.length} de 3 angles requereixen revisió`
+                                : 'No es detecta una desviació angular gran en aquesta fase'}
+                            </strong>
+                            <p>Els angles orienten la revisió, però no confirmen per si sols un error tècnic. Contrasta aquestes possibilitats amb el vídeo complet.</p>
+                          </div>
+                          {significantRows.length > 0 && (
+                            <>
+                              <div className="phase-diagnosis-upstream">
+                                <span>Possible origen anterior</span>
+                                <p>{diagnostic.upstream}</p>
+                              </div>
+                              <div className="phase-error-grid">
+                                {diagnostic.errors.map((error) => (
+                                  <article key={error.name}>
+                                    <strong>{error.name}</strong>
+                                    <p>{error.effect}</p>
+                                  </article>
+                                ))}
+                              </div>
+                              <div className="phase-cascade">
+                                <span>Efecte en cadena</span>
+                                <p>{diagnostic.cascade}</p>
+                              </div>
+                            </>
+                          )}
+                        </aside>
                       </section>
                     );
                   })}

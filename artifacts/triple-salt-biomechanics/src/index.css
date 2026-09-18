@@ -4489,6 +4489,101 @@ button {
   font-size: .67rem;
 }
 
+.phase-diagnosis {
+  margin: 0 1rem 1rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: .6rem;
+  background: hsl(var(--muted) / .28);
+}
+
+.phase-diagnosis.has-alert {
+  border-color: hsl(25 82% 55% / .42);
+  background: hsl(28 90% 52% / .055);
+}
+
+.phase-diagnosis-heading,
+.phase-diagnosis-upstream,
+.phase-cascade {
+  padding: .9rem 1rem;
+}
+
+.phase-diagnosis-heading {
+  display: grid;
+  gap: .3rem;
+}
+
+.phase-diagnosis-heading > span,
+.phase-diagnosis-upstream > span,
+.phase-cascade > span {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.phase-diagnosis-heading strong {
+  font-family: var(--app-font-serif);
+  font-size: 1.05rem;
+}
+
+.phase-diagnosis p {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: .72rem;
+  line-height: 1.55;
+}
+
+.phase-diagnosis-upstream {
+  display: grid;
+  gap: .35rem;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+.phase-diagnosis-upstream p {
+  color: hsl(var(--foreground));
+}
+
+.phase-error-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid hsl(var(--border));
+}
+
+.phase-error-grid article {
+  display: grid;
+  gap: .3rem;
+  padding: .85rem 1rem;
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+.phase-error-grid article:nth-child(2n) {
+  border-right: 0;
+}
+
+.phase-error-grid strong {
+  font-size: .73rem;
+}
+
+.phase-cascade {
+  display: grid;
+  gap: .35rem;
+  background: hsl(216 31% 11%);
+}
+
+.phase-cascade > span {
+  color: hsl(25 92% 70%);
+}
+
+.phase-cascade p {
+  color: hsl(0 0% 100% / .82);
+}
+
 .analysis-frame-card-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4799,6 +4894,15 @@ button {
 }
 
 @media (max-width: 1050px) {
+  .phase-error-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-error-grid article,
+  .phase-error-grid article:nth-child(2n) {
+    border-right: 0;
+  }
+
   .phase-chart-angles {
     grid-template-columns: 1fr;
   }
