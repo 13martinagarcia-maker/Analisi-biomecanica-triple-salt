@@ -60,10 +60,39 @@ export async function getStoredFile(objectPath: string): Promise<File> {
   return file;
 }
 
-export async function pipeStoredFile(file: File, response: import("express").Response) {
+export async function pipeStoredFile(
+  file: File,
+  request: import("express").Request,
+  response: import("express").Response,
+) {
   const [metadata] = await file.getMetadata();
+  const size = Number(metadata.size ?? 0);
   response.setHeader("Content-Type", metadata.contentType || "application/octet-stream");
   response.setHeader("Cache-Control", "private, max-age=3600");
-  if (metadata.size) response.setHeader("Content-Length", String(metadata.size));
+  response.setHeader("Accept-Ranges", "bytes");
+
+  const range = request.headers.range;
+  if (range && size > 0) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (!match) {
+      response.status(416).setHeader("Content-Range", `bytes */${size}`);
+      response.end();
+      return;
+    }
+    const start = match[1] ? Number(match[1]) : 0;
+    const end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start > end || start >= size) {
+      response.status(416).setHeader("Content-Range", `bytes */${size}`);
+      response.end();
+      return;
+    }
+    response.status(206);
+    response.setHeader("Content-Range", `bytes ${start}-${end}/${size}`);
+    response.setHeader("Content-Length", String(end - start + 1));
+    Readable.from(file.createReadStream({ start, end })).pipe(response);
+    return;
+  }
+
+  if (size > 0) response.setHeader("Content-Length", String(size));
   Readable.from(file.createReadStream()).pipe(response);
 }

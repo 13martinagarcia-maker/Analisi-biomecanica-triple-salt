@@ -50,7 +50,7 @@ router.get("/athlete-media/:id", requireAuth, async (request, response) => {
     return;
   }
   try {
-    await pipeStoredFile(await getStoredFile(media.objectPath), response);
+    await pipeStoredFile(await getStoredFile(media.objectPath), request, response);
   } catch (error) {
     request.log.error({ err: error }, "Unable to serve athlete media");
     response.status(404).json({ message: "Fitxer no trobat." });

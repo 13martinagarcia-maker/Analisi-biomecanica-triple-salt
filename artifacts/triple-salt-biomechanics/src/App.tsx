@@ -403,6 +403,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const cropStartRef = useRef<{ x: number; y: number } | null>(null);
   const [toast, setToast] = useState('');
   const [videoSrc, setVideoSrc] = useState('');
+  const [sourceVideoFile, setSourceVideoFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('');
   const [duration, setDuration] = useState(0);
   // Normalized landmarks are converted back to source pixels for all geometry.
@@ -458,11 +459,14 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const [analysisSaved, setAnalysisSaved] = useState(false);
   const [draggingGuide, setDraggingGuide] = useState<'horizontal' | 'vertical' | null>(null);
 
-  // Saved analyses intentionally contain only serializable editing state. The source video
-  // remains local to the browser and is never persisted as a blob or object URL.
+  // Snapshots keep only the persistent authenticated media URL. A newly selected File is
+  // passed transiently to ProductHub, uploaded first, and never serialized into JSON.
   useEffect(() => {
     if (!initialSnapshot) return;
     const snapshot = initialSnapshot;
+    const persistedVideoUrl = typeof snapshot.sourceVideoUrl === 'string' ? snapshot.sourceVideoUrl : '';
+    setVideoSrc(persistedVideoUrl);
+    setSourceVideoFile(null);
     setFileName(String(snapshotValue(snapshot.fileName, '')));
     setRecordLocation(String(snapshotValue(snapshot.recordLocation, '')));
     setRecordDate(String(snapshotValue(snapshot.recordDate, new Date().toLocaleDateString('en-CA'))));
@@ -499,6 +503,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
 
   const resetWorkspace = useCallback(() => {
     setVideoSrc('');
+    setSourceVideoFile(null);
     setFileName('');
     setDuration(0);
     setSourceDimensions({ width: 1, height: 1 });
@@ -1119,6 +1124,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     const objectUrl = URL.createObjectURL(file);
     objectUrlRef.current = objectUrl;
     setVideoSrc(objectUrl);
+    setSourceVideoFile(file);
     setFileName(file.name);
     setLandmarks(null);
     setPoseCandidates([]);
@@ -1788,6 +1794,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       athleteId: selectedAthleteId,
       location: recordLocation.trim(),
       analysisDate: recordDate,
+      sourceVideoFile: sourceVideoFile ?? undefined,
       analysisData: {
         phases: (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
           const phaseRows = resultRows.filter((row) => row.phase === phase);
@@ -1814,6 +1821,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setSavingAnalysis(true);
     try {
       await onSave(payload);
+      setSourceVideoFile(null);
       setAnalysisSaved(true);
       showToast('Anàlisi guardada a l’historial.');
     } catch (error) {

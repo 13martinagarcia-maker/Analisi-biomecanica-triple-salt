@@ -80,6 +80,7 @@ export type HomeAnalysisPayload = {
   location: string;
   analysisDate: string;
   mediaIds?: string[];
+  sourceVideoFile?: File;
   analysisData: {
     phases: Array<{
       phase: "HOP" | "STEP" | "JUMP";
@@ -857,6 +858,29 @@ function ProductHub({ analysisWorkspace }: Props) {
       const images = snapshot.frameImages as Record<string, Array<string | null>> | undefined;
       const existingIds = Array.isArray(snapshot.mediaIds) ? snapshot.mediaIds.filter((id): id is string => typeof id === "string") : [];
       const mediaIds = [...existingIds];
+      if (payload.sourceVideoFile) {
+        const video = payload.sourceVideoFile;
+        const target = await api<{ media: { id: string }; uploadURL: string }>("/athlete-media/uploads", {
+          method: "POST",
+          body: JSON.stringify({
+            athleteId: payload.athleteId,
+            fileName: video.name,
+            contentType: video.type || "video/mp4",
+            mediaKind: "video",
+            size: video.size,
+          }),
+        });
+        const uploadResponse = await fetch(target.uploadURL, {
+          method: "PUT",
+          body: video,
+          headers: { "content-type": video.type || "video/mp4" },
+        });
+        if (!uploadResponse.ok) throw new Error("No s’ha pogut pujar el vídeo original.");
+        mediaIds.push(target.media.id);
+        snapshot.sourceVideoMediaId = target.media.id;
+        snapshot.sourceVideoUrl = `/api/athlete-media/${target.media.id}`;
+        snapshot.fileName = video.name;
+      }
       if (images) {
         for (const [phase, phaseImages] of Object.entries(images)) {
           for (let index = 0; index < phaseImages.length; index += 1) {
@@ -876,8 +900,9 @@ function ProductHub({ analysisWorkspace }: Props) {
           }
         }
       }
-      snapshot.mediaIds = mediaIds;
-      payload = { ...payload, mediaIds, analysisData: { ...payload.analysisData, snapshot } };
+      const persistedMediaIds = [...new Set(mediaIds)];
+      snapshot.mediaIds = persistedMediaIds;
+      payload = { ...payload, sourceVideoFile: undefined, mediaIds: persistedMediaIds, analysisData: { ...payload.analysisData, snapshot } };
     }
     const method = selectedHomeAnalysisId ? "PATCH" : "POST";
     const path = selectedHomeAnalysisId ? `/home-analyses/${selectedHomeAnalysisId}` : "/home-analyses";
