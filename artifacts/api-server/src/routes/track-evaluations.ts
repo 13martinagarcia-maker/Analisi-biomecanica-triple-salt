@@ -156,4 +156,17 @@ router.patch("/track-evaluations/:id", requireAuth, async (request, response): P
   response.json({ evaluation });
 });
 
+router.delete("/track-evaluations/:id", requireAuth, async (request, response): Promise<void> => {
+  const id = Array.isArray(request.params.id) ? request.params.id[0] : request.params.id;
+  const [deleted] = await db.delete(trackEvaluationsTable).where(and(
+    eq(trackEvaluationsTable.id, id),
+    eq(trackEvaluationsTable.userId, request.user!.id),
+  )).returning({ id: trackEvaluationsTable.id });
+  if (!deleted) {
+    response.status(404).json({ message: "No s’ha trobat la valoració." });
+    return;
+  }
+  response.status(204).send();
+});
+
 export default router;

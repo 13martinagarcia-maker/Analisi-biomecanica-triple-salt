@@ -166,4 +166,17 @@ router.patch("/home-analyses/:id", requireAuth, async (request, response): Promi
   response.json({ analysis });
 });
 
+router.delete("/home-analyses/:id", requireAuth, async (request, response): Promise<void> => {
+  const id = Array.isArray(request.params.id) ? request.params.id[0] : request.params.id;
+  const [deleted] = await db.delete(homeAnalysesTable).where(and(
+    eq(homeAnalysesTable.id, id),
+    eq(homeAnalysesTable.userId, request.user!.id),
+  )).returning({ id: homeAnalysesTable.id });
+  if (!deleted) {
+    response.status(404).json({ message: "No s’ha trobat l’anàlisi." });
+    return;
+  }
+  response.status(204).send();
+});
+
 export default router;

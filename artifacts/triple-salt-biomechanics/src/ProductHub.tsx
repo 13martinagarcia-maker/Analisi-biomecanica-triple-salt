@@ -553,6 +553,8 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [selectedHomeAnalysisId, setSelectedHomeAnalysisId] = useState<string | null>(null);
   const [selectedHomeSnapshot, setSelectedHomeSnapshot] = useState<Record<string, unknown> | null>(null);
   const [competitionToDelete, setCompetitionToDelete] = useState<Competition | null>(null);
+  const [evaluationToDelete, setEvaluationToDelete] = useState<TrackEvaluation | null>(null);
+  const [homeAnalysisToDelete, setHomeAnalysisToDelete] = useState<HomeAnalysis | null>(null);
   const [trackLocation, setTrackLocation] = useState("");
   const [trackDate, setTrackDate] = useState(() => new Date().toLocaleDateString("en-CA"));
 
@@ -767,6 +769,38 @@ function ProductHub({ analysisWorkspace }: Props) {
       notify("Competició esborrada de l’historial.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "No s’ha pogut esborrar la competició.");
+    }
+  };
+
+  const deleteEvaluation = async () => {
+    if (!evaluationToDelete) return;
+    try {
+      await api(`/track-evaluations/${evaluationToDelete.id}`, { method: "DELETE" });
+      setEvaluations((previous) => previous.filter((evaluation) => evaluation.id !== evaluationToDelete.id));
+      if (selectedEvaluationId === evaluationToDelete.id) {
+        setSelectedEvaluationId(null);
+        setAssessmentAnswers({});
+      }
+      setEvaluationToDelete(null);
+      notify("Valoració de pista esborrada de l’historial.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No s’ha pogut esborrar la valoració.");
+    }
+  };
+
+  const deleteHomeAnalysis = async () => {
+    if (!homeAnalysisToDelete) return;
+    try {
+      await api(`/home-analyses/${homeAnalysisToDelete.id}`, { method: "DELETE" });
+      setHomeAnalyses((previous) => previous.filter((analysis) => analysis.id !== homeAnalysisToDelete.id));
+      if (selectedHomeAnalysisId === homeAnalysisToDelete.id) {
+        setSelectedHomeAnalysisId(null);
+        setSelectedHomeSnapshot(null);
+      }
+      setHomeAnalysisToDelete(null);
+      notify("Anàlisi de casa esborrada de l’historial.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No s’ha pogut esborrar l’anàlisi.");
     }
   };
 
@@ -1117,6 +1151,7 @@ function ProductHub({ analysisWorkspace }: Props) {
                       setAssessmentSaved(false);
                       setPage("pista");
                     }}>Veure i editar <ChevronRight size={14} /></button>
+                    <button type="button" className="competition-delete-button" onClick={() => setEvaluationToDelete(evaluation)} aria-label={`Esborrar la valoració de ${evaluation.location || "pista"}`}><Trash2 size={15} /> Esborrar</button>
                   </article>
                 )) : <EmptyState title="Encara no hi ha valoracions de pista." description="Quan guardis una valoració, apareixerà aquí amb el seu dia i lloc." />}
               </section>
@@ -1136,6 +1171,7 @@ function ProductHub({ analysisWorkspace }: Props) {
                       setSelectedHomeSnapshot(detail.analysis.analysisData.snapshot ?? null);
                       setPage("casa");
                     }}>Veure i editar <ChevronRight size={14} /></button>
+                    <button type="button" className="competition-delete-button" onClick={() => setHomeAnalysisToDelete(analysis)} aria-label={`Esborrar l’anàlisi de ${analysis.location}`}><Trash2 size={15} /> Esborrar</button>
                   </article>
                 )) : <EmptyState title="Encara no hi ha anàlisis de casa." description="Completa els angles de HOP, STEP i JUMP i guarda el resultat." />}
               </section>
@@ -1351,6 +1387,20 @@ function ProductHub({ analysisWorkspace }: Props) {
           <span className="delete-warning-icon"><Trash2 size={22} /></span>
           <div><span className="eyebrow">Confirmació necessària</span><h2 id="delete-competition-title">Vols esborrar aquesta competició?</h2><p><strong>{competitionToDelete.location}</strong> i tots els seus salts desapareixeran definitivament de l’Historial.</p></div>
           <div className="modal-actions"><button type="button" className="button-outline" onClick={() => setCompetitionToDelete(null)}>Cancel·lar</button><button type="button" className="button-danger" onClick={() => void deleteCompetition()}><Trash2 size={15} /> Sí, esborrar</button></div>
+        </section>
+      </div>}
+      {evaluationToDelete && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setEvaluationToDelete(null); }}>
+        <section className="modal competition-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-evaluation-title">
+          <span className="delete-warning-icon"><Trash2 size={22} /></span>
+          <div><span className="eyebrow">Confirmació necessària</span><h2 id="delete-evaluation-title">Vols esborrar aquesta valoració?</h2><p>La valoració de <strong>{evaluationToDelete.location || "pista"}</strong> desapareixerà definitivament de l’Historial.</p></div>
+          <div className="modal-actions"><button type="button" className="button-outline" onClick={() => setEvaluationToDelete(null)}>Cancel·lar</button><button type="button" className="button-danger" onClick={() => void deleteEvaluation()}><Trash2 size={15} /> Sí, esborrar</button></div>
+        </section>
+      </div>}
+      {homeAnalysisToDelete && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setHomeAnalysisToDelete(null); }}>
+        <section className="modal competition-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-home-analysis-title">
+          <span className="delete-warning-icon"><Trash2 size={22} /></span>
+          <div><span className="eyebrow">Confirmació necessària</span><h2 id="delete-home-analysis-title">Vols esborrar aquesta anàlisi?</h2><p>L’anàlisi de <strong>{homeAnalysisToDelete.location}</strong> desapareixerà definitivament de l’Historial.</p></div>
+          <div className="modal-actions"><button type="button" className="button-outline" onClick={() => setHomeAnalysisToDelete(null)}>Cancel·lar</button><button type="button" className="button-danger" onClick={() => void deleteHomeAnalysis()}><Trash2 size={15} /> Sí, esborrar</button></div>
         </section>
       </div>}
       {feedback && <div className="toast" role="status">{feedback}</div>}
