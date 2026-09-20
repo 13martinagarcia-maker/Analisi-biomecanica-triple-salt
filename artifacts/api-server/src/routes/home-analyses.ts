@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import { athletesTable, db, homeAnalysesTable } from "@workspace/db";
+import { athleteMediaTable, athletesTable, db, homeAnalysesTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 
 const router = Router();
@@ -20,6 +20,9 @@ router.post("/home-analyses", requireAuth, async (request, response) => {
     ? body.analysisDate
     : "";
   const analysisData = body.analysisData && typeof body.analysisData === "object" ? body.analysisData : null;
+  const mediaIds = Array.isArray(body.mediaIds)
+    ? body.mediaIds.filter((value): value is string => typeof value === "string")
+    : [];
 
   if (!athleteId || !location || !analysisDate || !analysisData) {
     response.status(400).json({ message: "Selecciona l’atleta i indica el dia i el lloc de l’anàlisi." });
@@ -33,13 +36,37 @@ router.post("/home-analyses", requireAuth, async (request, response) => {
     return;
   }
 
-  const [analysis] = await db.insert(homeAnalysesTable).values({
-    userId: request.user!.id,
-    athleteId,
-    location,
-    analysisDate,
-    analysisData,
-  }).returning();
+  if (mediaIds.length) {
+    const ownedMedia = await db.select({ id: athleteMediaTable.id }).from(athleteMediaTable).where(and(
+      eq(athleteMediaTable.userId, request.user!.id),
+      eq(athleteMediaTable.athleteId, athleteId),
+    ));
+    const ownedIds = new Set(ownedMedia.map((media) => media.id));
+    if (mediaIds.some((id) => !ownedIds.has(id))) {
+      response.status(400).json({ message: "Un dels fitxers no pertany a l’atleta seleccionat." });
+      return;
+    }
+  }
+
+  const analysis = await db.transaction(async (tx) => {
+    const [created] = await tx.insert(homeAnalysesTable).values({
+      userId: request.user!.id,
+      athleteId,
+      location,
+      analysisDate,
+      analysisData,
+    }).returning();
+    if (mediaIds.length) {
+      for (const mediaId of mediaIds) {
+        await tx.update(athleteMediaTable).set({ homeAnalysisId: created.id }).where(and(
+          eq(athleteMediaTable.id, mediaId),
+          eq(athleteMediaTable.userId, request.user!.id),
+          eq(athleteMediaTable.athleteId, athleteId),
+        ));
+      }
+    }
+    return created;
+  });
 
   response.status(201).json({ analysis });
 });

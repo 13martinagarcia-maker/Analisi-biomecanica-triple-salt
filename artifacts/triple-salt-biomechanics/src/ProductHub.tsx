@@ -7,6 +7,7 @@ import {
   BookOpen,
   CalendarPlus,
   Check,
+  ChevronDown,
   ChevronRight,
   CircleGauge,
   ClipboardList,
@@ -464,6 +465,34 @@ const getCompetitionBest = (competition: Competition) => {
   return validMarks.length ? Math.max(...validMarks) : null;
 };
 
+function AthleteCard({ athlete, competitions, analyses, onSelect, onEdit }: { athlete: Athlete, competitions: Competition[], analyses: HomeAnalysis[], onSelect: () => void, onEdit: () => void }) {
+  const validMarks = competitions.flatMap(c => c.jumps.filter(j => !j.isFoul && j.mark).map(j => Number(j.mark)).filter(m => Number.isFinite(m)));
+  const bestMark = validMarks.length ? Math.max(...validMarks).toFixed(2).replace('.', ',') : "--";
+
+  return (
+    <article className="athlete-roster-card">
+      <div className="ac-header">
+        <div className="ac-avatar">{athlete.firstName[0]}{athlete.lastName[0]}</div>
+        <button type="button" className="button-quiet ac-edit" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label="Editar atleta">
+          <Pencil size={14} />
+        </button>
+      </div>
+      <div className="ac-info" onClick={onSelect} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}>
+        <h3>{athlete.firstName} {athlete.lastName}</h3>
+        <p className="ac-goals">{athlete.goals || "Sense objectius definits"}</p>
+      </div>
+      <div className="ac-metrics">
+        <div className="ac-metric"><strong>{bestMark}</strong><span>PB (m)</span></div>
+        <div className="ac-metric"><strong>{competitions.length}</strong><span>Competicions</span></div>
+        <div className="ac-metric"><strong>{analyses.length}</strong><span>Anàlisis</span></div>
+      </div>
+      <div className="ac-footer">
+        <button type="button" className="button-primary w-full" onClick={onSelect}>Obrir perfil</button>
+      </div>
+    </article>
+  );
+}
+
 function CompetitionFields({ athletes, competition, defaultAthleteId }: { athletes: Athlete[]; competition?: Competition; defaultAthleteId: string }) {
   const jumps = Array.from({ length: 6 }, (_, index) => competition?.jumps.find((jump) => jump.jumpNumber === index + 1));
   return <>
@@ -506,6 +535,8 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [homeAnalyses, setHomeAnalyses] = useState<HomeAnalysis[]>([]);
   const [selectedAthleteId, setSelectedAthleteId] = useState("");
   const [athleteFormOpen, setAthleteFormOpen] = useState(false);
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+  const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
   const [feedback, setFeedback] = useState("");
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
   const [assessmentSaved, setAssessmentSaved] = useState(false);
@@ -577,25 +608,64 @@ function ProductHub({ analysisWorkspace }: Props) {
     setPage("inici");
   };
 
-  const addAthlete = async (event: FormEvent<HTMLFormElement>) => {
+  const handleAthleteChange = (newId: string) => {
+    if (page === "casa") {
+      if (!window.confirm("Canviar d'atleta reiniciarà l'anàlisi de vídeo actual. Vols continuar?")) return;
+    } else if (page === "pista") {
+      setAssessmentAnswers({});
+      setTrackLocation("");
+      setTrackDate(new Date().toLocaleDateString("en-CA"));
+    }
+    setSelectedAthleteId(newId);
+  };
+
+  const addOrEditAthlete = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const payload = {
+      firstName: data.get("firstName") as string,
+      lastName: data.get("lastName") as string,
+      goals: (data.get("goals") as string) || null,
+      technicalNotes: (data.get("technicalNotes") as string) || null,
+    };
     try {
-      const result = await api<{ athlete: Athlete }>("/athletes", {
-        method: "POST",
-        body: JSON.stringify({
-          firstName: data.get("firstName"),
-          lastName: data.get("lastName"),
-          goals: data.get("goals"),
-          technicalNotes: data.get("technicalNotes"),
-        }),
-      });
-      setAthletes((previous) => [...previous, result.athlete].sort((a, b) => `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`)));
-      setSelectedAthleteId(result.athlete.id);
+      if (editingAthlete) {
+        const updated = await api<Athlete>(`/athletes/${editingAthlete.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        setAthletes((prev) => prev.map((a) => (a.id === updated.id ? updated : a)).sort((a, b) => `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`)));
+        notify("Atleta actualitzat correctament.");
+      } else {
+        const result = await api<{ athlete: Athlete }>("/athletes", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        setAthletes((prev) => [...prev, result.athlete].sort((a, b) => `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`)));
+        if (!selectedAthleteId) setSelectedAthleteId(result.athlete.id);
+        notify("Atleta afegit a l'historial.");
+      }
       setAthleteFormOpen(false);
-      notify("Atleta afegit a l’historial.");
+      setEditingAthlete(null);
     } catch (error) {
-      notify(error instanceof Error ? error.message : "No s’ha pogut crear l’atleta.");
+      notify(error instanceof Error ? error.message : "Error desant l'atleta.");
+    }
+  };
+
+  const deleteAthlete = async () => {
+    if (!athleteToDelete) return;
+    try {
+      await api(`/athletes/${athleteToDelete.id}`, { method: "DELETE" });
+      setAthletes((prev) => prev.filter((a) => a.id !== athleteToDelete.id));
+      if (selectedAthleteId === athleteToDelete.id) {
+        const nextAthlete = athletes.find(a => a.id !== athleteToDelete.id);
+        setSelectedAthleteId(nextAthlete?.id || "");
+        setPage("inici");
+      }
+      notify("Atleta esborrat correctament.");
+      setAthleteToDelete(null);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No s'ha pogut esborrar l'atleta.");
     }
   };
 
@@ -833,29 +903,67 @@ function ProductHub({ analysisWorkspace }: Props) {
     })}</div>;
     if (page === "inici") return (
       <section className="hub-page">
-        <div className="hub-hero"><div><span className="eyebrow">Espai de temporada</span><h1>Hola, {user.firstName}.</h1><p>Registra el que passa a pista i torna a l’anàlisi de casa quan ho necessitis.</p></div><button className="button-primary" onClick={() => setPage("competició")}><CalendarPlus size={16} /> Nova competició</button></div>
-        <div className="hub-action-grid">
+        <div className="hub-hero">
+          <div><span className="eyebrow">Espai d'entrenador</span><h1>Hola, {user.firstName}.</h1><p>Gestiona els teus atletes, registra competicions i analitza el rendiment.</p></div>
+        </div>
+        
+        <div className="roster-section">
+          <div className="section-caption roster-header">
+            <div>
+              <h2>El teu equip</h2>
+              <p className="eyebrow">{athletes.length} atletes actius</p>
+            </div>
+            <button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}>
+              <UserPlus size={15} /> Afegir atleta
+            </button>
+          </div>
+          
+          {athletes.length === 0 ? (
+            <EmptyState 
+              title="Cap atleta registrat" 
+              description="Afegeix la primera fitxa per començar a registrar competicions i valoracions."
+              action={<button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}><Plus size={15} /> Afegir atleta</button>}
+            />
+          ) : (
+            <div className="roster-grid">
+              {athletes.map(a => (
+                <AthleteCard 
+                  key={a.id} 
+                  athlete={a} 
+                  competitions={competitions.filter(c => c.athleteId === a.id)}
+                  analyses={homeAnalyses.filter(h => h.athleteId === a.id)}
+                  onSelect={() => { setSelectedAthleteId(a.id); setPage("historial"); }}
+                  onEdit={() => { setEditingAthlete(a); setAthleteFormOpen(true); }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <div className="hub-action-grid" style={{ marginTop: '2.5rem' }}>
           {[
-            { icon: BarChart3, title: "Historial", text: "Consulta atletes, competicions i evolució quan hi hagi registres.", page: "historial" as Page },
-            { icon: Activity, title: "Estic a pista", text: "Fes una valoració ràpida després de saltar.", page: "pista" as Page },
-            { icon: CircleGauge, title: "Estic a casa", text: "Accedeix al flux actual de vídeo i anàlisi biomecànica.", page: "casa" as Page },
             { icon: BookOpen, title: "Tècnica", text: "Organitza els continguts i les correccions de cada fase del salt.", page: "tècnica" as Page },
             { icon: Dumbbell, title: "Escalfament", text: "Prepara exercicis, temps i repeticions abans de competir.", page: "escalfament" as Page },
           ].map((card) => <button className="hub-action-card" key={card.page} onClick={() => setPage(card.page)}><card.icon size={21} /><span><strong>{card.title}</strong><small>{card.text}</small></span><ChevronRight size={17} /></button>)}
-        </div>
-        <div className="hub-summary-grid">
-          <article><Users size={18} /><span>Atletes</span><strong>{athletes.length || "—"}</strong><small>{athletes.length ? "Disponibles al teu historial" : "Encara no n’hi ha cap"}</small></article>
-          <article><Trophy size={18} /><span>Competicions</span><strong>{competitions.length || "—"}</strong><small>{competitions.length ? "Registres de la temporada" : "Cap competició registrada"}</small></article>
-          <article><Flag size={18} /><span>Proper pas</span><strong>{athletes.length ? "Pista" : "Atleta"}</strong><small>{athletes.length ? "Registra una competició o una valoració" : "Afegeix el primer atleta"}</small></article>
         </div>
       </section>
     );
     if (page === "historial") return (
       <section className="hub-page">
-        <BackButton onClick={() => setPage("inici")} />
-        <div className="hub-title-row"><div><span className="eyebrow">Seguiment de temporada</span><h1>Historial</h1><p>Entra a qualsevol competició per revisar i corregir totes les dades de la jornada.</p></div><button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={16} /> Afegir atleta</button></div>
-        {!athletes.length ? <EmptyState title="Encara no hi ha atletes registrats." description="Crea la primera fitxa per començar a relacionar competicions, salts i valoracions." action={<button className="button-primary" onClick={() => setAthleteFormOpen(true)}><Plus size={15} /> Crear atleta</button>} /> : <>
-          <div className="athlete-switcher"><button type="button" onClick={() => moveAthlete(-1)} disabled={athletes.length < 2} aria-label="Atleta anterior"><ArrowLeft size={17} /></button><select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)} aria-label="Canviar d’atleta">{athletes.map((athlete) => <option key={athlete.id} value={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select><button type="button" onClick={() => moveAthlete(1)} disabled={athletes.length < 2} aria-label="Atleta següent"><ArrowRight size={17} /></button></div>
+        <BackButton onClick={() => setPage("inici")} label="Tornar a l'equip" />
+        <div className="hub-title-row">
+          <div>
+            <span className="eyebrow">Perfil de l'atleta</span>
+            <h1>{selectedAthlete?.firstName} {selectedAthlete?.lastName}</h1>
+            <p>{selectedAthlete?.goals || "Sense objectius definits"}</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="button-outline" onClick={() => { setEditingAthlete(selectedAthlete || null); setAthleteFormOpen(true); }}><Pencil size={15} /> Editar</button>
+            <button className="button-primary" onClick={() => setPage("competició")}><CalendarPlus size={15} /> Nova competició</button>
+          </div>
+        </div>
+        
+        {!athletes.length ? <EmptyState title="Encara no hi ha atletes registrats." description="Crea la primera fitxa per començar a relacionar competicions, salts i valoracions." action={<button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}><Plus size={15} /> Crear atleta</button>} /> : <>
           {competitionProgressData.length > 0 && (
             <section className="competition-progress-card">
               <div className="competition-progress-heading">
@@ -1091,10 +1199,77 @@ function ProductHub({ analysisWorkspace }: Props) {
       {page !== "casa" && <aside className="hub-sidebar"><div className="sidebar-brand"><div className="brand-mark">TS<br />01</div><div><div className="font-display" style={{ fontSize: "1.1rem", lineHeight: 1 }}>Triple Salt</div><div className="sidebar-label" style={{ padding: ".35rem 0 0", color: "hsl(215 14% 67%)" }}>Temporada i anàlisi</div></div></div><nav className="sidebar-nav" aria-label="Navegació principal"><div className="sidebar-label">El teu espai</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}><item.icon size={16} /><span>{item.label}</span></button>)}</nav><div className="hub-user-block"><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><div><strong>{user.firstName} {user.lastName}</strong><button onClick={logout}><LogOut size={12} /> Tancar sessió</button></div></div></aside>}
       <main className={page === "casa" ? "hub-analysis-main" : "hub-main"}>
         {page === "casa" && <div className="analysis-hub-bar"><button className="button-outline" onClick={() => setPage("inici")}><ArrowLeft size={14} /> Tornar a l’espai de temporada</button><div><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><strong>{user.firstName} {user.lastName}</strong><button className="button-quiet" onClick={logout}><LogOut size={14} /><span>Tancar sessió</span></button></div></div>}
-        {page !== "casa" && <header className="hub-topbar"><div><span className="live-dot" /><span className="eyebrow">Espai personal / Triple salt</span></div><button className="button-outline" onClick={() => setPage("casa")}><CircleGauge size={14} /> Estic a casa</button></header>}
+        {page !== "casa" && page !== "inici" && (
+          <header className="hub-topbar">
+            <div className="topbar-context">
+               <span className="eyebrow">Atleta actual</span>
+               <div className="athlete-switcher-wrap">
+                  <select 
+                     value={selectedAthleteId} 
+                     onChange={(e) => handleAthleteChange(e.target.value)} 
+                     className="athlete-switcher-select"
+                  >
+                     {athletes.map(a => <option key={a.id} value={a.id}>{a.firstName} {a.lastName}</option>)}
+                  </select>
+                  <ChevronDown size={14} className="switcher-icon" />
+               </div>
+            </div>
+            <div className="flex gap-2">
+              <button className="button-outline" onClick={() => setPage("pista")}><Activity size={14} /> Estic a pista</button>
+              <button className="button-primary" onClick={() => setPage("casa")}><CircleGauge size={14} /> Estic a casa</button>
+            </div>
+          </header>
+        )}
         {renderPage()}
       </main>
-      {athleteFormOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAthleteFormOpen(false); }}><form className="modal hub-athlete-modal" onSubmit={addAthlete}><div className="modal-title-row"><div><span className="eyebrow">Nou atleta</span><h2>Crea una fitxa</h2></div><button type="button" className="button-quiet" onClick={() => setAthleteFormOpen(false)} aria-label="Tancar"><X size={15} /></button></div><div className="auth-name-grid"><label>Nom<input name="firstName" required autoFocus /></label><label>Cognom<input name="lastName" required /></label></div><label>Objectius<input name="goals" placeholder="Opcional" /></label><label>Informació tècnica<textarea name="technicalNotes" placeholder="Opcional" /></label><div className="modal-actions"><button type="button" className="button-outline" onClick={() => setAthleteFormOpen(false)}>Cancel·lar</button><button className="button-primary" type="submit"><Save size={14} /> Guardar atleta</button></div></form></div>}
+      {athleteFormOpen && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAthleteFormOpen(false); }}>
+          <form className="modal hub-athlete-modal" onSubmit={addOrEditAthlete}>
+            <div className="modal-title-row">
+              <div>
+                <span className="eyebrow">{editingAthlete ? "Editar atleta" : "Nou atleta"}</span>
+                <h2>{editingAthlete ? "Modifica la fitxa" : "Crea una fitxa"}</h2>
+              </div>
+              <button type="button" className="button-quiet" onClick={() => { setAthleteFormOpen(false); setEditingAthlete(null); }} aria-label="Tancar">
+                <X size={15} />
+              </button>
+            </div>
+            <div className="auth-name-grid">
+              <label>Nom<input name="firstName" required autoFocus defaultValue={editingAthlete?.firstName || ""} /></label>
+              <label>Cognom<input name="lastName" required defaultValue={editingAthlete?.lastName || ""} /></label>
+            </div>
+            <label>Objectius<input name="goals" placeholder="Opcional" defaultValue={editingAthlete?.goals || ""} /></label>
+            <label>Informació tècnica<textarea name="technicalNotes" placeholder="Opcional" defaultValue={editingAthlete?.technicalNotes || ""} /></label>
+            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+              {editingAthlete ? (
+                <button type="button" className="button-danger" onClick={() => { setAthleteToDelete(editingAthlete); setAthleteFormOpen(false); }}>
+                  <Trash2 size={14} /> Esborrar
+                </button>
+              ) : <div />}
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="button" className="button-outline" onClick={() => { setAthleteFormOpen(false); setEditingAthlete(null); }}>Cancel·lar</button>
+                <button className="button-primary" type="submit"><Save size={14} /> Guardar</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+      {athleteToDelete && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAthleteToDelete(null); }}>
+          <section className="modal delete-modal" role="alertdialog">
+            <span className="delete-warning-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'hsl(4 69% 47%)' }}><Trash2 size={24} /></span>
+            <div>
+              <span className="eyebrow">Confirmació necessària</span>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Vols esborrar a {athleteToDelete.firstName}?</h2>
+              <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>Aquesta acció esborrarà la fitxa de l'atleta. <strong>Atenció:</strong> les competicions, avaluacions i anàlisis existents no s'esborraran, però quedaran desvinculades a l'historial.</p>
+            </div>
+            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button type="button" className="button-outline" onClick={() => setAthleteToDelete(null)}>Cancel·lar</button>
+              <button type="button" className="button-danger" onClick={deleteAthlete}><Trash2 size={15} /> Sí, esborrar</button>
+            </div>
+          </section>
+        </div>
+      )}
       {competitionToDelete && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setCompetitionToDelete(null); }}>
         <section className="modal competition-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-competition-title">
           <span className="delete-warning-icon"><Trash2 size={22} /></span>

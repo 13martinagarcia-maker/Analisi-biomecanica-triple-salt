@@ -94,3 +94,15 @@ export const homeAnalysesTable = pgTable("ts_home_analyses", {
   analysisData: jsonb("analysis_data").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const athleteMediaTable = pgTable("ts_athlete_media", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  athleteId: uuid("athlete_id").notNull().references(() => athletesTable.id, { onDelete: "cascade" }),
+  homeAnalysisId: uuid("home_analysis_id").references(() => homeAnalysesTable.id, { onDelete: "cascade" }),
+  objectPath: text("object_path").notNull().unique(),
+  fileName: text("file_name").notNull(),
+  contentType: text("content_type").notNull(),
+  mediaKind: text("media_kind").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

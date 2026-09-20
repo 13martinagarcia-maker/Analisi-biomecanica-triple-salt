@@ -44,6 +44,10 @@ type AnglePoint = {
   landmarkIndex?: number;
   corrected?: boolean;
 };
+type AngleGuides = {
+  horizontal: number | null;
+  vertical: number | null;
+};
 type FrameSlot = {
   frame: number | null;
   time: number | null;
@@ -51,6 +55,7 @@ type FrameSlot = {
   angleMode: AngleMode;
   label: string;
   referenceId: '' | 'lead' | 'trail' | 'internal' | 'trajectory';
+  guides: AngleGuides;
 };
 
 type Landmark = {
@@ -213,9 +218,9 @@ const INITIAL_MEASUREMENTS: Record<PhaseKey, Measurement> = {
 };
 
 const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
-  HOP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId })),
-  STEP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId })),
-  JUMP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId })),
+  HOP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId, guides: { horizontal: null, vertical: null } })),
+  STEP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId, guides: { horizontal: null, vertical: null } })),
+  JUMP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId, guides: { horizontal: null, vertical: null } })),
 });
 
 const ANGLE_LABELS = ['Cama davantera', 'Cama posterior', 'Angle intern'] as const;
@@ -404,6 +409,48 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const [recordDate, setRecordDate] = useState(() => new Date().toLocaleDateString('en-CA'));
   const [savingAnalysis, setSavingAnalysis] = useState(false);
   const [analysisSaved, setAnalysisSaved] = useState(false);
+  const [draggingGuide, setDraggingGuide] = useState<'horizontal' | 'vertical' | null>(null);
+
+  const resetWorkspace = useCallback(() => {
+    setVideoSrc('');
+    setFileName('');
+    setDuration(0);
+    setCurrentTime(0);
+    setIsPlaying(false);
+    setLandmarks(null);
+    setPoseCandidates([]);
+    setSelectedPoseIndex(null);
+    setAthleteLocked(false);
+    setAthleteSelectionMode(false);
+    setTrackingWarning('');
+    setConfidence(null);
+    setPhases(INITIAL_PHASES);
+    setActivePhase('HOP');
+    setProposals([]);
+    setManualPointMode(false);
+    setManualPoints({});
+    setCropMode(false);
+    setCropRect(null);
+    setDraggingAnglePointId(null);
+    setActiveClipPhase('HOP');
+    setActiveFrameSlot(0);
+    setFrameSlots(createEmptyFrameSlots());
+    setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] });
+    setLandmarkCache({});
+    setMeasurements(INITIAL_MEASUREMENTS);
+    setAnalysisStarted(false);
+    setAnalysisSaved(false);
+  }, []);
+
+  const prevAthleteIdRef = useRef(selectedAthleteId);
+  useEffect(() => {
+    if (prevAthleteIdRef.current !== selectedAthleteId) {
+      if (videoSrc || analysisStarted) {
+        resetWorkspace();
+      }
+      prevAthleteIdRef.current = selectedAthleteId;
+    }
+  }, [selectedAthleteId, videoSrc, analysisStarted, resetWorkspace]);
 
   const selectedAthlete = athletes.find((item) => item.id === selectedAthleteId);
   const athlete = selectedAthlete ? `${selectedAthlete.firstName} ${selectedAthlete.lastName}` : 'Atleta';
@@ -992,6 +1039,42 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       ...previous,
       [activeClipPhase]: previous[activeClipPhase].map((slot, index) => index === activeFrameSlot ? { ...slot, ...update } : slot),
     }));
+  };
+
+  const toggleGuide = (guide: keyof AngleGuides) => {
+    const current = activeSlot.guides[guide];
+    updateActiveFrameSlot({
+      guides: {
+        ...activeSlot.guides,
+        [guide]: current === null ? (guide === 'horizontal' ? .68 : .5) : null,
+      },
+    });
+  };
+
+  const handleGuidePointerDown = (guide: 'horizontal' | 'vertical', event: ReactPointerEvent<SVGLineElement>) => {
+    event.stopPropagation();
+    setDraggingGuide(guide);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleGuidePointerMove = (event: ReactPointerEvent<SVGLineElement>) => {
+    if (!draggingGuide) return;
+    const bounds = event.currentTarget.ownerSVGElement?.getBoundingClientRect();
+    if (!bounds) return;
+    const x = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+    const y = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
+    updateActiveFrameSlot({
+      guides: {
+        ...activeSlot.guides,
+        horizontal: draggingGuide === 'horizontal' ? y : activeSlot.guides.horizontal,
+        vertical: draggingGuide === 'vertical' ? x : activeSlot.guides.vertical,
+      },
+    });
+  };
+
+  const handleGuidePointerUp = (event: ReactPointerEvent<SVGLineElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    setDraggingGuide(null);
   };
 
   const captureOriginalVideoFrame = async (time: number) => {
@@ -2043,7 +2126,24 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
             <div style={{ display: 'grid', gap: '.5rem', minWidth: '13rem' }}>
               <label className="field-label" htmlFor="athlete-select">Atleta</label>
               <div className="selector-row">
-                <select id="athlete-select" className="select-field" data-testid="select-athlete" value={selectedAthleteId} onChange={(event) => { onAthleteChange(event.target.value); setAnalysisSaved(false); }}>
+                <select 
+                  id="athlete-select" 
+                  className="select-field" 
+                  data-testid="select-athlete" 
+                  value={selectedAthleteId} 
+                  onChange={(event) => { 
+                    const newId = event.target.value;
+                    if (videoSrc || analysisStarted) {
+                      if (window.confirm("Canviar d'atleta reiniciarà l'anàlisi de vídeo actual. Vols continuar?")) {
+                        resetWorkspace();
+                        onAthleteChange(newId);
+                      }
+                    } else {
+                      onAthleteChange(newId);
+                      setAnalysisSaved(false);
+                    }
+                  }}
+                >
                   {athletes.map((item) => <option key={item.id} value={item.id}>{item.firstName} {item.lastName}</option>)}
                 </select>
               </div>
