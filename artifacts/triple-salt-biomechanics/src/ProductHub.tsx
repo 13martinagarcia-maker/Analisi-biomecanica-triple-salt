@@ -624,13 +624,21 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const handleAthleteChange = (newId: string) => {
+    if (newId === selectedAthleteId) return;
     if (page === "casa") {
       if (!window.confirm("Canviar d'atleta reiniciarà l'anàlisi de vídeo actual. Vols continuar?")) return;
-    } else if (page === "pista") {
-      setAssessmentAnswers({});
-      setTrackLocation("");
-      setTrackDate(new Date().toLocaleDateString("en-CA"));
     }
+    setSelectedEvaluationId(null);
+    setSelectedHomeAnalysisId(null);
+    setSelectedHomeSnapshot(null);
+    setSelectedCompetitionId("");
+    setCompetitionToDelete(null);
+    setEvaluationToDelete(null);
+    setHomeAnalysisToDelete(null);
+    setAssessmentAnswers({});
+    setAssessmentSaved(false);
+    setTrackLocation("");
+    setTrackDate(new Date().toLocaleDateString("en-CA"));
     setSelectedAthleteId(newId);
   };
 
@@ -696,7 +704,7 @@ function ProductHub({ analysisWorkspace }: Props) {
       const result = await api<{ competition: Competition }>("/competitions", {
         method: "POST",
         body: JSON.stringify({
-          athleteId: data.get("athleteId"),
+          athleteId: selectedAthleteId,
           location: data.get("location"),
           eventDate: data.get("eventDate"),
           objective: data.get("objective"),
@@ -719,7 +727,10 @@ function ProductHub({ analysisWorkspace }: Props) {
 
   const updateCompetition = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedCompetition) return;
+    if (!selectedCompetition || selectedCompetition.athleteId !== selectedAthleteId) {
+      notify("Aquesta competició no pertany a l’atleta seleccionat.");
+      return;
+    }
     const data = new FormData(event.currentTarget);
     const jumps = Array.from({ length: 6 }, (_, index) => ({
       mark: data.get(`jump-${index + 1}`),
@@ -729,7 +740,7 @@ function ProductHub({ analysisWorkspace }: Props) {
       const result = await api<{ competition: Competition }>(`/competitions/${selectedCompetition.id}`, {
         method: "PATCH",
         body: JSON.stringify({
-          athleteId: data.get("athleteId"),
+          athleteId: selectedAthleteId,
           location: data.get("location"),
           eventDate: data.get("eventDate"),
           objective: data.get("objective"),
@@ -750,8 +761,13 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const openCompetition = async (competition: Competition) => {
+    if (competition.athleteId !== selectedAthleteId) {
+      notify("Aquesta competició no pertany a l’atleta seleccionat.");
+      return;
+    }
     try {
       const result = await api<{ competition: Competition }>(`/competitions/${competition.id}`);
+      if (result.competition.athleteId !== selectedAthleteId) throw new Error("Aquesta competició no pertany a l’atleta seleccionat.");
       setCompetitions((previous) => previous.map((item) => item.id === result.competition.id ? result.competition : item));
       setSelectedCompetitionId(result.competition.id);
       setPage("detall-competició");
@@ -824,6 +840,9 @@ function ProductHub({ analysisWorkspace }: Props) {
       return;
     }
     try {
+      const editableEvaluation = selectedEvaluationId
+        ? evaluations.find((evaluation) => evaluation.id === selectedEvaluationId && evaluation.athleteId === selectedAthleteId)
+        : null;
       const criteria = assessmentGroups.map((group, index) => ({
         key: group.key,
         question: group.question,
@@ -831,8 +850,8 @@ function ProductHub({ analysisWorkspace }: Props) {
         criterion: selectedAssessment[index].description,
         score: selectedAssessment[index].value,
       }));
-      const result = await api<{ evaluation: TrackEvaluation }>(selectedEvaluationId ? `/track-evaluations/${selectedEvaluationId}` : "/track-evaluations", {
-        method: selectedEvaluationId ? "PATCH" : "POST",
+      const result = await api<{ evaluation: TrackEvaluation }>(editableEvaluation ? `/track-evaluations/${editableEvaluation.id}` : "/track-evaluations", {
+        method: editableEvaluation ? "PATCH" : "POST",
         body: JSON.stringify({
           athleteId: selectedAthleteId || null,
           location: trackLocation,
@@ -841,7 +860,7 @@ function ProductHub({ analysisWorkspace }: Props) {
         }),
       });
       const savedEvaluation = { ...result.evaluation, criteria };
-      setEvaluations((previous) => selectedEvaluationId
+      setEvaluations((previous) => editableEvaluation
         ? previous.map((evaluation) => evaluation.id === savedEvaluation.id ? savedEvaluation : evaluation)
         : [savedEvaluation, ...previous]);
       setAssessmentSaved(true);
@@ -853,6 +872,10 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const saveHomeAnalysis = async (payload: HomeAnalysisPayload) => {
+    if (payload.athleteId !== selectedAthleteId) throw new Error("L’anàlisi no pertany a l’atleta seleccionat.");
+    const editableAnalysis = selectedHomeAnalysisId
+      ? homeAnalyses.find((analysis) => analysis.id === selectedHomeAnalysisId && analysis.athleteId === selectedAthleteId)
+      : null;
     const snapshot = payload.analysisData.snapshot ? { ...payload.analysisData.snapshot } : null;
     if (snapshot) {
       const images = snapshot.frameImages as Record<string, Array<string | null>> | undefined;
@@ -904,18 +927,18 @@ function ProductHub({ analysisWorkspace }: Props) {
       snapshot.mediaIds = persistedMediaIds;
       payload = { ...payload, sourceVideoFile: undefined, mediaIds: persistedMediaIds, analysisData: { ...payload.analysisData, snapshot } };
     }
-    const method = selectedHomeAnalysisId ? "PATCH" : "POST";
-    const path = selectedHomeAnalysisId ? `/home-analyses/${selectedHomeAnalysisId}` : "/home-analyses";
+    const method = editableAnalysis ? "PATCH" : "POST";
+    const path = editableAnalysis ? `/home-analyses/${editableAnalysis.id}` : "/home-analyses";
     const result = await api<{ analysis: HomeAnalysis }>(path, {
       method,
       body: JSON.stringify(payload),
     });
-    setHomeAnalyses((previous) => selectedHomeAnalysisId
+    setHomeAnalyses((previous) => editableAnalysis
       ? previous.map((analysis) => analysis.id === result.analysis.id ? result.analysis : analysis)
       : [result.analysis, ...previous]);
     setSelectedHomeAnalysisId(result.analysis.id);
     setSelectedHomeSnapshot(result.analysis.analysisData.snapshot ?? snapshot ?? null);
-    notify(selectedHomeAnalysisId ? "Anàlisi de casa actualitzada." : "Anàlisi de casa guardada a l’historial.");
+    notify(editableAnalysis ? "Anàlisi de casa actualitzada." : "Anàlisi de casa guardada a l’historial.");
   };
 
   const athleteCompetitions = useMemo(
@@ -961,7 +984,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const moveAthlete = (direction: -1 | 1) => {
     if (athletes.length < 2) return;
     const nextIndex = (selectedAthleteIndex + direction + athletes.length) % athletes.length;
-    setSelectedAthleteId(athletes[nextIndex].id);
+    handleAthleteChange(athletes[nextIndex].id);
   };
 
   if (loadingSession) return <div className="hub-loading">Carregant l’espai esportiu…</div>;
@@ -1007,7 +1030,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     if (page === "casa") return <div className="analysis-embed">{analysisWorkspace({
       athletes,
       selectedAthleteId,
-      onAthleteChange: setSelectedAthleteId,
+      onAthleteChange: handleAthleteChange,
       onSave: saveHomeAnalysis,
       analysisId: selectedHomeAnalysisId,
       initialSnapshot: selectedHomeAnalysisId ? selectedHomeSnapshot : null,
@@ -1043,7 +1066,7 @@ function ProductHub({ analysisWorkspace }: Props) {
                   athlete={a} 
                   competitions={competitions.filter(c => c.athleteId === a.id)}
                   analyses={homeAnalyses.filter(h => h.athleteId === a.id)}
-                  onSelect={() => { setSelectedAthleteId(a.id); setPage("historial"); }}
+                  onSelect={() => { handleAthleteChange(a.id); setPage("historial"); }}
                   onEdit={() => { setEditingAthlete(a); setAthleteFormOpen(true); }}
                 />
               ))}
@@ -1163,8 +1186,11 @@ function ProductHub({ analysisWorkspace }: Props) {
                     <button type="button" className="button-outline" onClick={async () => {
                       const detail = await api<{ evaluation: TrackEvaluation }>(`/track-evaluations/${evaluation.id}`);
                       const fullEvaluation = detail.evaluation;
+                      if (fullEvaluation.athleteId !== selectedAthleteId) {
+                        notify("Aquesta valoració no pertany a l’atleta seleccionat.");
+                        return;
+                      }
                       setEvaluations((previous) => previous.map((item) => item.id === fullEvaluation.id ? fullEvaluation : item));
-                      setSelectedAthleteId(evaluation.athleteId ?? "");
                       setSelectedEvaluationId(evaluation.id);
                       setTrackLocation(fullEvaluation.location ?? "");
                       setTrackDate(fullEvaluation.evaluationDate ?? new Date().toLocaleDateString("en-CA"));
@@ -1190,8 +1216,11 @@ function ProductHub({ analysisWorkspace }: Props) {
                     </div>
                     <button type="button" className="button-outline" onClick={async () => {
                       const detail = await api<{ analysis: HomeAnalysis }>(`/home-analyses/${analysis.id}`);
+                      if (detail.analysis.athleteId !== selectedAthleteId) {
+                        notify("Aquesta anàlisi no pertany a l’atleta seleccionat.");
+                        return;
+                      }
                       setHomeAnalyses((previous) => previous.map((item) => item.id === detail.analysis.id ? detail.analysis : item));
-                      setSelectedAthleteId(detail.analysis.athleteId);
                       setSelectedHomeAnalysisId(detail.analysis.id);
                       setSelectedHomeSnapshot(detail.analysis.analysisData.snapshot ?? null);
                       setPage("casa");
@@ -1211,7 +1240,7 @@ function ProductHub({ analysisWorkspace }: Props) {
         <div className="hub-title-row"><div><span className="eyebrow">Registre de competició</span><h1>Nova competició</h1><p>Les dades que introdueixis quedaran vinculades a l’atleta escollit.</p></div></div>
         {!athletes.length ? <EmptyState title="Primer crea un atleta." description="La competició necessita una fitxa d’atleta per quedar ben organitzada a l’historial." action={<button className="button-primary" onClick={() => setAthleteFormOpen(true)}><UserPlus size={15} /> Crear atleta</button>} /> :
           <form className="competition-form" onSubmit={saveCompetition}>
-            <CompetitionFields athletes={athletes} defaultAthleteId={selectedAthleteId} />
+            <CompetitionFields athletes={selectedAthlete ? [selectedAthlete] : []} defaultAthleteId={selectedAthleteId} />
             <button className="button-primary save-competition" type="submit"><Save size={16} /> Guardar competició</button>
           </form>}
       </section>
@@ -1223,7 +1252,7 @@ function ProductHub({ analysisWorkspace }: Props) {
           <>
             <div className="hub-title-row competition-detail-heading"><div><span className="eyebrow">Edició persistent</span><h1>{selectedCompetition.location}</h1><p>Revisa i modifica totes les dades, salts i resultat d’aquesta competició.</p></div><span className="detail-date"><Pencil size={15} /> {selectedCompetition.eventDate}</span></div>
             <form className="competition-form" onSubmit={updateCompetition}>
-              <CompetitionFields athletes={athletes} competition={selectedCompetition} defaultAthleteId={selectedAthleteId} />
+              <CompetitionFields athletes={selectedAthlete ? [selectedAthlete] : []} competition={selectedCompetition} defaultAthleteId={selectedAthleteId} />
               <button className="button-primary save-competition" type="submit"><Save size={16} /> Guardar canvis</button>
             </form>
           </>}
@@ -1232,7 +1261,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     if (page === "pista") return (
       <section className="hub-page track-assessment-page">
         <BackButton onClick={() => setPage("inici")} />
-        <div className="hub-title-row"><div><span className="eyebrow">Anàlisi immediata del salt</span><h1>Estic a pista</h1><p>Valora cada aspecte observat i obtén una nota tècnica clara del salt.</p></div>{athletes.length > 0 && <label className="compact-select">Atleta<select value={selectedAthleteId} onChange={(event) => setSelectedAthleteId(event.target.value)}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>}</div>
+        <div className="hub-title-row"><div><span className="eyebrow">Anàlisi immediata del salt</span><h1>Estic a pista</h1><p>Valora cada aspecte observat i obtén una nota tècnica clara del salt.</p></div>{athletes.length > 0 && <label className="compact-select">Atleta<select value={selectedAthleteId} onChange={(event) => handleAthleteChange(event.target.value)}>{athletes.map((athlete) => <option value={athlete.id} key={athlete.id}>{athlete.firstName} {athlete.lastName}</option>)}</select></label>}</div>
         <section className="session-record-fields">
           <div><span className="eyebrow">Dades del registre</span><h2>Dia i lloc de la valoració</h2></div>
           <label>Dia<input type="date" required value={trackDate} onChange={(event) => { setTrackDate(event.target.value); setAssessmentSaved(false); }} /></label>

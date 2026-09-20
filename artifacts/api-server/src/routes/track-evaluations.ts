@@ -129,12 +129,20 @@ router.patch("/track-evaluations/:id", requireAuth, async (request, response): P
     response.status(400).json({ message: "Indica el dia i el lloc de la valoració." });
     return;
   }
-  const [existing] = await db.select({ id: trackEvaluationsTable.id }).from(trackEvaluationsTable).where(and(
+  const athleteId = typeof body.athleteId === "string" ? body.athleteId : "";
+  const [existing] = await db.select({
+    id: trackEvaluationsTable.id,
+    athleteId: trackEvaluationsTable.athleteId,
+  }).from(trackEvaluationsTable).where(and(
     eq(trackEvaluationsTable.id, id),
     eq(trackEvaluationsTable.userId, request.user!.id),
   ));
   if (!existing) {
     response.status(404).json({ message: "No s’ha trobat la valoració." });
+    return;
+  }
+  if (!athleteId || athleteId !== existing.athleteId) {
+    response.status(400).json({ message: "La valoració no pertany a l’atleta seleccionat." });
     return;
   }
   const finalScore = parsedCriteria.reduce((sum, criterion) => sum + criterion.score, 0) / parsedCriteria.length;

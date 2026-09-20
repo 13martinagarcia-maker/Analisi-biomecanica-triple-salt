@@ -146,6 +146,10 @@ router.patch("/competitions/:id", requireAuth, async (request, response) => {
     response.status(400).json({ message: "Indica si s’ha assolit l’objectiu." });
     return;
   }
+  if (athleteId !== competition.athleteId) {
+    response.status(400).json({ message: "La competició no pertany a l’atleta seleccionat." });
+    return;
+  }
   if (!personalBest.valid || !seasonGoal.valid || parsedJumps.invalidJump) {
     response.status(400).json({
       message: parsedJumps.invalidJump

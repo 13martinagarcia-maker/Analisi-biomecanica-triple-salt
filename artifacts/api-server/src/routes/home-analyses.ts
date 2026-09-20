@@ -105,12 +105,19 @@ router.patch("/home-analyses/:id", requireAuth, async (request, response): Promi
     return;
   }
 
-  const [existing] = await db.select({ id: homeAnalysesTable.id }).from(homeAnalysesTable).where(and(
+  const [existing] = await db.select({
+    id: homeAnalysesTable.id,
+    athleteId: homeAnalysesTable.athleteId,
+  }).from(homeAnalysesTable).where(and(
     eq(homeAnalysesTable.id, id),
     eq(homeAnalysesTable.userId, request.user!.id),
   ));
   if (!existing) {
     response.status(404).json({ message: "No s’ha trobat l’anàlisi." });
+    return;
+  }
+  if (athleteId !== existing.athleteId) {
+    response.status(400).json({ message: "L’anàlisi no pertany a l’atleta seleccionat." });
     return;
   }
 
