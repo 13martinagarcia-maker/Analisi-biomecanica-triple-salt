@@ -12,6 +12,19 @@ router.get("/track-evaluations", requireAuth, async (request, response) => {
   response.json({ evaluations });
 });
 
+router.get("/track-evaluations/:id", requireAuth, async (request, response): Promise<void> => {
+  const id = Array.isArray(request.params.id) ? request.params.id[0] : request.params.id;
+  const [evaluation] = await db.select().from(trackEvaluationsTable).where(and(
+    eq(trackEvaluationsTable.id, id),
+    eq(trackEvaluationsTable.userId, request.user!.id),
+  ));
+  if (!evaluation) {
+    response.status(404).json({ message: "No s’ha trobat la valoració." });
+    return;
+  }
+  response.json({ evaluation });
+});
+
 router.post("/track-evaluations", requireAuth, async (request, response) => {
   const body = request.body && typeof request.body === "object" ? request.body as Record<string, unknown> : {};
   const criteria = Array.isArray(body.criteria) ? body.criteria : [];
@@ -81,6 +94,66 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     },
   }).returning();
   response.status(201).json({ evaluation });
+});
+
+router.patch("/track-evaluations/:id", requireAuth, async (request, response): Promise<void> => {
+  const id = Array.isArray(request.params.id) ? request.params.id[0] : request.params.id;
+  const body = request.body && typeof request.body === "object" ? request.body as Record<string, unknown> : {};
+  const assessmentData = body.assessmentData && typeof body.assessmentData === "object"
+    ? body.assessmentData as Record<string, unknown>
+    : {};
+  const rawCriteria = Array.isArray(body.criteria) ? body.criteria
+    : Array.isArray(assessmentData.criteria) ? assessmentData.criteria : [];
+  const validScores = new Set([0, 7, 8.5, 10]);
+  const parsedCriteria = rawCriteria.map((item) => {
+    const criterion = item && typeof item === "object" ? item as Record<string, unknown> : {};
+    return {
+      key: typeof criterion.key === "string" ? criterion.key : "",
+      question: typeof criterion.question === "string" ? criterion.question : "",
+      level: typeof criterion.level === "string" ? criterion.level : "",
+      criterion: typeof criterion.criterion === "string" ? criterion.criterion : "",
+      score: Number(criterion.score),
+    };
+  });
+  if (parsedCriteria.length !== 5 || parsedCriteria.some((criterion) =>
+    !criterion.key || !criterion.question || !criterion.level || !criterion.criterion || !validScores.has(criterion.score)
+  )) {
+    response.status(400).json({ message: "Respon les cinc preguntes abans de guardar l’anàlisi." });
+    return;
+  }
+  const location = typeof body.location === "string" ? body.location.trim() : "";
+  const evaluationDate = typeof body.evaluationDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.evaluationDate)
+    ? body.evaluationDate
+    : "";
+  if (!location || !evaluationDate) {
+    response.status(400).json({ message: "Indica el dia i el lloc de la valoració." });
+    return;
+  }
+  const [existing] = await db.select({ id: trackEvaluationsTable.id }).from(trackEvaluationsTable).where(and(
+    eq(trackEvaluationsTable.id, id),
+    eq(trackEvaluationsTable.userId, request.user!.id),
+  ));
+  if (!existing) {
+    response.status(404).json({ message: "No s’ha trobat la valoració." });
+    return;
+  }
+  const finalScore = parsedCriteria.reduce((sum, criterion) => sum + criterion.score, 0) / parsedCriteria.length;
+  const [evaluation] = await db.update(trackEvaluationsTable).set({
+    location,
+    evaluationDate,
+    approachScore: parsedCriteria[0].score.toFixed(2),
+    rhythmScore: parsedCriteria[1].score.toFixed(2),
+    landingScore: parsedCriteria[3].score.toFixed(2),
+    approachAnswer: `${parsedCriteria[0].level}: ${parsedCriteria[0].criterion}`,
+    rhythmAnswer: `${parsedCriteria[1].level}: ${parsedCriteria[1].criterion}`,
+    landingAnswer: `${parsedCriteria[3].level}: ${parsedCriteria[3].criterion}`,
+    finalScore: finalScore.toFixed(2),
+    assessmentData: { ...assessmentData, criteria: parsedCriteria, validity: parsedCriteria[4] },
+  }).where(and(
+    eq(trackEvaluationsTable.id, id),
+    eq(trackEvaluationsTable.userId, request.user!.id),
+  )).returning();
+  response.json({ evaluation });
 });
 
 export default router;

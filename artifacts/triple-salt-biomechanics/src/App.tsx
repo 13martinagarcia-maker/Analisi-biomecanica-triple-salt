@@ -223,6 +223,30 @@ const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
   JUMP: (['lead', 'trail', 'internal'] as const).map((referenceId) => ({ frame: null, time: null, points: [], angleMode: 'vertex', label: '', referenceId, guides: { horizontal: null, vertical: null } })),
 });
 
+const normalizeFrameSlots = (value: unknown): Record<PhaseKey, FrameSlot[]> => {
+  const defaults = createEmptyFrameSlots();
+  if (!value || typeof value !== 'object') return defaults;
+  const saved = value as Partial<Record<PhaseKey, unknown>>;
+  return Object.fromEntries((['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => {
+    const savedSlots = Array.isArray(saved[phase]) ? saved[phase] : [];
+    return [phase, defaults[phase].map((fallback, index) => {
+      const candidate = savedSlots[index];
+      if (!candidate || typeof candidate !== 'object') return fallback;
+      const slot = candidate as Partial<FrameSlot>;
+      return {
+        ...fallback,
+        ...slot,
+        points: Array.isArray(slot.points) ? slot.points : fallback.points,
+        label: typeof slot.label === 'string' ? slot.label : fallback.label,
+        guides: {
+          ...fallback.guides,
+          ...(slot.guides && typeof slot.guides === 'object' ? slot.guides : {}),
+        },
+      };
+    })];
+  })) as Record<PhaseKey, FrameSlot[]>;
+};
+
 const ANGLE_LABELS = ['Cama davantera', 'Cama posterior', 'Angle intern'] as const;
 
 const PHASE_DIAGNOSTICS: Record<PhaseKey, {
@@ -334,9 +358,13 @@ type AnalysisWorkspaceProps = {
   selectedAthleteId: string;
   onAthleteChange: (athleteId: string) => void;
   onSave: (payload: HomeAnalysisPayload) => Promise<void>;
+  initialSnapshot?: Record<string, unknown> | null;
+  analysisId?: string | null;
 };
 
-export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange, onSave }: AnalysisWorkspaceProps) {
+const snapshotValue = (value: unknown, fallback: any) => value === undefined ? fallback : value;
+
+export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange, onSave, initialSnapshot }: AnalysisWorkspaceProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sourceVideoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -411,6 +439,33 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const [analysisSaved, setAnalysisSaved] = useState(false);
   const [draggingGuide, setDraggingGuide] = useState<'horizontal' | 'vertical' | null>(null);
 
+  // Saved analyses intentionally contain only serializable editing state. The source video
+  // remains local to the browser and is never persisted as a blob or object URL.
+  useEffect(() => {
+    if (!initialSnapshot) return;
+    const snapshot = initialSnapshot;
+    setFileName(String(snapshotValue(snapshot.fileName, '')));
+    setRecordLocation(String(snapshotValue(snapshot.recordLocation, '')));
+    setRecordDate(String(snapshotValue(snapshot.recordDate, new Date().toLocaleDateString('en-CA'))));
+    setDuration(Number(snapshotValue(snapshot.duration, 0)));
+    setCurrentTime(Number(snapshotValue(snapshot.currentTime, 0)));
+    setFps(Number(snapshotValue(snapshot.fps, 30)));
+    setPhases(snapshotValue(snapshot.phases, INITIAL_PHASES) as Record<PhaseKey, PhaseMark>);
+    setGuides(snapshotValue(snapshot.guides, { horizontal: true, vertical: false, grid: false }) as Record<GuideKey, boolean>);
+    setFrameCorrections(snapshotValue(snapshot.frameCorrections, {}) as Record<number, Partial<Record<PointKey, ManualPoint>>>);
+    setManualPoints(snapshotValue(snapshot.manualPoints, {}) as Partial<Record<PointKey, ManualPoint>>);
+    setCropRect(snapshotValue(snapshot.cropRect, null) as CropRect | null);
+    setFrameSlots(normalizeFrameSlots(snapshot.frameSlots));
+    setFrameImages(snapshotValue(snapshot.frameImages, { HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }) as Record<PhaseKey, Array<string | null>>);
+    setMeasurements(snapshotValue(snapshot.measurements, INITIAL_MEASUREMENTS) as Record<PhaseKey, Measurement>);
+    setAngleDefinition(snapshotValue(snapshot.angleDefinition, 'internal') as 'internal' | 'segment-horizontal' | 'trajectory-horizontal');
+    setActivePhase(snapshotValue(snapshot.activePhase, 'HOP') as PhaseKey);
+    setActiveClipPhase(snapshotValue(snapshot.activeClipPhase, 'HOP') as PhaseKey);
+    setActiveFrameSlot(Number(snapshotValue(snapshot.activeFrameSlot, 0)));
+    setAnalysisStarted(Boolean(snapshotValue(snapshot.analysisStarted, false)));
+    setAnalysisSaved(false);
+  }, [initialSnapshot]);
+
   const resetWorkspace = useCallback(() => {
     setVideoSrc('');
     setFileName('');
@@ -468,7 +523,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     .every((phase) => frameSlots[phase].every((slot) => slot.frame !== null));
   const phaseTitle = (phase: PhaseKey) => `Batuda ${phase === 'HOP' ? 1 : phase === 'STEP' ? 2 : 3}`;
   const slotTitle = (phase: PhaseKey, slot: FrameSlot, index: number) =>
-    slot.label.trim() || `${phaseTitle(phase)} — ${ANGLE_LABELS[index]}`;
+    (typeof slot.label === 'string' ? slot.label.trim() : '') || `${phaseTitle(phase)} — ${ANGLE_LABELS[index]}`;
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -1536,6 +1591,16 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       showToast('Completa els tres angles de HOP, STEP i JUMP i indica el dia i el lloc.');
       return;
     }
+    const boundedImages = Object.fromEntries(Object.entries(frameImages).map(([phase, images]) => [
+      phase,
+      (images as Array<string | null>).map((image) => image && image.length <= 1_000_000 ? image : null),
+    ]));
+    const snapshot: Record<string, unknown> = {
+      version: 1,
+      fileName, recordLocation, recordDate, duration, currentTime, fps, phases, frameSlots, frameImages: boundedImages,
+      measurements, frameCorrections, manualPoints, cropRect, guides, angleDefinition,
+      activePhase, activeClipPhase, activeFrameSlot, analysisStarted,
+    };
     const payload: HomeAnalysisPayload = {
       athleteId: selectedAthleteId,
       location: recordLocation.trim(),
@@ -1560,6 +1625,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
           }).length;
           return { phase, angles, significantDeviationCount };
         }),
+        snapshot,
       },
     };
     setSavingAnalysis(true);

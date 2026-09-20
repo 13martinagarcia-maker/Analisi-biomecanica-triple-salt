@@ -70,17 +70,23 @@ type TrackEvaluation = {
   location: string | null;
   evaluationDate: string | null;
   createdAt: string;
+  criteria?: Array<{ key: string; question: string; level: AssessmentOption["level"]; criterion: string; score: number }>;
+  assessmentData?: {
+    criteria?: Array<{ key: string; question: string; level: AssessmentOption["level"]; criterion: string; score: number }>;
+  };
 };
 export type HomeAnalysisPayload = {
   athleteId: string;
   location: string;
   analysisDate: string;
+  mediaIds?: string[];
   analysisData: {
     phases: Array<{
       phase: "HOP" | "STEP" | "JUMP";
       angles: Array<{ label: string; athleteValue: number; referenceValue: number; difference: number }>;
       significantDeviationCount: number;
     }>;
+    snapshot?: Record<string, unknown>;
   };
 };
 type HomeAnalysis = HomeAnalysisPayload & { id: string; createdAt: string };
@@ -105,6 +111,8 @@ type Props = {
     selectedAthleteId: string;
     onAthleteChange: (athleteId: string) => void;
     onSave: (payload: HomeAnalysisPayload) => Promise<void>;
+    initialSnapshot?: Record<string, unknown> | null;
+    analysisId?: string | null;
   }) => ReactNode;
 };
 
@@ -540,13 +548,17 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [feedback, setFeedback] = useState("");
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
   const [assessmentSaved, setAssessmentSaved] = useState(false);
+  const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState("");
+  const [selectedHomeAnalysisId, setSelectedHomeAnalysisId] = useState<string | null>(null);
+  const [selectedHomeSnapshot, setSelectedHomeSnapshot] = useState<Record<string, unknown> | null>(null);
   const [competitionToDelete, setCompetitionToDelete] = useState<Competition | null>(null);
   const [trackLocation, setTrackLocation] = useState("");
   const [trackDate, setTrackDate] = useState(() => new Date().toLocaleDateString("en-CA"));
 
   const selectedAthlete = athletes.find((athlete) => athlete.id === selectedAthleteId);
   const selectedCompetition = competitions.find((competition) => competition.id === selectedCompetitionId);
+  const evaluationCriteria = (evaluation: TrackEvaluation) => evaluation.assessmentData?.criteria ?? evaluation.criteria ?? [];
 
   const loadData = async () => {
     const [athleteData, competitionData, evaluationData, homeAnalysisData] = await Promise.all([
@@ -777,23 +789,28 @@ function ProductHub({ analysisWorkspace }: Props) {
       return;
     }
     try {
-      const result = await api<{ evaluation: TrackEvaluation }>("/track-evaluations", {
-        method: "POST",
+      const criteria = assessmentGroups.map((group, index) => ({
+        key: group.key,
+        question: group.question,
+        level: selectedAssessment[index].level,
+        criterion: selectedAssessment[index].description,
+        score: selectedAssessment[index].value,
+      }));
+      const result = await api<{ evaluation: TrackEvaluation }>(selectedEvaluationId ? `/track-evaluations/${selectedEvaluationId}` : "/track-evaluations", {
+        method: selectedEvaluationId ? "PATCH" : "POST",
         body: JSON.stringify({
           athleteId: selectedAthleteId || null,
           location: trackLocation,
           evaluationDate: trackDate,
-          criteria: assessmentGroups.map((group, index) => ({
-            key: group.key,
-            question: group.question,
-            level: selectedAssessment[index].level,
-            criterion: selectedAssessment[index].description,
-            score: selectedAssessment[index].value,
-          })),
+          criteria,
         }),
       });
-      setEvaluations((previous) => [result.evaluation, ...previous]);
+      const savedEvaluation = { ...result.evaluation, criteria };
+      setEvaluations((previous) => selectedEvaluationId
+        ? previous.map((evaluation) => evaluation.id === savedEvaluation.id ? savedEvaluation : evaluation)
+        : [savedEvaluation, ...previous]);
       setAssessmentSaved(true);
+      setSelectedEvaluationId(savedEvaluation.id);
       notify("Valoració de pista guardada.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "No s’ha pogut guardar la valoració.");
@@ -801,12 +818,45 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const saveHomeAnalysis = async (payload: HomeAnalysisPayload) => {
-    const result = await api<{ analysis: HomeAnalysis }>("/home-analyses", {
-      method: "POST",
+    const snapshot = payload.analysisData.snapshot ? { ...payload.analysisData.snapshot } : null;
+    if (snapshot) {
+      const images = snapshot.frameImages as Record<string, Array<string | null>> | undefined;
+      const existingIds = Array.isArray(snapshot.mediaIds) ? snapshot.mediaIds.filter((id): id is string => typeof id === "string") : [];
+      const mediaIds = [...existingIds];
+      if (images) {
+        for (const [phase, phaseImages] of Object.entries(images)) {
+          for (let index = 0; index < phaseImages.length; index += 1) {
+            const image = phaseImages[index];
+            if (!image || !image.startsWith("data:")) continue;
+            const comma = image.indexOf(",");
+            if (comma < 0) throw new Error("La imatge capturada no té un format vàlid.");
+            const blob = await fetch(image).then((response) => response.blob());
+            const target = await api<{ media: { id: string }; uploadURL: string }>("/athlete-media/uploads", {
+              method: "POST",
+              body: JSON.stringify({ athleteId: payload.athleteId, fileName: `frame-${phase.toLowerCase()}-${index + 1}.jpg`, contentType: blob.type || "image/jpeg", mediaKind: "frame", size: blob.size }),
+            });
+            const uploadResponse = await fetch(target.uploadURL, { method: "PUT", body: blob, headers: { "content-type": blob.type || "image/jpeg" } });
+            if (!uploadResponse.ok) throw new Error("No s’ha pogut pujar un fotograma capturat.");
+            mediaIds.push(target.media.id);
+            phaseImages[index] = `/api/athlete-media/${target.media.id}`;
+          }
+        }
+      }
+      snapshot.mediaIds = mediaIds;
+      payload = { ...payload, mediaIds, analysisData: { ...payload.analysisData, snapshot } };
+    }
+    const method = selectedHomeAnalysisId ? "PATCH" : "POST";
+    const path = selectedHomeAnalysisId ? `/home-analyses/${selectedHomeAnalysisId}` : "/home-analyses";
+    const result = await api<{ analysis: HomeAnalysis }>(path, {
+      method,
       body: JSON.stringify(payload),
     });
-    setHomeAnalyses((previous) => [result.analysis, ...previous]);
-    notify("Anàlisi de casa guardada a l’historial.");
+    setHomeAnalyses((previous) => selectedHomeAnalysisId
+      ? previous.map((analysis) => analysis.id === result.analysis.id ? result.analysis : analysis)
+      : [result.analysis, ...previous]);
+    setSelectedHomeAnalysisId(result.analysis.id);
+    setSelectedHomeSnapshot(result.analysis.analysisData.snapshot ?? snapshot ?? null);
+    notify(selectedHomeAnalysisId ? "Anàlisi de casa actualitzada." : "Anàlisi de casa guardada a l’historial.");
   };
 
   const athleteCompetitions = useMemo(
@@ -900,6 +950,8 @@ function ProductHub({ analysisWorkspace }: Props) {
       selectedAthleteId,
       onAthleteChange: setSelectedAthleteId,
       onSave: saveHomeAnalysis,
+      analysisId: selectedHomeAnalysisId,
+      initialSnapshot: selectedHomeAnalysisId ? selectedHomeSnapshot : null,
     })}</div>;
     if (page === "inici") return (
       <section className="hub-page">
@@ -1043,23 +1095,47 @@ function ProductHub({ analysisWorkspace }: Props) {
             </div>
             <div className="technical-history-grid">
               <section className="technical-history-section track">
-                <div className="section-card-heading"><div><span className="eyebrow">Estic a pista</span><h2>Valoracions de pista</h2></div><button className="button-outline" onClick={() => setPage("pista")}>Nova</button></div>
+                <div className="section-card-heading"><div><span className="eyebrow">Estic a pista</span><h2>Valoracions de pista</h2></div><button className="button-outline" onClick={() => { setSelectedEvaluationId(null); setAssessmentAnswers({}); setPage("pista"); }}>Nova</button></div>
                 {athleteEvaluations.length ? athleteEvaluations.map((evaluation) => (
                   <article className="technical-history-item" key={evaluation.id}>
                     <div><MapPin size={15} /><strong>{evaluation.location || "Lloc no registrat"}</strong><span>{evaluation.evaluationDate ? new Date(`${evaluation.evaluationDate}T12:00:00`).toLocaleDateString("ca-ES") : new Date(evaluation.createdAt).toLocaleDateString("ca-ES")}</span></div>
                     <b>{Number(evaluation.finalScore ?? ((Number(evaluation.approachScore) + Number(evaluation.rhythmScore) + Number(evaluation.landingScore)) / 3)).toFixed(1).replace(".", ",")} / 10</b>
                     <small>Cursa {Number(evaluation.approachScore).toFixed(1).replace(".", ",")} · Ritme {Number(evaluation.rhythmScore).toFixed(1).replace(".", ",")} · Caiguda {Number(evaluation.landingScore).toFixed(1).replace(".", ",")}</small>
+                    <button type="button" className="button-outline" onClick={async () => {
+                      const detail = await api<{ evaluation: TrackEvaluation }>(`/track-evaluations/${evaluation.id}`);
+                      const fullEvaluation = detail.evaluation;
+                      setEvaluations((previous) => previous.map((item) => item.id === fullEvaluation.id ? fullEvaluation : item));
+                      setSelectedAthleteId(evaluation.athleteId ?? "");
+                      setSelectedEvaluationId(evaluation.id);
+                      setTrackLocation(fullEvaluation.location ?? "");
+                      setTrackDate(fullEvaluation.evaluationDate ?? new Date().toLocaleDateString("en-CA"));
+                      const answers = Object.fromEntries(evaluationCriteria(fullEvaluation).map((criterion) => {
+                        const group = assessmentGroups.find((item) => item.key === criterion.key);
+                        return [criterion.key, group?.options.findIndex((option) => option.level === criterion.level) ?? -1];
+                      }).filter(([, index]) => Number(index) >= 0));
+                      setAssessmentAnswers(answers);
+                      setAssessmentSaved(false);
+                      setPage("pista");
+                    }}>Veure i editar <ChevronRight size={14} /></button>
                   </article>
                 )) : <EmptyState title="Encara no hi ha valoracions de pista." description="Quan guardis una valoració, apareixerà aquí amb el seu dia i lloc." />}
               </section>
               <section className="technical-history-section home">
-                <div className="section-card-heading"><div><span className="eyebrow">Estic a casa</span><h2>Anàlisis biomecàniques</h2></div><button className="button-outline" onClick={() => setPage("casa")}>Nova</button></div>
+                <div className="section-card-heading"><div><span className="eyebrow">Estic a casa</span><h2>Anàlisis biomecàniques</h2></div><button className="button-outline" onClick={() => { setSelectedHomeAnalysisId(null); setSelectedHomeSnapshot(null); setPage("casa"); }}>Nova</button></div>
                 {athleteHomeAnalyses.length ? athleteHomeAnalyses.map((analysis) => (
                   <article className="technical-history-item home-analysis-history" key={analysis.id}>
                     <div><MapPin size={15} /><strong>{analysis.location}</strong><span>{new Date(`${analysis.analysisDate}T12:00:00`).toLocaleDateString("ca-ES")}</span></div>
                     <div className="home-analysis-phase-summary">
                       {analysis.analysisData.phases.map((phase) => <span key={phase.phase}><strong>{phase.phase}</strong>{phase.significantDeviationCount ? `${phase.significantDeviationCount} angle${phase.significantDeviationCount > 1 ? "s" : ""} a revisar` : "Dins diferència moderada"}</span>)}
                     </div>
+                    <button type="button" className="button-outline" onClick={async () => {
+                      const detail = await api<{ analysis: HomeAnalysis }>(`/home-analyses/${analysis.id}`);
+                      setHomeAnalyses((previous) => previous.map((item) => item.id === detail.analysis.id ? detail.analysis : item));
+                      setSelectedAthleteId(detail.analysis.athleteId);
+                      setSelectedHomeAnalysisId(detail.analysis.id);
+                      setSelectedHomeSnapshot(detail.analysis.analysisData.snapshot ?? null);
+                      setPage("casa");
+                    }}>Veure i editar <ChevronRight size={14} /></button>
                   </article>
                 )) : <EmptyState title="Encara no hi ha anàlisis de casa." description="Completa els angles de HOP, STEP i JUMP i guarda el resultat." />}
               </section>
