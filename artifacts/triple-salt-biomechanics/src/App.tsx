@@ -1656,22 +1656,22 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         ? 'POSE NO DISPONIBLE'
         : 'POSE EN ESPERA';
 
-  const renderVideoToolStrip = (position: 'top' | 'bottom') => {
-    const testId = (name: string) => position === 'bottom' ? name : `${name}-top`;
+  const renderVideoToolStrip = () => {
+    const movableGuidesActive = analysisStarted && Boolean(activeFrameImage);
     return (
-      <div className={`tool-strip tool-strip-${position}`} aria-label={`Eines d’anàlisi del vídeo, fila ${position === 'top' ? 'superior' : 'inferior'}`}>
-        <button className={`tool-toggle ${showSkeleton ? 'active' : ''}`} onClick={() => setShowSkeleton((value) => !value)} disabled={!videoSrc} data-testid={testId('button-toggle-skeleton')}><ScanLine size={13} /> {showSkeleton ? 'Amagar esquelet' : 'Mostrar esquelet'}</button>
-        {athleteLocked && <button className="tool-toggle" onClick={changeAthlete} data-testid={testId('button-change-athlete')}><UserRound size={13} /> Canviar atleta</button>}
-        <button className={`tool-toggle ${guides.horizontal ? 'active' : ''}`} onClick={() => setGuide('horizontal')} data-testid={testId('button-guide-horizontal')}><Minus size={13} /> Horitzontal</button>
-        <button className={`tool-toggle ${guides.vertical ? 'active' : ''}`} onClick={() => setGuide('vertical')} data-testid={testId('button-guide-vertical')}><Minus size={13} style={{ transform: 'rotate(90deg)' }} /> Vertical</button>
-        <button className={`tool-toggle ${guides.grid ? 'active' : ''}`} onClick={() => setGuide('grid')} data-testid={testId('button-guide-grid')}><Grid3X3 size={13} /> Quadrícula</button>
-        <button className={`tool-toggle ${manualPointMode ? 'active' : ''}`} onClick={() => { setAngleSelectionMode(false); setManualPointMode((value) => !value); }} data-testid={testId('button-manual-point-mode')}><Crosshair size={13} /> Corregir punts</button>
-        <select className="select-field tool-point-select" value={selectedPoint} onChange={(event) => setSelectedPoint(event.target.value as PointKey)} disabled={!manualPointMode} data-testid={testId('select-manual-point')} aria-label="Punt corporal per corregir">
+      <div className="tool-strip" aria-label="Eines d’anàlisi del vídeo">
+        <button className={`tool-toggle ${showSkeleton ? 'active' : ''}`} onClick={() => setShowSkeleton((value) => !value)} disabled={!videoSrc} data-testid="button-toggle-skeleton"><ScanLine size={13} /> {showSkeleton ? 'Amagar esquelet' : 'Mostrar esquelet'}</button>
+        {athleteLocked && <button className="tool-toggle" onClick={changeAthlete} data-testid="button-change-athlete"><UserRound size={13} /> Canviar atleta</button>}
+        <button className={`tool-toggle ${(movableGuidesActive ? activeSlot.guides.horizontal !== null : guides.horizontal) ? 'active' : ''}`} onClick={() => movableGuidesActive ? toggleGuide('horizontal') : setGuide('horizontal')} data-testid="button-guide-horizontal"><Minus size={13} /> Horitzontal</button>
+        <button className={`tool-toggle ${(movableGuidesActive ? activeSlot.guides.vertical !== null : guides.vertical) ? 'active' : ''}`} onClick={() => movableGuidesActive ? toggleGuide('vertical') : setGuide('vertical')} data-testid="button-guide-vertical"><Minus size={13} style={{ transform: 'rotate(90deg)' }} /> Vertical</button>
+        <button className={`tool-toggle ${guides.grid ? 'active' : ''}`} onClick={() => setGuide('grid')} data-testid="button-guide-grid"><Grid3X3 size={13} /> Quadrícula</button>
+        <button className={`tool-toggle ${manualPointMode ? 'active' : ''}`} onClick={() => { setAngleSelectionMode(false); setManualPointMode((value) => !value); }} data-testid="button-manual-point-mode"><Crosshair size={13} /> Corregir punts</button>
+        <select className="select-field tool-point-select" value={selectedPoint} onChange={(event) => setSelectedPoint(event.target.value as PointKey)} disabled={!manualPointMode} data-testid="select-manual-point" aria-label="Punt corporal per corregir">
           <option value="hip">Maluc</option><option value="knee">Genoll</option><option value="ankle">Turmell</option>
         </select>
-        <button className="control-icon" onClick={() => setZoom((value) => Math.max(activeFrameImage ? 1 : .7, value - .1))} disabled={!videoSrc} data-testid={testId('button-zoom-out')} aria-label="Allunyar"><ZoomOut size={14} /></button>
-        <button className="control-icon" onClick={() => setZoom((value) => Math.min(activeFrameImage ? 3.5 : 2.4, value + .1))} disabled={!videoSrc} data-testid={testId('button-zoom-in')} aria-label="Apropar"><ZoomIn size={14} /></button>
-        <button className="control-icon" onClick={resetView} data-testid={testId('button-reset-view')} aria-label="Restablir la vista"><RotateCcw size={14} /></button>
+        <button className="control-icon" onClick={() => setZoom((value) => Math.max(activeFrameImage ? 1 : .7, value - .1))} disabled={!videoSrc} data-testid="button-zoom-out" aria-label="Allunyar"><ZoomOut size={14} /></button>
+        <button className="control-icon" onClick={() => setZoom((value) => Math.min(activeFrameImage ? 3.5 : 2.4, value + .1))} disabled={!videoSrc} data-testid="button-zoom-in" aria-label="Apropar"><ZoomIn size={14} /></button>
+        <button className="control-icon" onClick={resetView} data-testid="button-reset-view" aria-label="Restablir la vista"><RotateCcw size={14} /></button>
       </div>
     );
   };
@@ -1682,7 +1682,6 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                   <div className="panel-title"><Video size={17} /> {analysisStarted ? `Vídeo original · rang ${activeClipPhase}` : 'Vídeo original · Definició de temps'}</div>
                   <div className="eyebrow" style={{ color: 'hsl(216 13% 43%)' }}>{fileName || 'Sense vídeo'}</div>
                 </div>
-                {renderVideoToolStrip('top')}
                 <div
                   className="video-stage"
                   ref={stageRef}
@@ -1750,6 +1749,32 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                         }}
                         data-testid="canvas-pose-overlay"
                       />
+                      {analysisStarted && activeFrameImage && (activeSlot.guides.horizontal !== null || activeSlot.guides.vertical !== null) && (
+                        <svg className="analysis-athlete-overlay video-guide-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" aria-label="Guies mòbils sobre el vídeo">
+                          {activeSlot.guides.horizontal !== null && <line
+                            x1="0"
+                            y1={activeSlot.guides.horizontal}
+                            x2="1"
+                            y2={activeSlot.guides.horizontal}
+                            className="overlay-position-guide horizontal"
+                            onPointerDown={(event) => handleGuidePointerDown('horizontal', event)}
+                            onPointerMove={handleGuidePointerMove}
+                            onPointerUp={handleGuidePointerUp}
+                            onPointerCancel={handleGuidePointerUp}
+                          />}
+                          {activeSlot.guides.vertical !== null && <line
+                            x1={activeSlot.guides.vertical}
+                            y1="0"
+                            x2={activeSlot.guides.vertical}
+                            y2="1"
+                            className="overlay-position-guide vertical"
+                            onPointerDown={(event) => handleGuidePointerDown('vertical', event)}
+                            onPointerMove={handleGuidePointerMove}
+                            onPointerUp={handleGuidePointerUp}
+                            onPointerCancel={handleGuidePointerUp}
+                          />}
+                        </svg>
+                      )}
                       <div className="video-overlay-chip"><span className="status-dot live-dot" />{athleteSelectionMode ? 'SELECCIONA UNA PERSONA' : trackingWarning || (athleteLocked ? 'ATLETA SELECCIONAT · SEGUINT' : poseLabel)}{poseCandidates.length > 1 && !athleteSelectionMode ? ` · ${poseCandidates.length} PERSONES` : ''}</div>
                     </>
                   ) : (
@@ -1836,7 +1861,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                       </div>
                     </div>
                   )}
-                    {renderVideoToolStrip('bottom')}
+                    {renderVideoToolStrip()}
                 </div>
               </div>
   );
@@ -2331,18 +2356,6 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                                         </button>
                                         <div className="angle-point-progress"><span>Punts seleccionats</span><strong>{slot.points.length} / {requiredAnglePointCount}</strong></div>
                                         <button type="button" className="button-outline w-full" onClick={() => { updateActiveFrameSlot({ points: [] }); setAngleSelectionMode(true); }} disabled={!slot.points.length} data-testid="button-reset-angle-points"><RotateCcw size={14} /> Repetir selecció</button>
-                                         <div className="angle-guide-controls">
-                                           <span className="eyebrow">Guies de posició</span>
-                                           <div>
-                                             <button type="button" className={`reference-choice ${slot.guides.horizontal !== null ? 'active' : ''}`} onClick={() => toggleGuide('horizontal')} aria-pressed={slot.guides.horizontal !== null} data-testid="button-guide-horizontal">
-                                               Barra horitzontal
-                                             </button>
-                                             <button type="button" className={`reference-choice ${slot.guides.vertical !== null ? 'active' : ''}`} onClick={() => toggleGuide('vertical')} aria-pressed={slot.guides.vertical !== null} data-testid="button-guide-vertical">
-                                               Barra vertical
-                                             </button>
-                                           </div>
-                                           <small>Arrossega cada barra sobre la imatge. La direcció queda bloquejada.</small>
-                                         </div>
                                         <div className="reference-picker">
                                           <span className="eyebrow">Comparar amb Jonathan</span>
                                           <div>
@@ -2364,29 +2377,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                                             </figure>
                                             <figure className="analysis-athlete-visual">
                                               {image ? <img src={image} alt={`${athlete}, ${phase}, fotograma ${slotIndex + 1}`} /> : <div className="analysis-image-empty">Fotograma no disponible</div>}
-                                              {image && <svg className="analysis-athlete-overlay" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-label="Punts, angle i guies de l’atleta">
-                                                {slot.guides.horizontal !== null && <line
-                                                  x1="0"
-                                                  y1={slot.guides.horizontal}
-                                                  x2="1"
-                                                  y2={slot.guides.horizontal}
-                                                  className="overlay-position-guide horizontal"
-                                                  onPointerDown={(event) => handleGuidePointerDown('horizontal', event)}
-                                                  onPointerMove={handleGuidePointerMove}
-                                                  onPointerUp={handleGuidePointerUp}
-                                                  onPointerCancel={handleGuidePointerUp}
-                                                />}
-                                                {slot.guides.vertical !== null && <line
-                                                  x1={slot.guides.vertical}
-                                                  y1="0"
-                                                  x2={slot.guides.vertical}
-                                                  y2="1"
-                                                  className="overlay-position-guide vertical"
-                                                  onPointerDown={(event) => handleGuidePointerDown('vertical', event)}
-                                                  onPointerMove={handleGuidePointerMove}
-                                                  onPointerUp={handleGuidePointerUp}
-                                                  onPointerCancel={handleGuidePointerUp}
-                                                />}
+                                              {image && <svg className="analysis-athlete-overlay" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-label="Punts i angle de l’atleta">
                                                 {slot.points.slice(0, -1).map((point, pointIndex) => <line key={`${point.id}-active-line`} x1={point.x} y1={point.y} x2={slot.points[pointIndex + 1].x} y2={slot.points[pointIndex + 1].y} className="overlay-angle-line" />)}
                                                 {slot.angleMode === 'vertex' && slot.points.length === 3 && <path d={angleArcPath(slot.points[0], slot.points[1], slot.points[2])} className="overlay-angle-arc" />}
                                                 {slot.points.map((point, pointIndex) => <g key={`${point.id}-active`}><circle cx={point.x} cy={point.y} r=".017" className={point.source === 'landmark' ? 'overlay-point-landmark' : 'overlay-point-manual'} /><text x={point.x + .023} y={point.y - .018} fontSize=".07">{pointIndex + 1}</text></g>)}

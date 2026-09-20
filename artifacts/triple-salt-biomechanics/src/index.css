@@ -923,11 +923,6 @@ button {
   color: hsl(36 33% 94%);
 }
 
-.tool-strip-top {
-  border-top: 0;
-  border-bottom: 1px solid hsl(215 23% 29%);
-}
-
 .tool-point-select {
   width: 8rem;
   padding: .35rem;
@@ -1871,6 +1866,10 @@ button {
 
 .analysis-athlete-overlay .overlay-position-guide.vertical {
   cursor: ew-resize;
+}
+
+.video-guide-overlay {
+  z-index: 4;
 }
 
 .analysis-athlete-overlay .overlay-skeleton-line {
@@ -4977,25 +4976,6 @@ button {
 .active-card-container .angle-point-progress strong,
 .active-card-container .inline-comparison-metrics strong {
   color: hsl(36 33% 94%);
-}
-
-.angle-guide-controls {
-  display: grid;
-  gap: .55rem;
-  margin-top: .9rem;
-  padding-top: .9rem;
-  border-top: 1px solid hsl(215 20% 30%);
-}
-
-.angle-guide-controls > div {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .45rem;
-}
-
-.angle-guide-controls small {
-  color: hsl(215 14% 72%);
-  line-height: 1.4;
 }
 
 .active-card-container .inline-comparison-metrics > div {
