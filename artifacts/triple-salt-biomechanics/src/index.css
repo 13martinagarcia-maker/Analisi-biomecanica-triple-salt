@@ -1773,6 +1773,13 @@ button {
   color: hsl(40 89% 72%);
 }
 
+.analysis-status.error,
+.status-badge.error {
+  border-color: hsl(6 72% 52% / .6);
+  background: hsl(6 72% 52% / .14);
+  color: hsl(6 72% 72%);
+}
+
 .analysis-visual-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;

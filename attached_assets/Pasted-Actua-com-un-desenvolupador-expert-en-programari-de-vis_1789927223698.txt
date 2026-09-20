@@ -1,0 +1,16 @@
+Actua com un desenvolupador expert en programari de visió per computador i biomecànica esportiva. Necessito que escriguis el codi en [POSA AQUÍ EL TEU LLENGUATGE, ej: Python, React, Flutter] per integrar MediaPipe Pose en una aplicació d'anàlisi de triple salt. 
+
+L'aplicació ha de ser 100% automàtica en la seva primera fase. L'usuari només pujarà el vídeo de l'atleta. A partir d'aquest moment, l'aplicació ha d'executar de manera totalment autònoma el següent flux de treball sense demanar cap marcatge manual previ a l'humà:
+
+1. DETECCÓ AUTOMÀTICA DE FASES: L'algorisme ha d'analitzar el desplaçament horitzontal i vertical dels malucs i els peus de l'atleta per detectar automàticament on es produeixen els impactes contra el terra. Això servirà per delimitar els trams exactes de manera autònoma i trobar els fotogrames clau on comença i acaba el HOP, el STEP i el JUMP.
+
+2. CÀLCUL ESTRICTE D'ANGLES BIOMECÀNICS: En aquests fotogrames detectats, el sistema ha de calcular matemàticament els angles anatòmics interns i els angles dels segments del cos respecte a una línia horitzontal (el terra). Els resultats s'han de mostrar amb una sola decimal. Queda totalment exclòs i suprimit l'angle de trajectòria o d'enlairament de l'anàlisi.
+
+3. INTEGRACIÓ DE VALORS REALS DE LA IMATGE: Per classificar si els salts són correctes, s'ha d'utilitzar una estructura de dades configurable que contingui exactament els valors i les toleràncies de la imatge de referència de Jonathan Edwards per a les tres batudes, eliminant qualsevol dada de trajectòria:
+- Per a la Batuda 1 (Hop): l'Angle A és seixanta-nou graus amb un marge de més o menys tres graus; l'Angle B és seixanta-dos graus amb un marge de més o menys tres graus; i l'Angle alfa és cent quaranta-dos graus amb un marge de més o menys tres graus.
+- Per a la Batuda 2 (Step): l'Angle 1 és seixanta-vuit graus amb un marge de més o menys dos graus; l'Angle 2 és seixanta-un graus amb un marge de més o menys tres graus; i l'Angle beta és cent trenta-vuit graus amb un marge de més o menys tres graus.
+- Per a la Batuda 3 (Jump): l'Angle 1 és seixanta-sis graus amb un marge de més o menys dos graus; l'Angle 2 és seixanta-tres graus amb un marge de més o menys tres graus; i l'Angle gamma és cent trenta-cinc graus amb un marge de més o menys tres graus.
+
+4. SISTEMA DE SEMÀFOR AUTOMÀTIC I EDICIÓ OPCIONAL: L'app mostrarà directament el panell de resultats organitzat per targetes de batuda. Si l'angle calculat es troba dins del rang estricte especificat amb el seu marge, la targeta ha de mostrar en color verd el text "DINS DEL RANG". Si el valor es desvia, mostrarà immediatament "FORA DEL RANG". Només al final, si el tracking ha fallat o l'usuari vol canviar el resultat, podrà prémer un botó d'editar per canviar el fotograma o arrossegar lliurement els punts pintats a sobre de la pantalla. En fer-ho, l'angle i l'estat del semàfor s'han de recalcular de manera immediata.
+
+Totes les etiquetes, botons, menús i missatges resultants han d'estar redactats completament en un català natural i clar.

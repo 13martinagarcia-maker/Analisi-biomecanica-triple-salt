@@ -54,7 +54,7 @@ type FrameSlot = {
   points: AnglePoint[];
   angleMode: AngleMode;
   label: string;
-  referenceId: '' | 'lead' | 'trail' | 'internal' | 'trajectory';
+  referenceId: '' | 'lead' | 'trail' | 'internal';
   guides: AngleGuides;
 };
 
@@ -108,7 +108,6 @@ type Measurement = {
   primary: string;
   secondary: string;
   internal: string;
-  trajectory: string;
 };
 
 type ManualPoint = {
@@ -181,11 +180,10 @@ const REFERENCE_ROWS: Array<{
   lead: string;
   trail: string;
   internal: string;
-  trajectory: string;
 }> = [
-  { phase: 'HOP', lead: '69±3°', trail: '62±3°', internal: 'α 142±3°', trajectory: '17±1°' },
-  { phase: 'STEP', lead: '68±2°', trail: '61±3°', internal: 'β 138±3°', trajectory: '14±1°' },
-  { phase: 'JUMP', lead: '66±2°', trail: '63±3°', internal: 'γ 135±3°', trajectory: '18±2°' },
+  { phase: 'HOP', lead: '69±3°', trail: '62±3°', internal: 'α 142±3°' },
+  { phase: 'STEP', lead: '68±2°', trail: '61±3°', internal: 'β 138±3°' },
+  { phase: 'JUMP', lead: '66±2°', trail: '63±3°', internal: 'γ 135±3°' },
 ];
 
 const CONNECTIONS: Array<[number, number]> = [
@@ -212,9 +210,9 @@ const INITIAL_PHASES: Record<PhaseKey, PhaseMark> = {
 };
 
 const INITIAL_MEASUREMENTS: Record<PhaseKey, Measurement> = {
-  HOP: { primary: '', secondary: '', internal: '', trajectory: '' },
-  STEP: { primary: '', secondary: '', internal: '', trajectory: '' },
-  JUMP: { primary: '', secondary: '', internal: '', trajectory: '' },
+  HOP: { primary: '', secondary: '', internal: '' },
+  STEP: { primary: '', secondary: '', internal: '' },
+  JUMP: { primary: '', secondary: '', internal: '' },
 };
 
 const createEmptyFrameSlots = (): Record<PhaseKey, FrameSlot[]> => ({
@@ -233,9 +231,14 @@ const normalizeFrameSlots = (value: unknown): Record<PhaseKey, FrameSlot[]> => {
       const candidate = savedSlots[index];
       if (!candidate || typeof candidate !== 'object') return fallback;
       const slot = candidate as Partial<FrameSlot>;
+      const legacyReferenceId = String(slot.referenceId ?? '');
+      const savedReferenceId = legacyReferenceId === 'lead' || legacyReferenceId === 'trail' || legacyReferenceId === 'internal'
+        ? legacyReferenceId as FrameSlot['referenceId']
+        : fallback.referenceId;
       return {
         ...fallback,
         ...slot,
+        referenceId: savedReferenceId,
         points: Array.isArray(slot.points) ? slot.points : fallback.points,
         label: typeof slot.label === 'string' ? slot.label : fallback.label,
         guides: {
@@ -303,9 +306,14 @@ const calculateAngle = (
   first: { x: number; y: number },
   vertex: { x: number; y: number },
   last: { x: number; y: number },
+  dimensions: { width: number; height: number } = { width: 1, height: 1 },
 ) => {
-  const firstVector = { x: first.x - vertex.x, y: first.y - vertex.y };
-  const lastVector = { x: last.x - vertex.x, y: last.y - vertex.y };
+  const point = (value: { x: number; y: number }) => ({ x: value.x * dimensions.width, y: value.y * dimensions.height });
+  const firstPixel = point(first);
+  const vertexPixel = point(vertex);
+  const lastPixel = point(last);
+  const firstVector = { x: firstPixel.x - vertexPixel.x, y: firstPixel.y - vertexPixel.y };
+  const lastVector = { x: lastPixel.x - vertexPixel.x, y: lastPixel.y - vertexPixel.y };
   const numerator = firstVector.x * lastVector.x + firstVector.y * lastVector.y;
   const denominator = Math.hypot(firstVector.x, firstVector.y) * Math.hypot(lastVector.x, lastVector.y);
   if (!denominator) return null;
@@ -317,13 +325,20 @@ const calculateSegmentAngle = (
   firstEnd: { x: number; y: number },
   secondStart: { x: number; y: number },
   secondEnd: { x: number; y: number },
+  dimensions: { width: number; height: number } = { width: 1, height: 1 },
 ) => {
-  const firstVector = { x: firstEnd.x - firstStart.x, y: firstEnd.y - firstStart.y };
-  const secondVector = { x: secondEnd.x - secondStart.x, y: secondEnd.y - secondStart.y };
+  const point = (value: { x: number; y: number }) => ({ x: value.x * dimensions.width, y: value.y * dimensions.height });
+  const firstPixelStart = point(firstStart);
+  const firstPixelEnd = point(firstEnd);
+  const secondPixelStart = point(secondStart);
+  const secondPixelEnd = point(secondEnd);
+  const firstVector = { x: firstPixelEnd.x - firstPixelStart.x, y: firstPixelEnd.y - firstPixelStart.y };
+  const secondVector = { x: secondPixelEnd.x - secondPixelStart.x, y: secondPixelEnd.y - secondPixelStart.y };
   const denominator = Math.hypot(firstVector.x, firstVector.y) * Math.hypot(secondVector.x, secondVector.y);
   if (!denominator) return null;
   const numerator = firstVector.x * secondVector.x + firstVector.y * secondVector.y;
-  return Math.acos(Math.min(1, Math.max(-1, numerator / denominator))) * (180 / Math.PI);
+  const angle = Math.acos(Math.min(1, Math.max(-1, numerator / denominator))) * (180 / Math.PI);
+  return Math.min(angle, 180 - angle);
 };
 
 const angleArcPath = (
@@ -378,6 +393,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const poseEngineLoadingRef = useRef(false);
   const poseLoadingRef = useRef(false);
   const poseBusyRef = useRef(false);
+  const automaticPassRef = useRef(false);
   const lastInferenceAtRef = useRef(0);
   const lastPoseTimestampRef = useRef(0);
   const playbackLoopRef = useRef<number | null>(null);
@@ -389,6 +405,9 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const [videoSrc, setVideoSrc] = useState('');
   const [fileName, setFileName] = useState('');
   const [duration, setDuration] = useState(0);
+  // Normalized landmarks are converted back to source pixels for all geometry.
+  // Legacy snapshots may lack dimensions; 1:1 is a safe compatibility fallback.
+  const [sourceDimensions, setSourceDimensions] = useState({ width: 1, height: 1 });
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [fps, setFps] = useState(30);
@@ -430,7 +449,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     JUMP: [null, null, null],
   });
   const [landmarkCache, setLandmarkCache] = useState<Record<number, Landmark[]>>({});
-  const [angleDefinition, setAngleDefinition] = useState<'internal' | 'segment-horizontal' | 'trajectory-horizontal'>('internal');
+  const [angleDefinition, setAngleDefinition] = useState<'internal' | 'segment-horizontal'>('internal');
   const [measurements, setMeasurements] = useState<Record<PhaseKey, Measurement>>(INITIAL_MEASUREMENTS);
   const [analysisStarted, setAnalysisStarted] = useState(false);
   const [recordLocation, setRecordLocation] = useState('');
@@ -448,6 +467,10 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setRecordLocation(String(snapshotValue(snapshot.recordLocation, '')));
     setRecordDate(String(snapshotValue(snapshot.recordDate, new Date().toLocaleDateString('en-CA'))));
     setDuration(Number(snapshotValue(snapshot.duration, 0)));
+    setSourceDimensions({
+      width: Number(snapshotValue(snapshot.sourceVideoWidth, 1)) || 1,
+      height: Number(snapshotValue(snapshot.sourceVideoHeight, 1)) || 1,
+    });
     setCurrentTime(Number(snapshotValue(snapshot.currentTime, 0)));
     setFps(Number(snapshotValue(snapshot.fps, 30)));
     setPhases(snapshotValue(snapshot.phases, INITIAL_PHASES) as Record<PhaseKey, PhaseMark>);
@@ -457,8 +480,16 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setCropRect(snapshotValue(snapshot.cropRect, null) as CropRect | null);
     setFrameSlots(normalizeFrameSlots(snapshot.frameSlots));
     setFrameImages(snapshotValue(snapshot.frameImages, { HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }) as Record<PhaseKey, Array<string | null>>);
-    setMeasurements(snapshotValue(snapshot.measurements, INITIAL_MEASUREMENTS) as Record<PhaseKey, Measurement>);
-    setAngleDefinition(snapshotValue(snapshot.angleDefinition, 'internal') as 'internal' | 'segment-horizontal' | 'trajectory-horizontal');
+    const savedMeasurements = snapshotValue(snapshot.measurements, INITIAL_MEASUREMENTS) as Record<PhaseKey, Partial<Measurement> & { trajectory?: string }>;
+    setMeasurements(Object.fromEntries((['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => [
+      phase,
+      {
+        primary: String(savedMeasurements[phase]?.primary ?? ''),
+        secondary: String(savedMeasurements[phase]?.secondary ?? ''),
+        internal: String(savedMeasurements[phase]?.internal ?? ''),
+      },
+    ])) as Record<PhaseKey, Measurement>);
+    setAngleDefinition(snapshotValue(snapshot.angleDefinition, 'internal') === 'segment-horizontal' ? 'segment-horizontal' : 'internal');
     setActivePhase(snapshotValue(snapshot.activePhase, 'HOP') as PhaseKey);
     setActiveClipPhase(snapshotValue(snapshot.activeClipPhase, 'HOP') as PhaseKey);
     setActiveFrameSlot(Number(snapshotValue(snapshot.activeFrameSlot, 0)));
@@ -470,6 +501,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setVideoSrc('');
     setFileName('');
     setDuration(0);
+    setSourceDimensions({ width: 1, height: 1 });
     setCurrentTime(0);
     setIsPlaying(false);
     setLandmarks(null);
@@ -825,6 +857,8 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         poseLoadingRef.current = false;
         poseEngineLoadingRef.current = false;
         setPoseStatus('ready');
+        setTrackingWarning('MediaPipe Tasks Vision no està disponible. L’anàlisi automàtica no es pot executar amb aquest motor; pots fer correccions manuals.');
+        showToast('Anàlisi automàtica no disponible: s’ha carregat el motor de compatibilitat.');
         window.setTimeout(sendFrameToPose, 120);
       } catch {
         poseLoadingRef.current = false;
@@ -908,10 +942,159 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     const video = videoRef.current;
     if (!video) return;
     setDuration(video.duration || 0);
+    setSourceDimensions({ width: video.videoWidth || 1, height: video.videoHeight || 1 });
     setCurrentTime(0);
     initializePose();
     window.setTimeout(() => sendFrameToPose(true), 350);
   };
+
+  // First pass is deliberately deterministic: sample the complete clip, keep the
+  // clearest tracked person, and derive three consecutive airborne/contact windows.
+  const runAutomaticPass = useCallback(async () => {
+    const video = videoRef.current;
+    const landmarker = multiPoseRef.current;
+    if (!video || !landmarker || !duration || automaticPassRef.current) return;
+    automaticPassRef.current = true;
+    setTrackingWarning('Analitzant automàticament el vídeo complet…');
+    const samples: Array<{ time: number; pose: Landmark[] }> = [];
+    const count = Math.min(180, Math.max(30, Math.ceil(duration * 24)));
+    const originalTime = video.currentTime;
+    try {
+      const seekForScan = (time: number) => new Promise<void>((resolve, reject) => {
+        const epsilon = .0005;
+        if (Math.abs(video.currentTime - time) <= epsilon) {
+          resolve();
+          return;
+        }
+        let timeout = 0;
+        const cleanup = () => {
+          video.removeEventListener('seeked', onSeeked);
+          video.removeEventListener('error', onError);
+          window.clearTimeout(timeout);
+        };
+        const onSeeked = () => { cleanup(); resolve(); };
+        const onError = () => { cleanup(); reject(new Error('No s’ha pogut llegir aquest fotograma.')); };
+        video.addEventListener('seeked', onSeeked);
+        video.addEventListener('error', onError);
+        timeout = window.setTimeout(() => { cleanup(); reject(new Error('La cerca del fotograma ha superat el temps límit.')); }, 2500);
+        video.currentTime = time;
+      });
+      for (let index = 0; index < count; index += 1) {
+        const time = (duration * index) / Math.max(1, count - 1);
+        await seekForScan(time);
+        const submittedTimestamp = Math.max(lastPoseTimestampRef.current + 1, Math.round(time * 1000));
+        const result = landmarker.detectForVideo(video, submittedTimestamp);
+        lastPoseTimestampRef.current = submittedTimestamp;
+        const candidates = result.landmarks ?? [];
+        if (!candidates.length) continue;
+        const previous = samples.at(-1)?.pose;
+        const validCandidates = candidates.map((pose) => ({ pose, signature: createTrackingSignature(pose) }))
+          .filter((item): item is { pose: Landmark[]; signature: TrackingSignature } => item.pose.length > 28 && item.signature !== null);
+        const previousSignature = previous ? createTrackingSignature(previous) : null;
+        const ranked = validCandidates.map(({ pose, signature }) => ({
+          pose,
+          score: previousSignature ? trackingCost(previousSignature, signature) : -signature.scale,
+        }));
+        const selected = ranked.sort((a, b) => a.score - b.score)[0]?.pose;
+        if (selected) samples.push({ time, pose: selected });
+      }
+      if (samples.length < 12 || samples.length < count * .45) {
+        setTrackingWarning('Detecció insuficient: no hi ha prou visibilitat per obtenir les tres fases.');
+        showToast('No s’han detectat prou landmarks visibles; no s’han fabricat resultats.');
+        return;
+      }
+      const visible = (point: Landmark | undefined) => Boolean(point && (point.visibility ?? 1) >= .45);
+      const validSignal = samples.filter((sample) => [23, 24, 25, 26, 27, 28].every((index) => visible(sample.pose[index])));
+      if (validSignal.length < Math.max(12, count * .35)) throw new Error('visibilitat insuficient en malucs, genolls o turmells');
+      const signal = validSignal.map((sample) => ({
+        ...sample,
+        foot: (sample.pose[27].y + sample.pose[28].y) / 2,
+        hip: (sample.pose[23].y + sample.pose[24].y) / 2,
+      }));
+      const smoothed = signal.map((sample, index) => {
+        const window = signal.slice(Math.max(0, index - 2), Math.min(signal.length, index + 3));
+        return { ...sample, foot: window.reduce((sum, value) => sum + value.foot, 0) / window.length, hip: window.reduce((sum, value) => sum + value.hip, 0) / window.length };
+      });
+      const movementDirection = (smoothed.at(-1)!.pose[23]?.x ?? 0) + (smoothed.at(-1)!.pose[24]?.x ?? 0)
+        >= (smoothed[0].pose[23]?.x ?? 0) + (smoothed[0].pose[24]?.x ?? 0) ? 1 : -1;
+      const contacts = smoothed.map((sample, index) => {
+        const before = smoothed[index - 1]?.foot ?? sample.foot;
+        const after = smoothed[index + 1]?.foot ?? sample.foot;
+        const hipBefore = smoothed[index - 1]?.hip ?? sample.hip;
+        const hipAfter = smoothed[index + 1]?.hip ?? sample.hip;
+        const hipMotion = Math.abs(hipAfter - hipBefore);
+        return { ...sample, contact: sample.foot >= before && sample.foot >= after && hipMotion > .002 };
+      }).filter((sample) => sample.contact && sample.foot > .55);
+      const dedupedContacts = contacts.filter((sample, index) => index === 0 || sample.time - contacts[index - 1].time >= .12);
+      const sequences = Array.from({ length: Math.max(0, dedupedContacts.length - 3) }, (_, index) => dedupedContacts.slice(index, index + 4))
+        .filter((sequence) => sequence.length === 4 && sequence.every((contact, index) => index === 0 || contact.time - sequence[index - 1].time >= .18))
+        .map((sequence) => {
+          const progression = (sequence[3].pose[23]?.x ?? 0) - (sequence[0].pose[23]?.x ?? 0);
+          const forward = progression * movementDirection;
+          const intervals = sequence.slice(1).map((contact, index) => contact.time - sequence[index].time);
+          const airborneScore = intervals.filter((interval) => interval >= .18 && interval <= 1.4).length;
+          return { sequence, score: (forward > .02 ? 4 : 0) + airborneScore * 2 + forward + sequence[0].time * .01 };
+        }).sort((a, b) => b.score - a.score);
+      const strongest = sequences[0]?.sequence;
+      if (!strongest || strongest.length < 4) {
+        setTrackingWarning('Contactes insuficients o poc visibles: revisa l’enquadrament i torna-ho a provar.');
+        showToast('No s’han pogut separar HOP, STEP i JUMP de manera fiable.');
+        return;
+      }
+      const boundaries = strongest.map((contact) => contact.time);
+      const nextPhases = {
+        HOP: { start: boundaries[0].toFixed(6), end: boundaries[1].toFixed(6) },
+        STEP: { start: boundaries[1].toFixed(6), end: boundaries[2].toFixed(6) },
+        JUMP: { start: boundaries[2].toFixed(6), end: boundaries[3].toFixed(6) },
+      } as Record<PhaseKey, PhaseMark>;
+      const nextSlots = createEmptyFrameSlots();
+      const nextImages: Record<PhaseKey, Array<string | null>> = { HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] };
+      for (const [phaseIndex, phase] of (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).entries()) {
+        const start = Number(nextPhases[phase].start);
+        const end = Number(nextPhases[phase].end);
+        const canonical = strongest[phaseIndex] ?? samples.find((sample) => Math.abs(sample.time - start) < 1 / 24) ?? samples.find((sample) => sample.time >= start && sample.time <= end);
+        if (!canonical) throw new Error('visibilitat insuficient en una fase');
+        const pose = canonical.pose;
+        const left = [23, 25, 27].every((index) => visible(pose[index])) ? { hip: pose[23], knee: pose[25], ankle: pose[27], index: [23, 25, 27] } : null;
+        const right = [24, 26, 28].every((index) => visible(pose[index])) ? { hip: pose[24], knee: pose[26], ankle: pose[28], index: [24, 26, 28] } : null;
+        if (!left || !right) throw new Error('landmarks de cama no visibles');
+        const lead = movementDirection * ((left.ankle.x + left.knee.x) - (right.ankle.x + right.knee.x)) >= 0 ? left : right;
+        const trail = lead === left ? right : left;
+        const image = await captureOriginalVideoFrame(canonical.time);
+        for (let slotIndex = 0; slotIndex < 3; slotIndex += 1) {
+          const points = slotIndex === 2
+            ? [lead.hip, lead.knee, lead.ankle].map((point, index) => ({ id: makePointId(), ...point, source: 'landmark' as const, landmarkIndex: lead.index[index] }))
+            : [{ id: makePointId(), ... (slotIndex === 0 ? lead.knee : trail.knee), source: 'landmark' as const, landmarkIndex: slotIndex === 0 ? lead.index[1] : trail.index[1] }, { id: makePointId(), ... (slotIndex === 0 ? lead.ankle : trail.ankle), source: 'landmark' as const, landmarkIndex: slotIndex === 0 ? lead.index[2] : trail.index[2] }, { id: makePointId(), ... (slotIndex === 0 ? lead.knee : trail.knee), source: 'landmark' as const, landmarkIndex: slotIndex === 0 ? lead.index[1] : trail.index[1] }, { id: makePointId(), x: (slotIndex === 0 ? lead : trail).knee.x + movementDirection * .1, y: (slotIndex === 0 ? lead : trail).knee.y, source: 'landmark' as const }];
+          nextSlots[phase][slotIndex] = { ...nextSlots[phase][slotIndex], frame: frameForTime(canonical.time, fps), time: canonical.time, points, angleMode: slotIndex === 2 ? 'vertex' : 'segments' };
+          setLandmarkCache((previous) => ({ ...previous, [frameForTime(canonical.time, fps)]: pose }));
+          nextImages[phase][slotIndex] = image;
+        }
+      }
+      setPhases(nextPhases);
+      setFrameSlots(nextSlots);
+      setFrameImages(nextImages);
+      setAnalysisStarted(true);
+      setAthleteLocked(true);
+      athleteLockedRef.current = true;
+      setLandmarks(samples[0].pose);
+      setTrackingWarning('');
+      showToast('Anàlisi automàtica completada: 3 fotogrames clau i 9 mesures.');
+    } catch {
+      setTrackingWarning('No hi ha prou visibilitat per completar l’anàlisi automàtica.');
+      showToast('Anàlisi incompleta: revisa el vídeo i la visibilitat de l’atleta.');
+    } finally {
+      video.currentTime = originalTime;
+      automaticPassRef.current = false;
+    }
+  }, [duration, fps, showToast]);
+
+  useEffect(() => {
+    if (videoSrc && duration && poseStatus === 'ready' && multiPoseRef.current && !athleteLocked) {
+      const timer = window.setTimeout(() => { void runAutomaticPass(); }, 500);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [duration, poseStatus, videoSrc, athleteLocked, runAutomaticPass]);
 
   const onVideoTimeUpdate = () => {
     const video = videoRef.current;
@@ -929,7 +1112,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const uploadVideo = (file?: File) => {
     if (!file) return;
     if (!file.type.startsWith('video/')) {
-      showToast('Choose a video file to begin the bench.');
+      showToast('Tria un vídeo per començar l’anàlisi.');
       return;
     }
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -944,7 +1127,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setAthleteLocked(false);
     athleteLockedRef.current = false;
     setAthleteSelectionMode(true);
-    setTrackingWarning('Select the athlete to lock tracking before analysis');
+    setTrackingWarning('Selecciona l’atleta per bloquejar el seguiment abans de l’anàlisi.');
     setFrameCorrections({});
     setLandmarkCache({});
     setFrameSlots(createEmptyFrameSlots());
@@ -954,7 +1137,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setConfidence(null);
     setPoseStatus(multiPoseRef.current || poseRef.current ? 'ready' : 'idle');
     setProposals([]);
-    showToast('Video loaded locally. Pose will run in your browser.');
+    showToast('Vídeo carregat localment. La detecció s’executarà en aquest dispositiu.');
   };
 
   const seekTo = (time: number, phase: PhaseKey = activeClipPhase) => {
@@ -977,11 +1160,11 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video || !videoSrc) {
-      showToast('Load a jump video before playback.');
+      showToast('Carrega un vídeo abans de reproduir-lo.');
       return;
     }
     if (video.paused) {
-      video.play().then(() => setIsPlaying(true)).catch(() => showToast('Playback is blocked by the browser.'));
+      video.play().then(() => setIsPlaying(true)).catch(() => showToast('El navegador ha bloquejat la reproducció.'));
     } else {
       video.pause();
       setIsPlaying(false);
@@ -1003,7 +1186,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setTrackingWarning('');
     setLandmarks(candidate);
     setLandmarkCache((previous) => ({ ...previous, [currentFrame]: candidate }));
-    showToast(`Person ${index + 1} locked as the analyzed athlete.`);
+    showToast(`Persona ${index + 1} bloquejada com a atleta analitzat.`);
   };
 
   const changeAthlete = () => {
@@ -1014,13 +1197,13 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setAthleteSelectionMode(true);
     setSelectedPoseIndex(null);
     selectedPoseIndexRef.current = null;
-    setTrackingWarning('Select the correct person on this frame');
+    setTrackingWarning('Selecciona la persona correcta en aquest fotograma.');
     sendFrameToPose();
   };
 
   const markPhase = (phase: PhaseKey, edge: 'start' | 'end') => {
     if (!videoSrc) {
-      showToast('Load a video before marking frames.');
+      showToast('Carrega un vídeo abans de marcar fotogrames.');
       return;
     }
     const exactTime = videoRef.current?.currentTime ?? currentTime;
@@ -1548,21 +1731,21 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         ankle: landmarks[27],
       };
     if (!manual.hip || !manual.knee || !manual.ankle) return null;
-    if (angleDefinition === 'internal') return calculateAngle(manual.hip, manual.knee, manual.ankle);
-    const pointA = angleDefinition === 'trajectory-horizontal' ? manual.hip : manual.knee;
-    const pointB = angleDefinition === 'trajectory-horizontal' ? manual.knee : manual.ankle;
-    return Math.abs(Math.atan2(pointB.y - pointA.y, pointB.x - pointA.x) * (180 / Math.PI));
-  }, [angleDefinition, landmarks, manualPoints]);
+    if (angleDefinition === 'internal') return calculateAngle(manual.hip, manual.knee, manual.ankle, sourceDimensions);
+    const pointA = manual.knee;
+    const pointB = manual.ankle;
+    return Math.abs(Math.atan2((pointB.y - pointA.y) * sourceDimensions.height, (pointB.x - pointA.x) * sourceDimensions.width) * (180 / Math.PI));
+  }, [angleDefinition, landmarks, manualPoints, sourceDimensions]);
 
   const activeComputedAngle = useMemo(() => {
     if (activeSlot.frame === null || activeSlot.points.length !== requiredAnglePointCount) return null;
     if (activeSlot.angleMode === 'segments') {
       const [firstStart, firstEnd, secondStart, secondEnd] = activeSlot.points;
-      return calculateSegmentAngle(firstStart, firstEnd, secondStart, secondEnd);
+      return calculateSegmentAngle(firstStart, firstEnd, secondStart, secondEnd, sourceDimensions);
     }
     const [first, vertex, last] = activeSlot.points;
-    return calculateAngle(first, vertex, last);
-  }, [activeSlot, requiredAnglePointCount]);
+    return calculateAngle(first, vertex, last, sourceDimensions);
+  }, [activeSlot, requiredAnglePointCount, sourceDimensions]);
 
   const referenceTextForSlot = (phase: PhaseKey, slot: FrameSlot) => {
     const reference = REFERENCE_ROWS.find((row) => row.phase === phase)!;
@@ -1577,11 +1760,11 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const resultRows = useMemo(() => (
     (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).flatMap((phase) => frameSlots[phase].map((slot, index) => {
       const value = slot.angleMode === 'segments'
-        ? slot.points.length === 4 ? calculateSegmentAngle(slot.points[0], slot.points[1], slot.points[2], slot.points[3]) : null
-        : slot.points.length === 3 ? calculateAngle(slot.points[0], slot.points[1], slot.points[2]) : null;
+        ? slot.points.length === 4 ? calculateSegmentAngle(slot.points[0], slot.points[1], slot.points[2], slot.points[3], sourceDimensions) : null
+        : slot.points.length === 3 ? calculateAngle(slot.points[0], slot.points[1], slot.points[2], sourceDimensions) : null;
       return { phase, slot, index, value };
     }))
-  ), [frameSlots]);
+  ), [frameSlots, sourceDimensions]);
   const completedChartPhases = (['HOP', 'STEP', 'JUMP'] as PhaseKey[]).filter((phase) =>
     resultRows.filter((row) => row.phase === phase).every((row) => row.value !== null && Boolean(row.slot.referenceId)),
   );
@@ -1597,7 +1780,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     ]));
     const snapshot: Record<string, unknown> = {
       version: 1,
-      fileName, recordLocation, recordDate, duration, currentTime, fps, phases, frameSlots, frameImages: boundedImages,
+      fileName, recordLocation, recordDate, duration, currentTime, fps, sourceVideoWidth: sourceDimensions.width, sourceVideoHeight: sourceDimensions.height, phases, frameSlots, frameImages: boundedImages,
       measurements, frameCorrections, manualPoints, cropRect, guides, angleDefinition,
       activePhase, activeClipPhase, activeFrameSlot, analysisStarted,
     };
@@ -1660,7 +1843,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       '',
       ...REFERENCE_ROWS.map((reference) => {
         const measurement = measurements[reference.phase];
-        return `${reference.phase}: measured ${measurement.primary || '—'} / ${measurement.secondary || '—'} / ${measurement.internal || '—'} / ${measurement.trajectory || '—'} | reference ${reference.lead}, ${reference.trail}, ${reference.internal}, ${reference.trajectory}`;
+        return `${reference.phase}: measured ${measurement.primary || '—'} / ${measurement.secondary || '—'} / ${measurement.internal || '—'} | reference ${reference.lead}, ${reference.trail}, ${reference.internal}`;
       }),
       '',
       'Disclosure: analytical coaching aid; not medical precision.',
@@ -1878,7 +2061,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                   {!activeFrameImage ? <div className="control-row">
                     <div className="control-group">
                       <button className="control-icon" onClick={() => stepFrame(-1)} disabled={!videoSrc} data-testid="button-step-back" aria-label="Fotograma anterior"><SkipBack size={15} /></button>
-                      <button className="control-icon" onClick={togglePlay} disabled={!videoSrc} data-testid="button-play-pause" aria-label={isPlaying ? 'Pausa' : 'Reproducció'}>{isPlaying ? <Pause size={16} /> : <Play size={16} />}</button>
+        <button className="control-icon" onClick={togglePlay} disabled={!videoSrc} data-testid="button-play-pause" aria-label={isPlaying ? 'Pausa' : 'Reproducció'}>{isPlaying ? <Pause size={16} /> : <Play size={16} />}</button>
                       <button className="control-icon" onClick={() => stepFrame(1)} disabled={!videoSrc} data-testid="button-step-forward" aria-label="Fotograma següent"><SkipForward size={15} /></button>
                       <span className="time-readout" data-testid="text-timecode">{formatTime(currentTime)} / {formatTime(duration)}</span>
                     </div>
@@ -1957,7 +2140,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
             </div>
             <div className="panel-body">
               <div className="section-caption">
-                <div><h2>Targetes d’anàlisi per batuda</h2><div className="small-note">Cada fotograma triat manualment es compara visualment amb la secció corresponent de Jonathan Edwards.</div></div>
+                <div><h2>Targetes d’anàlisi per batuda</h2><div className="small-note">Els fotogrames es detecten automàticament i es poden corregir opcionalment; es comparen amb Jonathan Edwards.</div></div>
                 <button className="button-quiet" onClick={() => { setFrameSlots(createEmptyFrameSlots()); setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }); }} data-testid="button-clear-measurements"><X size={14} /> Restablir anàlisi</button>
               </div>
               {completedChartPhases.length > 0 && (
@@ -2072,8 +2255,8 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                       <div className="analysis-card-grid">
                         {frameSlots[phase].map((slot, index) => {
                           const value = slot.angleMode === 'segments'
-                            ? slot.points.length === 4 ? calculateSegmentAngle(slot.points[0], slot.points[1], slot.points[2], slot.points[3]) : null
-                            : slot.points.length === 3 ? calculateAngle(slot.points[0], slot.points[1], slot.points[2]) : null;
+                            ? slot.points.length === 4 ? calculateSegmentAngle(slot.points[0], slot.points[1], slot.points[2], slot.points[3], sourceDimensions) : null
+                            : slot.points.length === 3 ? calculateAngle(slot.points[0], slot.points[1], slot.points[2], sourceDimensions) : null;
                           const referenceText = referenceTextForSlot(phase, slot);
                           const referenceRange = slot.referenceId ? parseReferenceRange(referenceText) : null;
                           const difference = value !== null && referenceRange ? value - referenceRange.target : null;
@@ -2081,9 +2264,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                             ? 'Pendent de referència'
                             : Math.abs(difference) <= referenceRange.tolerance
                               ? 'DINS DEL RANG'
-                              : Math.abs(difference) <= referenceRange.tolerance + 2
-                                ? 'REVISAR'
-                                : 'FORA DEL RANG';
+                              : 'FORA DEL RANG';
                           const source = slot.frame === null ? null : landmarkCache[slot.frame];
                           const slotConfidence = confidenceForSlot(slot);
                           const confidenceLabel = slotConfidence === null
@@ -2093,7 +2274,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                             <article className="analysis-result-card" key={`${phase}-${index}`} data-testid={`analysis-card-${phase.toLowerCase()}-${index + 1}`}>
                               <header className="analysis-card-header">
                                 <div><span className="eyebrow">{phaseTitle(phase)} · Fotograma {index + 1}</span><h4>{slotTitle(phase, slot, index)}</h4></div>
-                                <span className={`analysis-status ${status === 'DINS DEL RANG' ? 'ok' : status === 'REVISAR' ? 'review' : 'pending'}`}>{status === 'DINS DEL RANG' && <Check size={12} />}{status}</span>
+                                <span className={`analysis-status ${status === 'DINS DEL RANG' ? 'ok' : 'error'}`}>{status === 'DINS DEL RANG' && <Check size={12} />}{status}</span>
                               </header>
                               <div className="analysis-visual-pair">
                                 <figure className={`analysis-reference-visual reference-crop-${phase.toLowerCase()}`}>
@@ -2136,7 +2317,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                     </section>
                   ))}
                 </div>
-              ) : <div className="empty-inline" data-testid="analysis-cards-waiting">Selecciona manualment els nou fotogrames i configura els punts per veure les targetes comparatives.</div>}
+              ) : <div className="empty-inline" data-testid="analysis-cards-waiting">L’anàlisi automàtica prepararà nou mesures quan la visibilitat sigui suficient.</div>}
               <details className="analysis-table-details">
                 <summary>Veure també la taula de resultats</summary>
                 <div className="report-table-wrap">
@@ -2151,9 +2332,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                         ? 'Pendent de configuració'
                         : Math.abs(difference) <= referenceRange.tolerance
                           ? 'DINS DEL RANG'
-                          : Math.abs(difference) <= referenceRange.tolerance + 2
-                            ? 'REVISAR'
-                            : 'FORA DEL RANG';
+                          : 'FORA DEL RANG';
                       return (
                         <tr key={`${row.phase}-${row.index}`}>
                           <td>{row.phase}</td>
@@ -2162,7 +2341,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                           <td>{referenceText}</td>
                           <td>{row.value === null ? '—' : `${row.value.toFixed(1)}°`}</td>
                           <td>{difference === null ? '—' : `${difference >= 0 ? '+' : ''}${difference.toFixed(1)}°`}</td>
-                          <td><span className={`status-badge ${status === 'DINS DEL RANG' ? '' : 'pending'}`}>{status === 'DINS DEL RANG' && <Check size={11} />}{status}</span></td>
+                          <td><span className={`status-badge ${status === 'DINS DEL RANG' ? '' : 'error'}`}>{status === 'DINS DEL RANG' && <Check size={11} />}{status}</span></td>
                         </tr>
                       );
                     })}
