@@ -37,6 +37,12 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
       level: typeof criterion.level === "string" ? criterion.level : "",
       criterion: typeof criterion.criterion === "string" ? criterion.criterion : "",
       score: Number(criterion.score),
+      principalError: typeof criterion.principalError === "string" ? criterion.principalError : undefined,
+      associatedErrors: Array.isArray(criterion.associatedErrors)
+        ? criterion.associatedErrors.filter((error): error is string => typeof error === "string")
+        : undefined,
+      consequence: typeof criterion.consequence === "string" ? criterion.consequence : undefined,
+      improvement: typeof criterion.improvement === "string" ? criterion.improvement : undefined,
     };
   });
   if (parsedCriteria.length !== 5 || parsedCriteria.some((criterion) =>
@@ -89,6 +95,7 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     landingAnswer: `${parsedCriteria[3].level}: ${parsedCriteria[3].criterion}`,
     finalScore: finalScore.toFixed(2),
     assessmentData: {
+      schemaVersion: 2,
       criteria: parsedCriteria,
       validity: parsedCriteria[4],
     },
@@ -113,6 +120,12 @@ router.patch("/track-evaluations/:id", requireAuth, async (request, response): P
       level: typeof criterion.level === "string" ? criterion.level : "",
       criterion: typeof criterion.criterion === "string" ? criterion.criterion : "",
       score: Number(criterion.score),
+      principalError: typeof criterion.principalError === "string" ? criterion.principalError : undefined,
+      associatedErrors: Array.isArray(criterion.associatedErrors)
+        ? criterion.associatedErrors.filter((error): error is string => typeof error === "string")
+        : undefined,
+      consequence: typeof criterion.consequence === "string" ? criterion.consequence : undefined,
+      improvement: typeof criterion.improvement === "string" ? criterion.improvement : undefined,
     };
   });
   if (parsedCriteria.length !== 5 || parsedCriteria.some((criterion) =>
@@ -156,7 +169,7 @@ router.patch("/track-evaluations/:id", requireAuth, async (request, response): P
     rhythmAnswer: `${parsedCriteria[1].level}: ${parsedCriteria[1].criterion}`,
     landingAnswer: `${parsedCriteria[3].level}: ${parsedCriteria[3].criterion}`,
     finalScore: finalScore.toFixed(2),
-    assessmentData: { ...assessmentData, criteria: parsedCriteria, validity: parsedCriteria[4] },
+    assessmentData: { ...assessmentData, schemaVersion: 2, criteria: parsedCriteria, validity: parsedCriteria[4] },
   }).where(and(
     eq(trackEvaluationsTable.id, id),
     eq(trackEvaluationsTable.userId, request.user!.id),
