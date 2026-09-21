@@ -82,8 +82,8 @@ router.post("/competitions", requireAuth, async (request, response) => {
   const personalBest = optionalNumber(request.body, "personalBest");
   const seasonGoal = optionalNumber(request.body, "seasonGoal");
   const parsedJumps = jumpsFromBody(request.body, "");
-  if (!location || !eventDate || !objective || !validDate(eventDate)) {
-    response.status(400).json({ message: "Indica lloc, data vàlida i objectiu de la competició." });
+  if (!athleteId || !location || !eventDate || !objective || !validDate(eventDate)) {
+    response.status(400).json({ message: "Selecciona l’atleta i indica lloc, data vàlida i objectiu de la competició." });
     return;
   }
   if (typeof achieved !== "boolean") {
@@ -98,17 +98,15 @@ router.post("/competitions", requireAuth, async (request, response) => {
     });
     return;
   }
-  if (athleteId) {
-    const [athlete] = await db.select({ id: athletesTable.id }).from(athletesTable).where(and(eq(athletesTable.id, athleteId), eq(athletesTable.userId, request.user!.id))).limit(1);
-    if (!athlete) {
-      response.status(400).json({ message: "L’atleta seleccionat no és vàlid." });
-      return;
-    }
+  const [athlete] = await db.select({ id: athletesTable.id }).from(athletesTable).where(and(eq(athletesTable.id, athleteId), eq(athletesTable.userId, request.user!.id))).limit(1);
+  if (!athlete) {
+    response.status(400).json({ message: "L’atleta seleccionat no és vàlid." });
+    return;
   }
   const { competition, jumpValues } = await db.transaction(async (transaction) => {
     const [createdCompetition] = await transaction.insert(competitionsTable).values({
       userId: request.user!.id,
-      athleteId: athleteId || null,
+      athleteId,
       location,
       eventDate,
       objective,

@@ -644,6 +644,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [evaluations, setEvaluations] = useState<TrackEvaluation[]>([]);
   const [homeAnalyses, setHomeAnalyses] = useState<HomeAnalysis[]>([]);
   const [selectedAthleteId, setSelectedAthleteId] = useState("");
+  const [athleteSelectionOpen, setAthleteSelectionOpen] = useState(true);
   const [athleteFormOpen, setAthleteFormOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
   const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
@@ -675,14 +676,13 @@ function ProductHub({ analysisWorkspace }: Props) {
     setCompetitions(competitionData.competitions);
     setEvaluations(evaluationData.evaluations);
     setHomeAnalyses(homeAnalysisData.analyses);
-    setSelectedAthleteId((previous) => previous || athleteData.athletes[0]?.id || "");
   };
 
   useEffect(() => {
     api<{ user: User | null }>("/auth/me")
-      .then((result) => {
+      .then(async (result) => {
         setUser(result.user);
-        if (result.user) void loadData();
+        if (result.user) await loadData();
       })
       .catch(() => setUser(null))
       .finally(() => setLoadingSession(false));
@@ -707,6 +707,8 @@ function ProductHub({ analysisWorkspace }: Props) {
       });
       setUser(result.user);
       await loadData();
+      setSelectedAthleteId("");
+      setAthleteSelectionOpen(true);
       setPage("inici");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "No s’ha pogut accedir al compte.");
@@ -721,11 +723,11 @@ function ProductHub({ analysisWorkspace }: Props) {
     setEvaluations([]);
     setHomeAnalyses([]);
     setSelectedAthleteId("");
+    setAthleteSelectionOpen(true);
     setPage("inici");
   };
 
-  const handleAthleteChange = (newId: string) => {
-    if (newId === selectedAthleteId) return;
+  const resetAthleteContext = (newId: string) => {
     if (page === "casa") {
       if (!window.confirm("Canviar d'atleta reiniciarà l'anàlisi de vídeo actual. Vols continuar?")) return;
     }
@@ -741,6 +743,18 @@ function ProductHub({ analysisWorkspace }: Props) {
     setTrackLocation("");
     setTrackDate(new Date().toLocaleDateString("en-CA"));
     setSelectedAthleteId(newId);
+    setPage("inici");
+    setAthleteSelectionOpen(false);
+  };
+
+  const handleAthleteChange = (newId: string) => {
+    if (!newId || newId === selectedAthleteId) return;
+    resetAthleteContext(newId);
+  };
+
+  const openAthleteSelection = () => {
+    if (page === "casa" && !window.confirm("Sortir del perfil reiniciarà l'anàlisi de vídeo actual. Vols continuar?")) return;
+    setAthleteSelectionOpen(true);
   };
 
   const addOrEditAthlete = async (event: FormEvent<HTMLFormElement>) => {
@@ -766,7 +780,6 @@ function ProductHub({ analysisWorkspace }: Props) {
           body: JSON.stringify(payload),
         });
         setAthletes((prev) => [...prev, result.athlete].sort((a, b) => `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`)));
-        if (!selectedAthleteId) setSelectedAthleteId(result.athlete.id);
         notify("Atleta afegit a l'historial.");
       }
       setAthleteFormOpen(false);
@@ -782,8 +795,8 @@ function ProductHub({ analysisWorkspace }: Props) {
       await api(`/athletes/${athleteToDelete.id}`, { method: "DELETE" });
       setAthletes((prev) => prev.filter((a) => a.id !== athleteToDelete.id));
       if (selectedAthleteId === athleteToDelete.id) {
-        const nextAthlete = athletes.find(a => a.id !== athleteToDelete.id);
-        setSelectedAthleteId(nextAthlete?.id || "");
+        setSelectedAthleteId("");
+        setAthleteSelectionOpen(true);
         setPage("inici");
       }
       notify("Atleta esborrat correctament.");
@@ -1138,9 +1151,69 @@ function ProductHub({ analysisWorkspace }: Props) {
     );
   }
 
+  if (athleteSelectionOpen || !selectedAthlete) {
+    return (
+      <main className="athlete-selection-page">
+        <header className="athlete-selection-header">
+          <div className="brand-lockup"><span className="brand-mark">TS<br />01</span><span>Triple Salt</span></div>
+          <button className="button-quiet" onClick={logout}><LogOut size={14} /> Tancar sessió</button>
+        </header>
+        <section className="athlete-selection-content">
+          <div className="athlete-selection-intro">
+            <span className="eyebrow">Selecciona el perfil actiu</span>
+            <h1>Amb quin atleta treballaràs?</h1>
+            <p>Totes les competicions, marques, valoracions, vídeos i anàlisis quedaran associades exclusivament al perfil que triïs.</p>
+          </div>
+          <div className="athlete-selection-toolbar">
+            <span>{athletes.length} atleta{athletes.length === 1 ? "" : "s"} al compte</span>
+            <button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}><UserPlus size={15} /> Afegir atleta</button>
+          </div>
+          {athletes.length === 0 ? (
+            <EmptyState title="Encara no hi ha cap atleta" description="Crea la primera fitxa abans d’entrar a l’app. Les dades que generis quedaran vinculades a aquest perfil." action={<button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}><Plus size={15} /> Crear atleta</button>} />
+          ) : (
+            <div className="athlete-selection-grid">
+              {athletes.map((athlete) => {
+                const initials = `${athlete.firstName[0] ?? ""}${athlete.lastName[0] ?? ""}`;
+                const competitionCount = competitions.filter((competition) => competition.athleteId === athlete.id).length;
+                const analysisCount = homeAnalyses.filter((analysis) => analysis.athleteId === athlete.id).length;
+                return (
+                  <article className="athlete-selection-card" key={athlete.id}>
+                    <div className="athlete-selection-avatar">{initials}</div>
+                    <div>
+                      <span className="eyebrow">Perfil d’atleta</span>
+                      <h2>{athlete.firstName} {athlete.lastName}</h2>
+                      <p>{athlete.goals || "Sense objectius definits"}</p>
+                    </div>
+                    <div className="athlete-selection-stats"><span><strong>{competitionCount}</strong> competicions</span><span><strong>{analysisCount}</strong> anàlisis</span></div>
+                    <div className="athlete-selection-actions">
+                      <button className="button-outline" onClick={() => { setEditingAthlete(athlete); setAthleteFormOpen(true); }}><Pencil size={14} /> Editar</button>
+                      <button className="button-primary" onClick={() => resetAthleteContext(athlete.id)}>Entrar al perfil <ArrowRight size={15} /></button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+        {athleteFormOpen && (
+          <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAthleteFormOpen(false); }}>
+            <form className="modal hub-athlete-modal" onSubmit={addOrEditAthlete}>
+              <div className="modal-title-row"><div><span className="eyebrow">{editingAthlete ? "Editar atleta" : "Nou atleta"}</span><h2>{editingAthlete ? "Modifica la fitxa" : "Crea una fitxa"}</h2></div><button type="button" className="button-quiet" onClick={() => { setAthleteFormOpen(false); setEditingAthlete(null); }} aria-label="Tancar"><X size={15} /></button></div>
+              <div className="form-grid"><label>Nom<input name="firstName" required defaultValue={editingAthlete?.firstName} /></label><label>Cognoms<input name="lastName" required defaultValue={editingAthlete?.lastName} /></label></div>
+              <label>Objectius<textarea name="goals" defaultValue={editingAthlete?.goals ?? ""} /></label>
+              <label>Notes tècniques<textarea name="technicalNotes" defaultValue={editingAthlete?.technicalNotes ?? ""} /></label>
+              <div className="modal-actions"><button type="button" className="button-outline" onClick={() => setAthleteFormOpen(false)}>Cancel·lar</button><button className="button-primary" type="submit"><Save size={15} /> Guardar atleta</button></div>
+            </form>
+          </div>
+        )}
+        {feedback && <div className="toast">{feedback}</div>}
+      </main>
+    );
+  }
+
   const renderPage = () => {
     if (page === "casa") return <div className="analysis-embed">{analysisWorkspace({
-      athletes,
+      athletes: selectedAthlete ? [selectedAthlete] : [],
       selectedAthleteId,
       onAthleteChange: handleAthleteChange,
       onSave: saveHomeAnalysis,
@@ -1150,44 +1223,15 @@ function ProductHub({ analysisWorkspace }: Props) {
     if (page === "inici") return (
       <section className="hub-page">
         <div className="hub-hero">
-          <div><span className="eyebrow">Espai d'entrenador</span><h1>Hola, {user.firstName}.</h1><p>Gestiona els teus atletes, registra competicions i analitza el rendiment.</p></div>
+          <div><span className="eyebrow">Perfil actiu</span><h1>{selectedAthlete.firstName} {selectedAthlete.lastName}</h1><p>{selectedAthlete.goals || "Registra competicions, valora la tècnica i analitza el rendiment d’aquest atleta."}</p></div>
+          <button className="button-outline" onClick={openAthleteSelection}><Users size={15} /> Canviar atleta</button>
         </div>
-        
-        <div className="roster-section">
-          <div className="section-caption roster-header">
-            <div>
-              <h2>El teu equip</h2>
-              <p className="eyebrow">{athletes.length} atletes actius</p>
-            </div>
-            <button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}>
-              <UserPlus size={15} /> Afegir atleta
-            </button>
-          </div>
-          
-          {athletes.length === 0 ? (
-            <EmptyState 
-              title="Cap atleta registrat" 
-              description="Afegeix la primera fitxa per començar a registrar competicions i valoracions."
-              action={<button className="button-primary" onClick={() => { setEditingAthlete(null); setAthleteFormOpen(true); }}><Plus size={15} /> Afegir atleta</button>}
-            />
-          ) : (
-            <div className="roster-grid">
-              {athletes.map(a => (
-                <AthleteCard 
-                  key={a.id} 
-                  athlete={a} 
-                  competitions={competitions.filter(c => c.athleteId === a.id)}
-                  analyses={homeAnalyses.filter(h => h.athleteId === a.id)}
-                  onSelect={() => { handleAthleteChange(a.id); setPage("historial"); }}
-                  onEdit={() => { setEditingAthlete(a); setAthleteFormOpen(true); }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        
-        <div className="hub-action-grid" style={{ marginTop: '2.5rem' }}>
+        <div className="hub-action-grid">
           {[
+            { icon: BarChart3, title: "Historial", text: "Consulta competicions, marques i anàlisis guardades.", page: "historial" as Page },
+            { icon: CalendarPlus, title: "Nova competició", text: "Registra objectius, sis salts i resultat.", page: "competició" as Page },
+            { icon: Activity, title: "Estic a pista", text: "Valora la tècnica del salt a peu de pista.", page: "pista" as Page },
+            { icon: CircleGauge, title: "Estic a casa", text: "Analitza vídeos, fotogrames i angles.", page: "casa" as Page },
             { icon: BookOpen, title: "Tècnica", text: "Organitza els continguts i les correccions de cada fase del salt.", page: "tècnica" as Page },
             { icon: Dumbbell, title: "Escalfament", text: "Prepara exercicis, temps i repeticions abans de competir.", page: "escalfament" as Page },
           ].map((card) => <button className="hub-action-card" key={card.page} onClick={() => setPage(card.page)}><card.icon size={21} /><span><strong>{card.title}</strong><small>{card.text}</small></span><ChevronRight size={17} /></button>)}
@@ -1196,7 +1240,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     );
     if (page === "historial") return (
       <section className="hub-page">
-        <BackButton onClick={() => setPage("inici")} label="Tornar a l'equip" />
+        <BackButton onClick={() => setPage("inici")} label="Tornar a l’inici" />
         <div className="hub-title-row">
           <div>
             <span className="eyebrow">Perfil de l'atleta</span>
@@ -1490,25 +1534,19 @@ function ProductHub({ analysisWorkspace }: Props) {
 
   return (
     <div className="hub-shell">
-      {page !== "casa" && <aside className="hub-sidebar"><div className="sidebar-brand"><div className="brand-mark">TS<br />01</div><div><div className="font-display" style={{ fontSize: "1.1rem", lineHeight: 1 }}>Triple Salt</div><div className="sidebar-label" style={{ padding: ".35rem 0 0", color: "hsl(215 14% 67%)" }}>Temporada i anàlisi</div></div></div><nav className="sidebar-nav" aria-label="Navegació principal"><div className="sidebar-label">El teu espai</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}><item.icon size={16} /><span>{item.label}</span></button>)}</nav><div className="hub-user-block"><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><div><strong>{user.firstName} {user.lastName}</strong><button onClick={logout}><LogOut size={12} /> Tancar sessió</button></div></div></aside>}
+         {page !== "casa" && <aside className="hub-sidebar"><div className="sidebar-brand"><div className="brand-mark">TS<br />01</div><div><div className="font-display" style={{ fontSize: "1.1rem", lineHeight: 1 }}>Triple Salt</div><div className="sidebar-label" style={{ padding: ".35rem 0 0", color: "hsl(215 14% 67%)" }}>{selectedAthlete.firstName} {selectedAthlete.lastName}</div></div></div><nav className="sidebar-nav" aria-label="Navegació principal"><div className="sidebar-label">El teu espai</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}><item.icon size={16} /><span>{item.label}</span></button>)}</nav><div className="hub-user-block"><span className="athlete-avatar">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><strong>{selectedAthlete.firstName} {selectedAthlete.lastName}</strong><button onClick={openAthleteSelection}><Users size={12} /> Canviar atleta</button><button onClick={logout}><LogOut size={12} /> Tancar sessió</button></div></div></aside>}
       <main className={page === "casa" ? "hub-analysis-main" : "hub-main"}>
-        {page === "casa" && <div className="analysis-hub-bar"><button className="button-outline" onClick={() => setPage("inici")}><ArrowLeft size={14} /> Tornar a l’espai de temporada</button><div><span className="athlete-avatar">{`${user.firstName[0]}${user.lastName[0]}`}</span><strong>{user.firstName} {user.lastName}</strong><button className="button-quiet" onClick={logout}><LogOut size={14} /><span>Tancar sessió</span></button></div></div>}
+         {page === "casa" && <div className="analysis-hub-bar"><button className="button-outline" onClick={() => setPage("inici")}><ArrowLeft size={14} /> Tornar a l’espai de temporada</button><div><span className="athlete-avatar">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><strong>{selectedAthlete.firstName} {selectedAthlete.lastName}</strong><button className="button-quiet" onClick={openAthleteSelection}><Users size={14} /><span>Canviar atleta</span></button><button className="button-quiet" onClick={logout}><LogOut size={14} /><span>Tancar sessió</span></button></div></div>}
         {page !== "casa" && page !== "inici" && (
           <header className="hub-topbar">
             <div className="topbar-context">
                <span className="eyebrow">Atleta actual</span>
                <div className="athlete-switcher-wrap">
-                  <select 
-                     value={selectedAthleteId} 
-                     onChange={(e) => handleAthleteChange(e.target.value)} 
-                     className="athlete-switcher-select"
-                  >
-                     {athletes.map(a => <option key={a.id} value={a.id}>{a.firstName} {a.lastName}</option>)}
-                  </select>
-                  <ChevronDown size={14} className="switcher-icon" />
+                   <strong>{selectedAthlete.firstName} {selectedAthlete.lastName}</strong>
                </div>
             </div>
             <div className="flex gap-2">
+               <button className="button-outline" onClick={openAthleteSelection}><Users size={14} /> Canviar atleta</button>
               <button className="button-outline" onClick={() => setPage("pista")}><Activity size={14} /> Estic a pista</button>
               <button className="button-primary" onClick={() => setPage("casa")}><CircleGauge size={14} /> Estic a casa</button>
             </div>

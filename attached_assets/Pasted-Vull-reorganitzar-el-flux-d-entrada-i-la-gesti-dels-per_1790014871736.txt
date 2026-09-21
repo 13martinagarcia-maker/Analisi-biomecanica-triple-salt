@@ -1,0 +1,90 @@
+Vull reorganitzar el flux d’entrada i la gestió dels perfils dels atletes.
+
+1. ENTRADA A L’APP
+Quan l’usuari introdueix:
+- Gmail
+- Contrasenya
+
+i inicia sessió, NO vull que entri directament a l’inici.
+
+Primer ha d’aparèixer una pantalla de SELECCIÓ D’ATLETA amb tots els perfils que té aquell compte.
+
+L’usuari selecciona un atleta i, només després, entra a l’INICI de l’app.
+
+2. INICI
+Una vegada seleccionat l’atleta, l’inici ha de mostrar clarament:
+
+- Historial
+- Nova competició
+- Estic a pista
+- Estic a casa
+- Tècnica
+- Escalfament
+
+Quan l’usuari clica qualsevol apartat, s’ha d’obrir directament aquella secció.
+
+3. PERFIL DE L’ATLETA
+L’atleta seleccionat ha de quedar actiu durant tota la sessió.
+
+TOT el que faci l’usuari s’ha d’associar únicament a aquell atleta:
+- Nova competició
+- Historial
+- Estic a pista
+- Estic a casa
+- Marques
+- Objectius
+- Anàlisis
+- Vídeos
+- Fotogrames
+- Imatges
+- Resultats
+
+4. HISTORIAL
+L’Historial ha de guardar tota la informació relacionada amb aquell atleta.
+
+Per cada competició s’han de guardar:
+- Totes les dades de “Nova competició”
+- Marques dels 6 salts
+- Objectius
+- Resultat
+- Dades d’“Estic a pista”
+- Anàlisi d’“Estic a casa”
+- Imatges
+- Fotogrames
+- Angles i resultats de l’anàlisi
+- Qualsevol altra dada generada durant aquella competició
+
+Quan l’usuari entri en una competició guardada, ha de poder:
+- Tornar a veure tota la informació
+- Revisar l’anàlisi
+- Retocar/corregir dades
+- Retocar l’anàlisi
+- Veure les imatges i fotogrames
+- Eliminar la competició
+
+5. SEPARACIÓ TOTAL ENTRE ATLETES
+
+AQUEST ÉS EL PUNT MÉS IMPORTANT:
+
+Les dades dels diferents atletes NO es poden barrejar mai.
+
+Per exemple:
+- Si estic dins del perfil de l’Atleta A, només he de veure les seves competicions, marques, anàlisis, imatges i dades.
+- Si canvio a l’Atleta B, només he de veure les dades de l’Atleta B.
+
+Cada dada, competició, vídeo, imatge i anàlisi ha d’estar vinculada al seu atleta corresponent i al compte d’usuari corresponent.
+
+Si tanco sessió i torno a entrar amb el mateix Gmail, han de continuar apareixent tots els atletes i totes les seves dades guardades.
+
+6. DISSENY
+
+Fes que la pantalla de selecció d’atleta sigui molt visual i moderna:
+- Targetes grans per cada atleta
+- Nom i cognoms visibles
+- Avatar o imatge
+- Botó clar per entrar al perfil
+
+Mantén l’estil modern, visual i esportiu de tota l’app, semblant a Lovable.
+
+IMPORTANT:
+No eliminis ni trenquis cap funcionalitat actual. Reorganitza el flux i la base de dades perquè primer es seleccioni l’atleta i, a partir d’aquell moment, tota l’app treballi exclusivament amb les dades d’aquell atleta.

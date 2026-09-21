@@ -60,12 +60,14 @@ router.post("/track-evaluations", requireAuth, async (request, response) => {
     response.status(400).json({ message: "Indica el dia i el lloc de la valoració." });
     return;
   }
-  const athleteId = typeof body.athleteId === "string" && body.athleteId ? body.athleteId : null;
+  const athleteId = typeof body.athleteId === "string" && body.athleteId ? body.athleteId : "";
   const competitionId = typeof body.competitionId === "string" && body.competitionId ? body.competitionId : null;
-  const [athlete] = athleteId
-    ? await db.select({ id: athletesTable.id }).from(athletesTable).where(and(eq(athletesTable.id, athleteId), eq(athletesTable.userId, request.user!.id)))
-    : [];
-  if (athleteId && !athlete) {
+  if (!athleteId) {
+    response.status(400).json({ message: "Selecciona un atleta abans de guardar la valoració." });
+    return;
+  }
+  const [athlete] = await db.select({ id: athletesTable.id }).from(athletesTable).where(and(eq(athletesTable.id, athleteId), eq(athletesTable.userId, request.user!.id)));
+  if (!athlete) {
     response.status(404).json({ message: "No s’ha trobat l’atleta seleccionat." });
     return;
   }
