@@ -666,7 +666,7 @@ const techniqueSections: TechniqueSectionDef[] = [
       { type: 'paragraph', text: "Pel que fa a la posició del peu, és essencial que es romangui “armat” abans del contacte amb el terra, és a dir, amb la punta aixecada. Aquesta postura facilita un recolzament actiu i afavoreix la continuïtat del moviment, a més de contribuir a l’elevació del genoll i a mantenir una postura corporal correcta. En canvi, si el peu entra en contacte amb el terra amb la punta caiguda, pot dificultar l'acció d'impuls i provocar una acció de frenada. Per això, el recolzament ha de ser ràpid i dinàmic, minimitzant el temps de contacte amb el terra per evitar perdre velocitat i alteracions brusques de la postura corporal." },
       { type: 'figure', src: "technique/approach-foot.png", caption: "Imatge 4: L’atleta entra en contacte amb la pista amb el peu “armat”, cosa que permet una postura recta del cos. Font pròpia." },
       { type: 'paragraph', text: "Finalment, la transició entre la cursa d’aproximació i la batuda ha de ser fluida, sense anticipar el salt ni interrompre la continuïtat de la carrera. L’atleta ha de mantenir la mirada endavant i seguir una trajectòria horitzontal, evitant mirar cap a terra per buscar visualment la taula. D’aquesta manera, es pot iniciar la primera fase del triple salt amb la velocitat i la coordinació adequades." },
-      { type: 'figure', src: "technique/approach-forward-look.jpeg", caption: "Imatge 5: L’atleta realitza una cursa ràpida i amb la mirada fixa cap endavant. Font pròpia." }
+      { type: 'figure', src: "technique/approach-forward-look-frame-5.jpeg", caption: "Imatge 5: L’atleta realitza una cursa ràpida i amb la mirada fixa cap endavant. Font pròpia." }
     ]
   },
   {
