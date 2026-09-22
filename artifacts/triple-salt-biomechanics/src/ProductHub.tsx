@@ -632,6 +632,95 @@ function CompetitionFields({ athletes, competition, defaultAthleteId }: { athlet
   </>;
 }
 
+const techniqueIntro = [
+  "El triple salt és una disciplina atlètica que requereix una combinació perfecta de velocitat, força, coordinació i precisió tècnica, ja que l’atleta ha d’enllaçar tres salts consecutius, mantenint el màxim rendiment possible sense perdre la velocitat horitzontal.",
+  "La prova es divideix en tres fases principals: el primer salt, conegut com a hop, el segon salt, anomenat step, i el tercer salt, que és el jump, que finalitza amb la caiguda al fossat de sorra. Els dos primers salts es realitzen amb la mateixa cama de batuda, mentre que el tercer es realitza amb la cama contrària.",
+  "L’objectiu principal és aconseguir la màxima distància horitzontal possible, mantenint la velocitat i la coordinació durant les diferents fases."
+];
+
+type ContentBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'figure'; src: string | string[]; caption: string };
+
+type TechniqueSectionDef = {
+  id: string;
+  label: string;
+  pdfTitle: string;
+  accentColor: string;
+  content: ContentBlock[];
+};
+
+const techniqueSections: TechniqueSectionDef[] = [
+  {
+    id: "cursa",
+    label: "Cursa d'impuls",
+    pdfTitle: "1. Cursa d'aproximació",
+    accentColor: "hsl(var(--primary))",
+    content: [
+      { type: 'paragraph', text: "La cursa d’aproximació té com a objectiu principal aconseguir una velocitat elevada i controlada abans d’arribar a la taula de batuda, ja que és imprescindible per assolir una bona marca. Per aconseguir-ho, cal accelerar de manera progressiva, mantenint sempre la tècnica de carrera i la coordinació dels moviments. En començar, el cos es manté lleugerament inclinat cap endavant per facilitar l’acceleració inicial, i a mesura que es va guanyant velocitat i s’apropa a la taula de batuda, el tronc es va redreçant gradualment fins a una posició més vertical." },
+      { type: 'figure', src: ["technique/approach-acceleration.png", "technique/approach-upright.png"], caption: "Imatge 2: L’atleta inicia la fase d’acceleració amb el tronc lleugerament inclinat cap endavant i a mesura que va agafant velocitat assoleix una posició més vertical. Font pròpia." },
+      { type: 'paragraph', text: "Durant els últims passos de la cursa, l’atleta ha d’incrementar la freqüència de les gambades i l’elevació dels genolls, mantenint una trajectòria horitzontal i recta. A diferència del salt de llargada, on es pot modificar l’última gambada per abaixar el centre de gravetat i aconseguir un angle de sortida més elevat, en el triple salt és crucial mantenir una trajectòria de cursa alta i horitzontal, evitant generar una velocitat vertical excessiva que pugui perjudicar la continuïtat dels salts. Per aconseguir-ho, les cames han de descriure un moviment semicircular que afavoreixi la fluïdesa de la cursa i permeti arribar a la taula de batuda en la posició òptima." },
+      { type: 'paragraph', text: "A més, el moviment dels braços juga un paper clau durant aquesta fase, ja que ajuda a generar velocitat i a mantenir la coordinació entre el tren superior i l’inferior. Els braços s’han de moure energèticament i han d’anar coordinats amb les cames, perquè una acció més ràpida dels braços incrementa la freqüència del moviment de les cames. Aquesta acció, a més, contribueix a impulsar els genolls amunt i endavant. Alhora, és important que l’atleta mantingui una actitud relaxada, perquè una tensió excessiva del tren superior pot afectar negativament la tècnica de carrera." },
+      { type: 'paragraph', text: "Un altre aspecte fonamental és el talonament, que implica a establir prèviament la distància de la cursa, mesurada en peus, per assegurar que l’atleta arribi correctament a la taula de batuda. Aquest ajustament depèn de diversos factors, com la tècnica de carrera, el ritme i la distribució de l’esforç. Per aquest motiu, encara que l’atleta mantingui una cursa uniforme, pot ser necessari modificar el talonament en diferents intents si no aconsegueix ajustar correctament l’últim recolzament a la taula." },
+      { type: 'figure', src: "technique/approach-checkmark.jpeg", caption: "Imatge 3: Procés de talonació. Font pròpia." },
+      { type: 'paragraph', text: "Pel que fa a la posició del peu, és essencial que es romangui “armat” abans del contacte amb el terra, és a dir, amb la punta aixecada. Aquesta postura facilita un recolzament actiu i afavoreix la continuïtat del moviment, a més de contribuir a l’elevació del genoll i a mantenir una postura corporal correcta. En canvi, si el peu entra en contacte amb el terra amb la punta caiguda, pot dificultar l'acció d'impuls i provocar una acció de frenada. Per això, el recolzament ha de ser ràpid i dinàmic, minimitzant el temps de contacte amb el terra per evitar perdre velocitat i alteracions brusques de la postura corporal." },
+      { type: 'figure', src: "technique/approach-foot.png", caption: "Imatge 4: L’atleta entra en contacte amb la pista amb el peu “armat”, cosa que permet una postura recta del cos. Font pròpia." },
+      { type: 'paragraph', text: "Finalment, la transició entre la cursa d’aproximació i la batuda ha de ser fluida, sense anticipar el salt ni interrompre la continuïtat de la carrera. L’atleta ha de mantenir la mirada endavant i seguir una trajectòria horitzontal, evitant mirar cap a terra per buscar visualment la taula. D’aquesta manera, es pot iniciar la primera fase del triple salt amb la velocitat i la coordinació adequades." },
+      { type: 'figure', src: "technique/approach-forward-look.jpeg", caption: "Imatge 5: L’atleta realitza una cursa ràpida i amb la mirada fixa cap endavant. Font pròpia." }
+    ]
+  },
+  {
+    id: "hop",
+    label: "Hop",
+    pdfTitle: "2. Primera fase: hop",
+    accentColor: "var(--color-hop)",
+    content: [
+      { type: 'paragraph', text: "El hop és el primer dels tres salts del triple salt. Comença amb la batuda sobre la taula i consisteix a impulsar-se amb una cama per tornar a contactar amb el terra amb aquesta mateixa cama. L’objectiu principal d’aquesta fase no és aconseguir la màxima alçada, sinó avançar mantenint la màxima velocitat horitzontal possible de la cursa d’aproximació. Per això, la trajectòria del salt ha de ser relativament baixa i dirigida cap endavant. Així, es facilita la continuïtat dels moviments i es prepara l’atleta per a la segona fase, el step." },
+      { type: 'paragraph', text: "Durant la batuda, el peu entra en contacte amb la taula i exerceix la força necessària per impulsar el cos cap endavant i lleugerament cap amunt. És important que el contacte sigui ràpid i actiu, per evitar una pèrdua excessiva de velocitat horitzontal. Aquesta batuda no ha de ser tan pronunciada com la del salt de llargada, ja que l’atleta haurà de tornar a recolzar-se sobre la mateixa cama i necessita conservar prou velocitat per continuar la seqüència de salts." },
+      { type: 'paragraph', text: "Un cop el peu deixa la taula, comença la fase de vol. En aquest moment, la cama que ha realitzat la batuda es flexiona i fa un moviment circular sota el maluc, com si estigués pedalejant. Aquest gest ajuda a recuperar la cama i preparar-la pel pròxim contacte amb el terra. Al mateix temps, la cama lliure avança i eleva el genoll. El tronc s’ha de mantenir vertical i equilibrat, mentre que els braços es mouen de manera coordinada amb les cames per ajudar a mantenir l’estabilitat i facilitar la continuïtat del moviment. Els braços es poden moure de dues maneres durant els salts: realitzant un moviment altern de braços (estil polonès) o utilitzant la tècnica dels braços simultanis (estil rus)." },
+      { type: 'paragraph', text: "La recepció del hop és un moment especialment exigent, ja que l’atleta torna a contactar amb el terra amb la mateixa cama que ha utilitzat per a la batuda. Per preparar aquest contacte, la cama s’estén gairebé del tot i el peu toca a terra de manera activa amb la planta (en unió amb el taló), procurant que el recolzament es produeixi a prop del centre de masses. Aquesta acció ajuda a minimitzar l’efecte de frenada i a conservar la velocitat horitzontal, alhora que permet enllaçar la recepció amb la batuda del step." },
+      { type: 'figure', src: "technique/hop.webp", caption: "Imatge 6: Fase de vol del hop. L’atleta realitza un moviment circular de la cama de batuda sota el maluc (efecte de pedaleig), mentre la cama lliure avança amb el genoll elevat. Els braços acompanyen el moviment de manera coordinada per mantenir l'equilibri i la posició vertical del tronc. Font pròpia." }
+    ]
+  },
+  {
+    id: "step",
+    label: "Step",
+    pdfTitle: "3. Segona fase: step",
+    accentColor: "var(--color-step)",
+    content: [
+      { type: 'paragraph', text: "El step és el segon salt del triple salt. Comença quan l’atleta torna a impulsar-se amb la mateixa cama amb què ha aterrat després del hop i acaba quan toca el terra amb la cama contrària. Aquesta fase és especialment exigent perquè l’atleta ha de mantenir l’equilibri i conservar tanta velocitat horitzontal com sigui possible. Per tant, és important enllaçar els moviments de manera contínua, sense perdre massa velocitat ni deixar que el cos s’enfonsi durant el salt." },
+      { type: 'paragraph', text: "Durant la batuda del step, el peu entra en contacte amb el terra de manera activa i la cama de suport s’estén per impulsar el cos. Alhora, la cama lliure es mou amb força cap amunt i endavant, amb el genoll flexionat i elevat. Aquesta acció és clau per projectar el cos i mantenir una bona postura durant el vol. El tronc ha de romandre vertical i recte, evitant inclinacions excessives que poden afectar l’equilibri. També és fonamental que el contacte amb el terra sigui ràpid, per reduir la pèrdua de velocitat i facilitar la continuïtat cap al tercer salt." },
+      { type: 'paragraph', text: "Durant la fase de vol del step, braços, espatlles i cames han de treballar en harmonia. El moviment de basculació implica coordinar l’acció del tren superior amb el moviment oposat dels malucs, ajudant a estabilitzar el cos i compensar les rotacions que poden aparèixer durant el salt. Aquesta coordinació és essencial per mantenir una posició equilibrada, preparar un contacte actiu amb el terra i evitar una pèrdua brusca de velocitat abans d’iniciar el jump." },
+      { type: 'paragraph', text: "En la recepció del step, l’atleta toca a terra amb la cama contrària a la que ha utilitzat en la batuda. Aquest contacte ha de ser actiu, permetent que el moviment continuï sense interrupcions. És important evitar una recepció passiva, entrar amb la punta del peu o deixar que el cos s’enfonsi abans de la següent batuda. Una bona coordinació entre la cama de suport, la cama lliure i els braços facilita la preparació del tercer salt." },
+      { type: 'figure', src: "technique/step.webp", caption: "Imatge 7: Fase de vol del step. Font pròpia." }
+    ]
+  },
+  {
+    id: "jump",
+    label: "Jump",
+    pdfTitle: "4. Tercera fase: jump",
+    accentColor: "var(--color-jump)",
+    content: [
+      { type: 'paragraph', text: "El jump és el tercer i últim salt de la seqüència. Es realitza amb la cama contrària a les dues primeres batudes. En aquesta fase, l’atleta ha d’aprofitar la velocitat horitzontal i la força que encara conserva per aconseguir la màxima distància possible abans de caure al fossat de sorra. Com que durant els salts anteriors s’ha anat perdent velocitat, és important executar una batuda eficaç i mantenir una bona coordinació dels moviments." },
+      { type: 'paragraph', text: "Durant l’enlairament del jump, la cama de batuda s’estén per impulsar el cos cap endavant i cap amunt. Al mateix temps, la cama lliure es dirigeix cap endavant amb el genoll elevat, mentre que el tronc es manté vertical i els braços acompanyen el moviment per potenciar l’impuls. A diferència dels dos salts anteriors, en aquesta fase es busca una trajectòria una mica més elevada, ja que és l’última oportunitat per guanyar distància abans de la caiguda." },
+      { type: 'figure', src: "technique/jump-takeoff.webp", caption: "Imatge 8: Inici de la fase de vol del jump. L'atleta s'impulsa cercant una trajectòria una mica més elevada. Font pròpia." },
+      { type: 'paragraph', text: "La fase de vol del jump es pot dividir en quatre moments: l’enlairament, que és quan l’atleta deixa el terra després de la batuda. La suspenció, durant la qual l’atleta flota a l’aire i prepara la posició del cos. L’adaptació, en què els braços i les cames es col·loquen cap endavant per preparar l’aterratge. Finalment, la caiguda, que és quan es produeix el contacte amb la sorra. Durant aquests moments, és clau mantenir l’equilibri i preparar bé les cames per aprofitar al màxim la distància del salt." },
+      { type: 'figure', src: "technique/jump-adaptation.jpeg", caption: "Imatge 9: Canvi de la fase de suspensió a adaptació. Font pròpia." }
+    ]
+  },
+  {
+    id: "caiguda",
+    label: "Caiguda",
+    pdfTitle: "5. Vol i caiguda al fossat",
+    accentColor: "hsl(var(--foreground))",
+    content: [
+      { type: 'paragraph', text: "La caiguda al fossat és l’última part del triple salt i és important perquè la manera d’aterrar pot fer guanyar o perdre distància en el resultat final. Durant el tram final del vol, l’atleta ha de flexionar els malucs i projectar les dues cames cap endavant, mantenint-les elevades fins al moment del contacte amb la sorra. Els braços també juguen un paper important per conservar aquesta posició i a mantenir l’equilibri del cos mentre es prepara l’aterratge." },
+      { type: 'paragraph', text: "El primer contacte amb la sorra es fa amb els talons i les cames estirades cap endavant. Just després, l’atleta flexiona els genolls i inclina el tronc cap endavant, de manera que el cos passi per sobre de la marca dels peus. D’aquesta manera, s’evita caure cap enrere i deixar una marca més pròxima a la taula de batuda, cosa que reduiria la distància registrada." },
+      { type: 'figure', src: "technique/landing.webp", caption: "Imatge 10: Caiguda del jump amb les cames i els braços projectats cap al davant. Font pròpia." }
+    ]
+  }
+];
+
 function ProductHub({ analysisWorkspace }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -1526,8 +1615,67 @@ function ProductHub({ analysisWorkspace }: Props) {
       </section>
     );
     if (page === "tècnica") {
-      const blocks = ["Cursa d’aproximació", "Entrada a la taula", "Hop", "Step", "Jump", "Caiguda", "Errors habituals", "Correccions"];
-      return <section className="hub-page"><BackButton onClick={() => setPage("inici")} /><div className="hub-title-row"><div><span className="eyebrow">Espai de contingut</span><h1>Tècnica</h1><p>Prepara explicacions, vídeos, imatges i exercicis per a cada fase del triple salt.</p></div></div><div className="content-placeholder-grid">{blocks.map((block) => <article key={block} className="content-placeholder"><span className="placeholder-icon"><BookOpen size={19} /></span><h2>{block}</h2><p>Aquí apareixerà el contingut quan l’afegeixis.</p><div><span>Text</span><span>Vídeo</span><span>Imatges</span></div></article>)}</div></section>;
+      return (
+        <section className="hub-page">
+          <BackButton onClick={() => setPage("inici")} />
+          <div className="hub-title-row">
+            <div>
+              <span className="eyebrow">Espai de contingut</span>
+              <h1>Tècnica i Biomecànica</h1>
+              <p>Coneix a fons les fases del triple salt i la biomecànica d'una execució perfecta.</p>
+            </div>
+          </div>
+
+          <div className="technique-container">
+            <div className="technique-intro">
+              {techniqueIntro.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+
+              <figure className="technique-sequence animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+                <img src={`${import.meta.env.BASE_URL}technique/sequence.png`} alt="Seqüència completa del triple salt" />
+                <figcaption>Imatge 1: Seqüència completa del triple salt. Font pròpia.</figcaption>
+              </figure>
+            </div>
+
+            <div className="technique-cards-wrapper">
+              {techniqueSections.map((section, index) => (
+                <article
+                  key={section.id}
+                  className="technique-card animate-in fade-in slide-in-from-bottom-8 duration-700"
+                  style={{
+                    '--card-accent': section.accentColor,
+                    animationDelay: `${(index + 2) * 150}ms`
+                  } as React.CSSProperties}
+                >
+                  <header className="technique-card-header">
+                    <h2 className="technique-card-label">{section.label}</h2>
+                    <div className="technique-card-subtitle">{section.pdfTitle}</div>
+                  </header>
+                  <div className="technique-content">
+                    {section.content.map((block, bIndex) => {
+                      if (block.type === 'paragraph') {
+                        return <p key={bIndex} className="technique-text">{block.text}</p>;
+                      } else {
+                        return (
+                          <figure key={bIndex} className="technique-figure">
+                            <div className={`technique-figure-media ${Array.isArray(block.src) ? "is-gallery" : ""}`}>
+                              {(Array.isArray(block.src) ? block.src : [block.src]).map((src) => (
+                                <img src={`${import.meta.env.BASE_URL}${src}`} alt={block.caption} key={src} />
+                              ))}
+                            </div>
+                            <figcaption>{block.caption}</figcaption>
+                          </figure>
+                        );
+                      }
+                    })}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
     }
     return null;
   };

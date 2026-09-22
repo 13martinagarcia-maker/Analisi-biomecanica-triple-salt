@@ -6152,3 +6152,176 @@ button {
     flex-direction: column;
   }
 }
+
+/* Tècnica & Biomecànica Page */
+.technique-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  padding-bottom: 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.technique-intro {
+  max-width: 80ch;
+}
+
+.technique-intro p {
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  line-height: 1.7;
+  color: hsl(var(--foreground) / 0.85);
+  margin-bottom: 1.5rem;
+}
+
+.technique-sequence {
+  margin: 3rem 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.5);
+  background: hsl(var(--muted) / 0.3);
+  box-shadow: var(--shadow-sm);
+}
+
+.technique-sequence img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.technique-sequence figcaption {
+  padding: 1rem 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border) / 0.5);
+}
+
+.technique-cards-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.technique-card {
+  position: relative;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--card-border));
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.technique-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Accent line at the top */
+.technique-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: var(--card-accent, hsl(var(--primary)));
+}
+
+.technique-card-header {
+  margin-bottom: 2.5rem;
+}
+
+.technique-card-label {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--card-accent, hsl(var(--foreground)));
+  margin-bottom: 0.5rem;
+}
+
+.technique-card-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: hsl(var(--muted-foreground));
+}
+
+.technique-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.technique-text {
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: hsl(var(--card-foreground) / 0.9);
+  max-width: 75ch;
+  margin: 0;
+}
+
+.technique-figure {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.6);
+  background: hsl(var(--muted) / 0.2);
+  margin: 1.5rem 0;
+}
+
+.technique-figure img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.technique-figure-media.is-gallery {
+  display: grid;
+  grid-template-columns: minmax(0, 2.6fr) minmax(9rem, 1fr);
+  align-items: stretch;
+}
+
+.technique-figure-media.is-gallery img {
+  width: 100%;
+  height: 100%;
+  min-height: 15rem;
+  object-fit: cover;
+}
+
+.technique-card:hover .technique-figure img {
+  transform: scale(1.015);
+}
+
+.technique-figure figcaption {
+  padding: 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border) / 0.6);
+  background: hsl(var(--muted) / 0.1);
+  line-height: 1.5;
+}
+
+/* On large screens, cards alternate image position if desired. Let's keep it simple and elegant stacked for now. */
+@media (min-width: 1024px) {
+  .technique-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .technique-figure-media.is-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .technique-figure-media.is-gallery img {
+    min-height: 0;
+    max-height: 18rem;
+    object-position: center 35%;
+  }
+}
