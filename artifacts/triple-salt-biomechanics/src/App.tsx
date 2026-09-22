@@ -2436,6 +2436,11 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
             </div>
           </section>
 
+          <div className="precision-notice" role="note">
+            <Info size={18} aria-hidden="true" />
+            <p>Sigues el màxim precís marcant els punts ja que, una petita desviació pot generar un marge d'error molt gran.</p>
+          </div>
+
           <section className="workspace">
             {!analysisStarted ? (
               <div className="phase-setup-flow">

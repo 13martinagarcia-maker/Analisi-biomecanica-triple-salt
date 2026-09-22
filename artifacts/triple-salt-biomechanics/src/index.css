@@ -1213,6 +1213,31 @@ button {
   line-height: 1.45;
 }
 
+.precision-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  margin-bottom: 1rem;
+  padding: .85rem 1rem;
+  border: 1px solid hsl(24 76% 48% / .28);
+  border-left: 4px solid hsl(24 76% 48%);
+  border-radius: .5rem;
+  background: hsl(24 76% 48% / .08);
+  color: hsl(24 76% 32%);
+}
+
+.precision-notice svg {
+  flex: 0 0 auto;
+  margin-top: .08rem;
+}
+
+.precision-notice p {
+  margin: 0;
+  font-size: .9rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
 .timeline-segment {
   position: absolute;
   top: 50%;
