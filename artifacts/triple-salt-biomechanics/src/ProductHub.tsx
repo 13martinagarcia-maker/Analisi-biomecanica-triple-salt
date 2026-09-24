@@ -1207,7 +1207,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     return (
       <main className="auth-page">
         <section className="auth-intro">
-          <div className="brand-lockup"><span className="brand-mark">TS<br />01</span><span>Triple Salt</span></div>
+          <div className="brand-lockup"><span className="brand-mark">TS<br />01</span><span>A peu de salt</span></div>
           <div><span className="eyebrow">Seguiment esportiu</span><h1>El teu salt, temporada rere temporada.</h1><p>Un espai personal per registrar competicions, seguir l’evolució i conservar l’anàlisi de casa.</p></div>
           <div className="auth-feature-list"><span><Activity size={16} /> Seguiment de la temporada</span><span><Target size={16} /> Objectius visibles</span><span><CircleGauge size={16} /> Anàlisi disponible des de casa</span></div>
         </section>
@@ -1244,7 +1244,7 @@ function ProductHub({ analysisWorkspace }: Props) {
     return (
       <main className="athlete-selection-page">
         <header className="athlete-selection-header">
-          <div className="brand-lockup"><span className="brand-mark">TS<br />01</span><span>Triple Salt</span></div>
+          <div className="brand-lockup"><span className="brand-mark">TS<br />01</span><span>A peu de salt</span></div>
           <button className="button-quiet" onClick={logout}><LogOut size={14} /> Tancar sessió</button>
         </header>
         <section className="athlete-selection-content">
@@ -1682,7 +1682,7 @@ function ProductHub({ analysisWorkspace }: Props) {
 
   return (
     <div className="hub-shell">
-         {page !== "casa" && <aside className="hub-sidebar"><div className="sidebar-brand"><div className="brand-mark">TS<br />01</div><div><div className="font-display" style={{ fontSize: "1.1rem", lineHeight: 1 }}>Triple Salt</div><div className="sidebar-label" style={{ padding: ".35rem 0 0", color: "hsl(215 14% 67%)" }}>{selectedAthlete.firstName} {selectedAthlete.lastName}</div></div></div><nav className="sidebar-nav" aria-label="Navegació principal"><div className="sidebar-label">El teu espai</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}><item.icon size={16} /><span>{item.label}</span></button>)}</nav><div className="hub-user-block"><span className="athlete-avatar">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><strong>{selectedAthlete.firstName} {selectedAthlete.lastName}</strong><button onClick={openAthleteSelection}><Users size={12} /> Canviar atleta</button><button onClick={logout}><LogOut size={12} /> Tancar sessió</button></div></div></aside>}
+         {page !== "casa" && <aside className="hub-sidebar"><div className="sidebar-brand"><div className="brand-mark">TS<br />01</div><div><div className="font-display" style={{ fontSize: "1.1rem", lineHeight: 1 }}>A peu de salt</div><div className="sidebar-label" style={{ padding: ".35rem 0 0", color: "hsl(215 14% 67%)" }}>{selectedAthlete.firstName} {selectedAthlete.lastName}</div></div></div><nav className="sidebar-nav" aria-label="Navegació principal"><div className="sidebar-label">El teu espai</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => setPage(item.id)}><item.icon size={16} /><span>{item.label}</span></button>)}</nav><div className="hub-user-block"><span className="athlete-avatar">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><strong>{selectedAthlete.firstName} {selectedAthlete.lastName}</strong><button onClick={openAthleteSelection}><Users size={12} /> Canviar atleta</button><button onClick={logout}><LogOut size={12} /> Tancar sessió</button></div></div></aside>}
       <main className={page === "casa" ? "hub-analysis-main" : "hub-main"}>
          {page === "casa" && <div className="analysis-hub-bar"><button className="button-outline" onClick={() => setPage("inici")}><ArrowLeft size={14} /> Tornar a l’espai de temporada</button><div><span className="athlete-avatar">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><strong>{selectedAthlete.firstName} {selectedAthlete.lastName}</strong><button className="button-quiet" onClick={openAthleteSelection}><Users size={14} /><span>Canviar atleta</span></button><button className="button-quiet" onClick={logout}><LogOut size={14} /><span>Tancar sessió</span></button></div></div>}
         {page !== "casa" && page !== "inici" && (

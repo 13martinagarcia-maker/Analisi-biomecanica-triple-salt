@@ -2368,7 +2368,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         <div className="sidebar-brand">
           <div className="brand-mark">TS<br />01</div>
           <div>
-            <div className="font-display" style={{ fontSize: '1.1rem', lineHeight: 1 }}>Triple Salt</div>
+            <div className="font-display" style={{ fontSize: '1.1rem', lineHeight: 1 }}>A peu de salt</div>
             <div className="sidebar-label" style={{ padding: '.35rem 0 0', color: 'hsl(215 14% 67%)' }}>Anàlisi biomecànica</div>
           </div>
         </div>
