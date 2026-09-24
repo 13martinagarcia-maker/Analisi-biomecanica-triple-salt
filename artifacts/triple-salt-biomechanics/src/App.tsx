@@ -2127,12 +2127,12 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     <div className="panel">
                 <div className="panel-header">
                   <div className="panel-title"><Settings2 size={17} /> Referència · {activeClipPhase}</div>
-                  <span className="eyebrow">Jonathan Edwards</span>
+                  <span className="eyebrow">Angles biomecànics ideals</span>
                 </div>
                 <div className="panel-body">
-                  <img src={referenceImage} alt="Imatge de referència biomecànica de Jonathan Edwards" className="reference-image" />
-                  <div className="small-note" style={{ marginBottom: '.8rem' }}>La metodologia interna és configurable i no s’assumeixen nous criteris fins que es defineixin.</div>
-                  <div className="reference-strip" aria-label="Jonathan Edwards reference values">
+                  <img src={referenceImage} alt="Esquema dels angles biomecànics de referència per al triple salt" className="reference-image" />
+                  <div className="small-note" style={{ marginBottom: '.8rem' }}>Aquests són angles de referència biomecànicament ideals per a un saltador de triple. Són els que més s’acosten als de Jonathan Edwards, però no són mesures seves.</div>
+                  <div className="reference-strip" aria-label="Valors biomecànics de referència">
                     {REFERENCE_ROWS.filter((row) => row.phase === activeClipPhase).map((row) => <div className="reference-cell" key={row.phase}><strong>{row.phase}</strong><span>{row.lead} · {row.trail}</span><span>{row.internal}</span></div>)}
                   </div>
                   <div className="small-note" style={{ marginTop: '.8rem' }}>Angle calculat del fotograma actual: <strong data-testid="text-live-angle">{liveAngle === null ? '—' : `${liveAngle.toFixed(1)}°`}</strong> <span style={{ color: 'hsl(216 13% 43%)' }}>({angleDefinition === 'internal' ? 'angle intern' : 'segment respecte a l’horitzontal'})</span></div>
@@ -2148,7 +2148,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
             </div>
             <div className="panel-body">
               <div className="section-caption">
-                <div><h2>Targetes d’anàlisi per batuda</h2><div className="small-note">Els fotogrames es detecten automàticament i es poden corregir opcionalment; es comparen amb Jonathan Edwards.</div></div>
+                <div><h2>Targetes d’anàlisi per batuda</h2><div className="small-note">Els fotogrames es detecten automàticament i es poden corregir opcionalment; els angles es comparen amb valors biomecànics ideals, propers als de Jonathan Edwards, però no mesurats en ell.</div></div>
                 <button className="button-quiet" onClick={() => { setFrameSlots(createEmptyFrameSlots()); setFrameImages({ HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }); }} data-testid="button-clear-measurements"><X size={14} /> Restablir anàlisi</button>
               </div>
               {completedChartPhases.length > 0 && (
@@ -2166,7 +2166,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                       <section className={`phase-comparison-chart ${phase.toLowerCase()}`} key={`chart-${phase}`}>
                         <header>
                           <div><span className="eyebrow">Comparació dels 3 angles</span><h3>{phase}</h3></div>
-                          <span className="phase-chart-legend"><i className="athlete" /> Atleta <i className="jonathan" /> Jonathan Edwards</span>
+                          <span className="phase-chart-legend"><i className="athlete" /> Atleta <i className="jonathan" /> Referència ideal</span>
                         </header>
                         <div className="phase-chart-angles">
                           {rows.map((row) => {
@@ -2192,7 +2192,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                                   <strong>{athleteValue.toFixed(1)}°</strong>
                                 </div>
                                 <div className="comparison-bar-row">
-                                  <span>Jonathan</span>
+                                  <span>Ideal</span>
                                   <div><i className="jonathan-bar" style={{ width: `${(referenceValue / maximum) * 100}%` }} /></div>
                                   <strong>{referenceValue.toFixed(1)}°</strong>
                                 </div>
@@ -2286,8 +2286,8 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                               </header>
                               <div className="analysis-visual-pair">
                                 <figure className={`analysis-reference-visual reference-crop-${phase.toLowerCase()}`}>
-                                  <img src={referenceImage} alt={`${phaseTitle(phase)} de Jonathan Edwards`} />
-                                  <figcaption>REFERÈNCIA · JONATHAN EDWARDS</figcaption>
+                                  <img src={referenceImage} alt={`Esquema biomecànic de referència per a ${phaseTitle(phase)}`} />
+                                  <figcaption>REFERÈNCIA BIOMECÀNICA IDEAL</figcaption>
                                 </figure>
                                 <figure className="analysis-athlete-visual">
                                   {frameImages[phase][index] ? <img src={frameImages[phase][index] ?? undefined} alt={`${athlete}, ${phase} fotograma ${index + 1}`} /> : <div className="analysis-image-empty">Fotograma no disponible</div>}
@@ -2330,7 +2330,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                 <summary>Veure també la taula de resultats</summary>
                 <div className="report-table-wrap">
                 <table className="report-table">
-                  <thead><tr><th>Salt</th><th>Fotograma</th><th>Angle</th><th>Jonathan Edwards</th><th>Atleta</th><th>Diferència</th><th>Estat</th></tr></thead>
+                  <thead><tr><th>Salt</th><th>Fotograma</th><th>Angle</th><th>Referència ideal</th><th>Atleta</th><th>Diferència</th><th>Estat</th></tr></thead>
                   <tbody>
                     {resultRows.map((row) => {
                       const referenceText = referenceTextForSlot(row.phase, row.slot);
@@ -2521,9 +2521,9 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                         data-testid={`tab-analysis-${phase.toLowerCase()}`}
                       >
                         <figure className={`phase-tab-reference reference-crop-${phase.toLowerCase()}`}>
-                          <img src={referenceImage} alt={`Referència ${phase} de Jonathan Edwards`} />
+                          <img src={referenceImage} alt={`Esquema biomecànic de referència per a ${phase}`} />
                         </figure>
-                        <span><strong>{phase}</strong><small>Jonathan Edwards · {selectedCount} / 3</small></span>
+                        <span><strong>{phase}</strong><small>Referència ideal · {selectedCount} / 3</small></span>
                       </button>
                     );
                   })}
@@ -2615,7 +2615,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                                         <div className="angle-point-progress"><span>Punts seleccionats</span><strong>{slot.points.length} / {requiredAnglePointCount}</strong></div>
                                         <button type="button" className="button-outline w-full" onClick={() => { updateActiveFrameSlot({ points: [] }); setAngleSelectionMode(true); }} disabled={!slot.points.length} data-testid="button-reset-angle-points"><RotateCcw size={14} /> Repetir selecció</button>
                                         <div className="reference-picker">
-                                          <span className="eyebrow">Comparar amb Jonathan</span>
+                                          <span className="eyebrow">Comparar amb la referència ideal</span>
                                           <div>
                                             {([
                                               ['lead', 'Cama davantera'],
@@ -2630,8 +2630,8 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                                         <div className="panel-body">
                                           <div className="inline-comparison-visuals">
                                             <figure className={`analysis-reference-visual reference-crop-${phase.toLowerCase()}`}>
-                                              <img src={referenceImage} alt={`${phase} de Jonathan Edwards`} />
-                                              <figcaption>JONATHAN EDWARDS · {phase}</figcaption>
+                                              <img src={referenceImage} alt={`Esquema biomecànic de referència per a ${phase}`} />
+                                              <figcaption>REFERÈNCIA BIOMECÀNICA · {phase}</figcaption>
                                             </figure>
                                             <figure className="analysis-athlete-visual">
                                               {image ? <img src={image} alt={`${athlete}, ${phase}, fotograma ${slotIndex + 1}`} /> : <div className="analysis-image-empty">Fotograma no disponible</div>}
