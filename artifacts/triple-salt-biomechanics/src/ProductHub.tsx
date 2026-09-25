@@ -91,7 +91,7 @@ export type HomeAnalysisPayload = {
     snapshot?: Record<string, unknown>;
   };
 };
-type HomeAnalysis = HomeAnalysisPayload & { id: string; createdAt: string };
+type HomeAnalysis = Omit<HomeAnalysisPayload, "athleteId"> & { id: string; athleteId: string | null; createdAt: string };
 type AssessmentDiagnosis = {
   principalError: string;
   associatedErrors: string[];
@@ -737,6 +737,7 @@ function ProductHub({ analysisWorkspace }: Props) {
   const [athleteFormOpen, setAthleteFormOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
   const [athleteToDelete, setAthleteToDelete] = useState<Athlete | null>(null);
+  const [deletingAthlete, setDeletingAthlete] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [assessmentAnswers, setAssessmentAnswers] = useState<Record<string, number>>({});
   const [assessmentSaved, setAssessmentSaved] = useState(false);
@@ -879,19 +880,30 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const deleteAthlete = async () => {
-    if (!athleteToDelete) return;
+    if (!athleteToDelete || deletingAthlete) return;
+    setDeletingAthlete(true);
     try {
       await api(`/athletes/${athleteToDelete.id}`, { method: "DELETE" });
       setAthletes((prev) => prev.filter((a) => a.id !== athleteToDelete.id));
+      setCompetitions((prev) => prev.map((item) => item.athleteId === athleteToDelete.id ? { ...item, athleteId: null } : item));
+      setEvaluations((prev) => prev.map((item) => item.athleteId === athleteToDelete.id ? { ...item, athleteId: null } : item));
+      setHomeAnalyses((prev) => prev.map((item) => item.athleteId === athleteToDelete.id ? { ...item, athleteId: null } : item));
       if (selectedAthleteId === athleteToDelete.id) {
         setSelectedAthleteId("");
         setAthleteSelectionOpen(true);
         setPage("inici");
+        setSelectedEvaluationId(null);
+        setSelectedHomeAnalysisId(null);
+        setSelectedHomeSnapshot(null);
+        setSelectedCompetitionId("");
       }
       notify("Atleta esborrat correctament.");
       setAthleteToDelete(null);
+      setEditingAthlete(null);
     } catch (error) {
       notify(error instanceof Error ? error.message : "No s'ha pogut esborrar l'atleta.");
+    } finally {
+      setDeletingAthlete(false);
     }
   };
 
@@ -1240,6 +1252,25 @@ function ProductHub({ analysisWorkspace }: Props) {
     );
   }
 
+  const athleteDeleteDialog = athleteToDelete && (
+    <div className="modal-backdrop">
+      <section className="modal delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-athlete-title" aria-describedby="delete-athlete-description">
+        <span className="delete-warning-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'hsl(4 69% 47%)' }}><Trash2 size={24} /></span>
+        <div>
+          <span className="eyebrow">Confirmació necessària</span>
+          <h2 id="delete-athlete-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Vols esborrar el perfil de {athleteToDelete.firstName} {athleteToDelete.lastName}?</h2>
+          <p id="delete-athlete-description" style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>
+            Aquesta acció no es pot desfer. Les competicions, valoracions i anàlisis guardades es conservaran, però quedaran desvinculades del perfil i no apareixeran al seu historial. Els vídeos vinculats a aquesta fitxa deixaran d’estar disponibles.
+          </p>
+        </div>
+        <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+          <button type="button" className="button-outline" onClick={() => setAthleteToDelete(null)} disabled={deletingAthlete}>Cancel·lar</button>
+          <button type="button" className="button-danger" onClick={() => void deleteAthlete()} disabled={deletingAthlete}><Trash2 size={15} /> {deletingAthlete ? 'Esborrant…' : 'Sí, esborrar perfil'}</button>
+        </div>
+      </section>
+    </div>
+  );
+
   if (athleteSelectionOpen || !selectedAthlete) {
     return (
       <main className="athlete-selection-page">
@@ -1277,6 +1308,7 @@ function ProductHub({ analysisWorkspace }: Props) {
                     <div className="athlete-selection-actions">
                       <button className="button-outline" onClick={() => { setEditingAthlete(athlete); setAthleteFormOpen(true); }}><Pencil size={14} /> Editar</button>
                       <button className="button-primary" onClick={() => resetAthleteContext(athlete.id)}>Entrar al perfil <ArrowRight size={15} /></button>
+                      <button type="button" className="button-danger athlete-selection-delete" onClick={() => setAthleteToDelete(athlete)} aria-label={`Esborrar el perfil de ${athlete.firstName} ${athlete.lastName}`}><Trash2 size={14} /> Esborrar perfil</button>
                     </div>
                   </article>
                 );
@@ -1295,6 +1327,7 @@ function ProductHub({ analysisWorkspace }: Props) {
             </form>
           </div>
         )}
+        {athleteDeleteDialog}
         {feedback && <div className="toast">{feedback}</div>}
       </main>
     );
@@ -1734,22 +1767,7 @@ function ProductHub({ analysisWorkspace }: Props) {
           </form>
         </div>
       )}
-      {athleteToDelete && (
-        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAthleteToDelete(null); }}>
-          <section className="modal delete-modal" role="alertdialog">
-            <span className="delete-warning-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'hsl(4 69% 47%)' }}><Trash2 size={24} /></span>
-            <div>
-              <span className="eyebrow">Confirmació necessària</span>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Vols esborrar a {athleteToDelete.firstName}?</h2>
-              <p style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>Aquesta acció esborrarà la fitxa de l'atleta. <strong>Atenció:</strong> les competicions, avaluacions i anàlisis existents no s'esborraran, però quedaran desvinculades a l'historial.</p>
-            </div>
-            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              <button type="button" className="button-outline" onClick={() => setAthleteToDelete(null)}>Cancel·lar</button>
-              <button type="button" className="button-danger" onClick={deleteAthlete}><Trash2 size={15} /> Sí, esborrar</button>
-            </div>
-          </section>
-        </div>
-      )}
+      {athleteDeleteDialog}
       {competitionToDelete && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setCompetitionToDelete(null); }}>
         <section className="modal competition-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-competition-title">
           <span className="delete-warning-icon"><Trash2 size={22} /></span>

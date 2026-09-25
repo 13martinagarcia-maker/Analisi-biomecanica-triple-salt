@@ -2804,6 +2804,11 @@ button {
   justify-content: center;
 }
 
+.athlete-selection-actions .athlete-selection-delete {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+
 /* 4. PAGE SPACING & HEADER */
 .hub-page {
   flex: 1;
