@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "A peu de salt"
+title = "A peu de pista"
 description = "Aplicació web semiautomàtica per analitzar vídeos de triple salt amb MediaPipe Pose, calcular angles biomecànics i permetre revisar i corregir els resultats."
 version = "1.0.0"
 id = "artifacts/triple-salt-biomechanics"
