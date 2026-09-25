@@ -52,6 +52,7 @@ type FrameSlot = {
   frame: number | null;
   time: number | null;
   points: AnglePoint[];
+  crop?: CropRect | null;
   angleMode: AngleMode;
   label: string;
   referenceId: '' | 'lead' | 'trail' | 'internal';
@@ -440,6 +441,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const [angleSelectionMode, setAngleSelectionMode] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [cropRect, setCropRect] = useState<CropRect | null>(null);
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [draggingAnglePointId, setDraggingAnglePointId] = useState<string | null>(null);
   const [activeClipPhase, setActiveClipPhase] = useState<PhaseKey>('HOP');
   const [activeFrameSlot, setActiveFrameSlot] = useState(0);
@@ -481,8 +483,15 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     setGuides(snapshotValue(snapshot.guides, { horizontal: true, vertical: false, grid: false }) as Record<GuideKey, boolean>);
     setFrameCorrections(snapshotValue(snapshot.frameCorrections, {}) as Record<number, Partial<Record<PointKey, ManualPoint>>>);
     setManualPoints(snapshotValue(snapshot.manualPoints, {}) as Partial<Record<PointKey, ManualPoint>>);
-    setCropRect(snapshotValue(snapshot.cropRect, null) as CropRect | null);
-    setFrameSlots(normalizeFrameSlots(snapshot.frameSlots));
+    setCropRect(null);
+    const restoredSlots = normalizeFrameSlots(snapshot.frameSlots);
+    const legacyCrop = snapshot.cropRect as CropRect | null | undefined;
+    const savedPhase = snapshotValue(snapshot.activeClipPhase, 'HOP') as PhaseKey;
+    const savedSlot = Number(snapshotValue(snapshot.activeFrameSlot, 0));
+    if (legacyCrop && restoredSlots[savedPhase]?.[savedSlot] && !restoredSlots[savedPhase][savedSlot].crop) {
+      restoredSlots[savedPhase][savedSlot] = { ...restoredSlots[savedPhase][savedSlot], crop: legacyCrop };
+    }
+    setFrameSlots(restoredSlots);
     setFrameImages(snapshotValue(snapshot.frameImages, { HOP: [null, null, null], STEP: [null, null, null], JUMP: [null, null, null] }) as Record<PhaseKey, Array<string | null>>);
     const savedMeasurements = snapshotValue(snapshot.measurements, INITIAL_MEASUREMENTS) as Record<PhaseKey, Partial<Measurement> & { trajectory?: string }>;
     setMeasurements(Object.fromEntries((['HOP', 'STEP', 'JUMP'] as PhaseKey[]).map((phase) => [
@@ -551,6 +560,37 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   const activeMeasurement = measurements[activePhase];
   const activeSlot = frameSlots[activeClipPhase][activeFrameSlot];
   const activeFrameImage = frameImages[activeClipPhase][activeFrameSlot];
+  const activeCrop = activeFrameImage && !cropMode ? activeSlot.crop : null;
+  const cropView = useMemo(() => {
+    if (!activeCrop || !stageSize.width || !stageSize.height || activeCrop.width <= 0 || activeCrop.height <= 0) return null;
+    const ratio = sourceDimensions.width / sourceDimensions.height;
+    const imageWidth = Math.min(stageSize.width, stageSize.height * ratio);
+    const imageHeight = Math.min(stageSize.height, stageSize.width / ratio);
+    const factor = Math.min(stageSize.width / (activeCrop.width * imageWidth), stageSize.height / (activeCrop.height * imageHeight));
+    const offsetX = (stageSize.width - imageWidth) / 2;
+    const offsetY = (stageSize.height - imageHeight) / 2;
+    const left = offsetX + activeCrop.left * imageWidth;
+    const top = offsetY + activeCrop.top * imageHeight;
+    return {
+      zoom: factor,
+      panX: (stageSize.width / 2 - left - activeCrop.width * imageWidth / 2) * factor,
+      panY: (stageSize.height / 2 - top - activeCrop.height * imageHeight / 2) * factor,
+      clipPath: `inset(${top}px ${stageSize.width - left - activeCrop.width * imageWidth}px ${stageSize.height - top - activeCrop.height * imageHeight}px ${left}px)`,
+    };
+  }, [activeCrop, sourceDimensions, stageSize]);
+  const viewZoom = cropView?.zoom ?? zoom;
+  const viewPanX = cropView?.panX ?? panX;
+  const viewPanY = cropView?.panY ?? panY;
+  const frameTransform = `translate(${viewPanX}px, ${viewPanY}px) scale(${viewZoom})`;
+  const frameClip = cropView?.clipPath;
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const observer = new ResizeObserver(() => setStageSize({ width: stage.clientWidth, height: stage.clientHeight }));
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [analysisStarted, activeClipPhase, activeFrameSlot, activeFrameImage]);
   const requiredAnglePointCount = activeSlot.angleMode === 'segments' ? 4 : 3;
   const activeClipMark = phases[activeClipPhase];
   const activeClipStart = activeClipMark.start ? Number(activeClipMark.start) : 0;
@@ -702,7 +742,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       const manualPosition = point({ x: position.x, y: position.y });
       context.fillText(key.toUpperCase(), manualPosition.x + 9, manualPosition.y + 3);
     });
-    if (activeFrameImage && cropRect) {
+    if (activeFrameImage && cropMode && cropRect) {
       const cropLeft = offsetX + cropRect.left * videoWidth * scale;
       const cropTop = offsetY + cropRect.top * videoHeight * scale;
       const cropWidth = cropRect.width * videoWidth * scale;
@@ -718,7 +758,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       context.strokeRect(cropLeft, cropTop, cropWidth, cropHeight);
       context.setLineDash([]);
     }
-  }, [activeClipPhase, activeFrameImage, activeFrameSlot, athleteSelectionMode, cropRect, frameSlots, guides, manualPoints, poseCandidates, selectedPoseIndex, showSkeleton]);
+  }, [activeClipPhase, activeFrameImage, activeFrameSlot, athleteSelectionMode, cropMode, cropRect, frameSlots, guides, manualPoints, poseCandidates, selectedPoseIndex, showSkeleton]);
 
   useEffect(() => {
     drawOverlay(landmarks);
@@ -1367,7 +1407,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       showToast('El fotograma original encara no està disponible.');
       return;
     }
-    updateActiveFrameSlot({ frame: exactFrame, time: exactTime, points: [], label: activeSlot.label, referenceId: activeSlot.referenceId });
+    updateActiveFrameSlot({ frame: exactFrame, time: exactTime, points: [], crop: null, label: activeSlot.label, referenceId: activeSlot.referenceId });
     setZoom(1);
     setPanX(0);
     setPanY(0);
@@ -1383,24 +1423,6 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     showToast(`${activeClipPhase} — Fotograma ${activeFrameSlot + 1} seleccionat: F ${currentFrame}.`);
   };
 
-  const focusedCrop = () => {
-    if (cropRect) return cropRect;
-    const stage = stageRef.current;
-    const effectiveZoom = Math.max(1, zoom);
-    const width = 1 / effectiveZoom;
-    const height = 1 / effectiveZoom;
-    const stageWidth = Math.max(1, stage?.clientWidth ?? 1);
-    const stageHeight = Math.max(1, stage?.clientHeight ?? 1);
-    const centerX = .5 - panX / (stageWidth * effectiveZoom);
-    const centerY = .5 - panY / (stageHeight * effectiveZoom);
-    return {
-      left: Math.min(1 - width, Math.max(0, centerX - width / 2)),
-      top: Math.min(1 - height, Math.max(0, centerY - height / 2)),
-      width,
-      height,
-    };
-  };
-
   const detectPoseOnFocusedFrame = async () => {
     if (!activeFrameImage || activeSlot.frame === null) {
       showToast('Primer has de capturar un fotograma.');
@@ -1408,6 +1430,10 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     }
     if (!poseRef.current && !multiPoseRef.current) {
       showToast('MediaPipe Pose encara no està preparat.');
+      return;
+    }
+    if (!activeSlot.crop) {
+      showToast('Primer dibuixa el retall de l’atleta sobre el fotograma.');
       return;
     }
     const image = new Image();
@@ -1425,7 +1451,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       setLandmarks(null);
       setConfidence(null);
       await image.decode();
-      const crop = focusedCrop();
+      const crop = activeSlot.crop;
       const input = document.createElement('canvas');
       input.width = Math.max(320, Math.round(image.naturalWidth * crop.width));
       input.height = Math.max(240, Math.round(image.naturalHeight * crop.height));
@@ -1487,7 +1513,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
   };
 
   const clearActiveFrameSlot = () => {
-    updateActiveFrameSlot({ frame: null, time: null, points: [], label: '', guides: { horizontal: null, vertical: null } });
+    updateActiveFrameSlot({ frame: null, time: null, points: [], crop: null, label: '', guides: { horizontal: null, vertical: null } });
     setAngleSelectionMode(false);
     setDraggingGuide(null);
     setCropMode(false);
@@ -1536,14 +1562,16 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     const offsetY = (height - videoHeight * scale) / 2;
     const transformedX = (event.clientX - stageBounds.left) * (width / stageBounds.width);
     const transformedY = (event.clientY - stageBounds.top) * (height / stageBounds.height);
-    const clickX = width / 2 + (transformedX - width / 2 - panX) / zoom;
-    const clickY = height / 2 + (transformedY - height / 2 - panY) / zoom;
+    const clickX = width / 2 + (transformedX - width / 2 - viewPanX) / viewZoom;
+    const clickY = height / 2 + (transformedY - height / 2 - viewPanY) / viewZoom;
     const rawX = (clickX - offsetX) / (videoWidth * scale);
     const rawY = (clickY - offsetY) / (videoHeight * scale);
     if (rawX < 0 || rawX > 1 || rawY < 0 || rawY > 1) {
       showToast('Selecciona un punt dins de la imatge del vídeo.');
       return;
     }
+    if (activeCrop && (rawX < activeCrop.left || rawX > activeCrop.left + activeCrop.width ||
+        rawY < activeCrop.top || rawY > activeCrop.top + activeCrop.height)) return;
     const x = Math.min(1, Math.max(0, rawX));
     const y = Math.min(1, Math.max(0, rawY));
     const toStage = (landmark: Landmark) => ({
@@ -1577,7 +1605,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       }
       const nearest = (landmarks ?? []).reduce((best, landmark, index) => {
         if ((landmark.visibility ?? 1) < .35) return best;
-        const distance = Math.hypot(toStage(landmark).x - clickX, toStage(landmark).y - clickY);
+        const distance = Math.hypot(toStage(landmark).x - clickX, toStage(landmark).y - clickY) * viewZoom;
         return distance < best.distance ? { index, distance } : best;
       }, { index: -1, distance: Number.POSITIVE_INFINITY });
       const landmarkCorrectionKeys: Partial<Record<number, PointKey>> = { 23: 'hip', 25: 'knee', 27: 'ankle' };
@@ -1645,11 +1673,14 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     const offsetY = (height - videoHeight * scale) / 2;
     const transformedX = (event.clientX - stageBounds.left) * (width / stageBounds.width);
     const transformedY = (event.clientY - stageBounds.top) * (height / stageBounds.height);
-    const clickX = width / 2 + (transformedX - width / 2 - panX) / zoom;
-    const clickY = height / 2 + (transformedY - height / 2 - panY) / zoom;
+    const clickX = width / 2 + (transformedX - width / 2 - viewPanX) / viewZoom;
+    const clickY = height / 2 + (transformedY - height / 2 - viewPanY) / viewZoom;
     const x = (clickX - offsetX) / (videoWidth * scale);
     const y = (clickY - offsetY) / (videoHeight * scale);
-    return x < 0 || x > 1 || y < 0 || y > 1 ? null : { x, y, stageX: clickX, stageY: clickY, scale, videoWidth, videoHeight };
+    return x < 0 || x > 1 || y < 0 || y > 1 ||
+      (activeCrop && (x < activeCrop.left || x > activeCrop.left + activeCrop.width ||
+        y < activeCrop.top || y > activeCrop.top + activeCrop.height))
+      ? null : { x, y, stageX: clickX, stageY: clickY, scale, videoWidth, videoHeight };
   };
 
   const handleCanvasPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
@@ -1671,7 +1702,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
       const distance = Math.hypot(pointX - click.stageX, pointY - click.stageY);
       return distance < best.distance ? { index, distance } : best;
     }, { index: -1, distance: Number.POSITIVE_INFINITY });
-    if (nearest.index < 0 || nearest.distance > 14) return;
+    if (nearest.index < 0 || nearest.distance * viewZoom > 18) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     setDraggingAnglePointId(activeSlot.points[nearest.index].id);
     event.preventDefault();
@@ -1709,8 +1740,11 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         setCropRect(null);
         showToast('La zona de retall és massa petita. Dibuixa un rectangle més gran.');
       } else {
+        updateActiveFrameSlot({ crop: cropRect, points: [] });
+        setCropRect(null);
         setCropMode(false);
-        showToast('Retall definit. MediaPipe només analitzarà aquesta zona.');
+        setAngleSelectionMode(false);
+        showToast('Retall ampliat. Ara pots marcar els punts dins de la zona seleccionada.');
       }
       return;
     }
@@ -1718,6 +1752,15 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     setDraggingAnglePointId(null);
     window.setTimeout(() => { suppressCanvasClickRef.current = false; }, 0);
+  };
+
+  const handleCanvasPointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (cropStartRef.current) {
+      cropStartRef.current = null;
+      setCropRect(null);
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    setDraggingAnglePointId(null);
   };
 
   const resetView = () => {
@@ -1787,7 +1830,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     const snapshot: Record<string, unknown> = {
       version: 1,
       fileName, recordLocation, recordDate, duration, currentTime, fps, sourceVideoWidth: sourceDimensions.width, sourceVideoHeight: sourceDimensions.height, phases, frameSlots, frameImages: boundedImages,
-      measurements, frameCorrections, manualPoints, cropRect, guides, angleDefinition,
+      measurements, frameCorrections, manualPoints, guides, angleDefinition,
       activePhase, activeClipPhase, activeFrameSlot, analysisStarted,
     };
     const payload: HomeAnalysisPayload = {
@@ -1914,7 +1957,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         : 'POSE EN ESPERA';
 
   const renderVideoToolStrip = () => {
-    const movableGuidesActive = analysisStarted && Boolean(activeFrameImage);
+    const movableGuidesActive = analysisStarted && Boolean(activeFrameImage) && !activeCrop;
     return (
       <div className="tool-strip" aria-label="Eines d’anàlisi del vídeo">
         <button className={`tool-toggle ${showSkeleton ? 'active' : ''}`} onClick={() => setShowSkeleton((value) => !value)} disabled={!videoSrc} data-testid="button-toggle-skeleton"><ScanLine size={13} /> {showSkeleton ? 'Amagar esquelet' : 'Mostrar esquelet'}</button>
@@ -1926,9 +1969,9 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
         <select className="select-field tool-point-select" value={selectedPoint} onChange={(event) => setSelectedPoint(event.target.value as PointKey)} disabled={!manualPointMode} data-testid="select-manual-point" aria-label="Punt corporal per corregir">
           <option value="hip">Maluc</option><option value="knee">Genoll</option><option value="ankle">Turmell</option>
         </select>
-        <button className="control-icon" onClick={() => setZoom((value) => Math.max(activeFrameImage ? 1 : .7, value - .1))} disabled={!videoSrc} data-testid="button-zoom-out" aria-label="Allunyar"><ZoomOut size={14} /></button>
-        <button className="control-icon" onClick={() => setZoom((value) => Math.min(activeFrameImage ? 3.5 : 2.4, value + .1))} disabled={!videoSrc} data-testid="button-zoom-in" aria-label="Apropar"><ZoomIn size={14} /></button>
-        <button className="control-icon" onClick={resetView} data-testid="button-reset-view" aria-label="Restablir la vista"><RotateCcw size={14} /></button>
+        <button className="control-icon" onClick={() => setZoom((value) => Math.max(.7, value - .1))} disabled={!videoSrc || Boolean(activeFrameImage)} data-testid="button-zoom-out" aria-label="Allunyar"><ZoomOut size={14} /></button>
+        <button className="control-icon" onClick={() => setZoom((value) => Math.min(2.4, value + .1))} disabled={!videoSrc || Boolean(activeFrameImage)} data-testid="button-zoom-in" aria-label="Apropar"><ZoomIn size={14} /></button>
+        <button className="control-icon" onClick={resetView} disabled={Boolean(activeFrameImage)} data-testid="button-reset-view" aria-label="Restablir la vista"><RotateCcw size={14} /></button>
       </div>
     );
   };
@@ -1940,11 +1983,11 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                   <div className="eyebrow" style={{ color: 'hsl(216 13% 43%)' }}>{fileName || 'Sense vídeo'}</div>
                 </div>
                 <div
-                  className="video-stage"
+                  className={`video-stage ${cropMode ? 'is-cropping' : ''}`}
                   ref={stageRef}
                   data-testid="video-stage"
                   onWheel={(event) => {
-                    if (!videoSrc) return;
+                    if (!videoSrc || activeFrameImage) return;
                     event.preventDefault();
                     setZoom((value) => Math.min(2.4, Math.max(.7, value - event.deltaY * .001)));
                   }}
@@ -1965,7 +2008,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                         ref={videoRef}
                         src={videoSrc}
                         style={{
-                          transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+                           transform: frameTransform,
                           visibility: analysisStarted && activeFrameImage ? 'hidden' : 'visible',
                         }}
                         onLoadedMetadata={onVideoLoaded}
@@ -1987,7 +2030,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                           className="captured-frame-editor-image"
                           src={activeFrameImage}
                           alt={`Fotograma capturat de ${activeClipPhase}`}
-                          style={{ transform: `translate(${panX}px, ${panY}px) scale(${zoom})` }}
+                          style={{ transform: frameTransform, clipPath: frameClip }}
                           draggable={false}
                           data-testid="captured-frame-editor-image"
                         />
@@ -1998,15 +2041,16 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                         onPointerDown={handleCanvasPointerDown}
                         onPointerMove={handleCanvasPointerMove}
                         onPointerUp={handleCanvasPointerUp}
-                        onPointerCancel={handleCanvasPointerUp}
+                        onPointerCancel={handleCanvasPointerCancel}
                         style={{
-                          transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+                           transform: frameTransform,
+                           clipPath: frameClip,
                            pointerEvents: cropMode || athleteSelectionMode || manualPointMode || angleSelectionMode || (Boolean(activeFrameImage) && activeSlot.points.length > 0) ? 'auto' : 'none',
                            cursor: cropMode ? 'crosshair' : draggingAnglePointId ? 'grabbing' : athleteSelectionMode || manualPointMode || angleSelectionMode ? 'crosshair' : activeSlot.points.length ? 'grab' : 'default',
                         }}
                         data-testid="canvas-pose-overlay"
                       />
-                      {analysisStarted && activeFrameImage && (activeSlot.guides.horizontal !== null || activeSlot.guides.vertical !== null) && (
+                      {analysisStarted && activeFrameImage && !activeCrop && (activeSlot.guides.horizontal !== null || activeSlot.guides.vertical !== null) && (
                         <svg className="analysis-athlete-overlay video-guide-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" aria-label="Guies mòbils sobre el vídeo">
                           {activeSlot.guides.horizontal !== null && <line
                             x1="0"
@@ -2033,6 +2077,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                         </svg>
                       )}
                       <div className="video-overlay-chip"><span className="status-dot live-dot" />{athleteSelectionMode ? 'SELECCIONA UNA PERSONA' : trackingWarning || (athleteLocked ? 'ATLETA SELECCIONAT · SEGUINT' : poseLabel)}{poseCandidates.length > 1 && !athleteSelectionMode ? ` · ${poseCandidates.length} PERSONES` : ''}</div>
+                      {cropMode && <div className="crop-stage-instruction">Arrossega sobre la imatge per delimitar l’atleta</div>}
                     </>
                   ) : (
                     <div className="video-empty">
@@ -2087,32 +2132,25 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                      </label>
                   </div> : (
                     <div className="captured-frame-edit-controls">
-                      <div>
+                      <div className="crop-control-copy">
                         <span className="eyebrow">Fotograma fix seleccionat</span>
-                        <strong>{cropRect ? 'Zona retallada preparada per a MediaPipe' : 'Retalla al voltant de l’atleta que vols analitzar'}</strong>
+                        <strong>{cropMode ? 'Dibuixa un rectangle al voltant de l’atleta' : activeSlot.crop ? 'Retall ampliat: marca els punts amb precisió' : 'Selecciona la zona de l’atleta per ampliar-la'}</strong>
+                        <span>El retall s’aplica només a aquest fotograma i conserva les coordenades originals dels angles.</span>
                       </div>
-                      <label>
-                        Mida
-                        <input type="range" min="1" max="3.5" step=".05" value={Math.max(1, zoom)} onChange={(event) => setZoom(Number(event.target.value))} aria-label="Ampliació del fotograma" />
-                      </label>
-                      <label>
-                        Horitzontal
-                        <input type="range" min="-360" max="360" step="2" value={panX} onChange={(event) => setPanX(Number(event.target.value))} aria-label="Posició horitzontal del fotograma" />
-                      </label>
-                      <label>
-                        Vertical
-                        <input type="range" min="-240" max="240" step="2" value={panY} onChange={(event) => setPanY(Number(event.target.value))} aria-label="Posició vertical del fotograma" />
-                      </label>
                       <div className="crop-actions">
                         <button type="button" className={`button-outline ${cropMode ? 'active-button' : ''}`} onClick={() => {
                           setCropMode((value) => !value);
+                          setCropRect(null);
+                          setZoom(1);
+                          setPanX(0);
+                          setPanY(0);
                           setAngleSelectionMode(false);
                           setManualPointMode(false);
                         }} data-testid="button-start-crop">
-                          <Crosshair size={14} /> {cropMode ? 'Cancel·lar retall' : cropRect ? 'Redibuixar retall' : 'Retallar zona'}
+                          <Crosshair size={14} /> {cropMode ? 'Cancel·lar retall' : activeSlot.crop ? 'Redibuixar retall' : 'Seleccionar retall'}
                         </button>
-                        {cropRect && <button type="button" className="button-outline" onClick={() => setCropRect(null)}><RotateCcw size={14} /> Treure retall</button>}
-                        <button type="button" className="button-primary" onClick={detectPoseOnFocusedFrame} data-testid="button-detect-focused-pose">
+                        {activeSlot.crop && <button type="button" className="button-outline" onClick={() => { updateActiveFrameSlot({ crop: null }); setCropRect(null); setCropMode(false); }} data-testid="button-remove-crop"><RotateCcw size={14} /> Veure fotograma complet</button>}
+                        <button type="button" className="button-primary" onClick={detectPoseOnFocusedFrame} disabled={!activeSlot.crop || cropMode} data-testid="button-detect-focused-pose">
                           <ScanLine size={14} /> Detectar persona dins del retall
                         </button>
                       </div>
@@ -2609,7 +2647,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
                                           setCropMode(false);
                                           setManualPointMode(false);
                                           setAngleSelectionMode((value) => !value);
-                                        }} disabled={!activeFrameImage || slot.points.length >= requiredAnglePointCount} style={{ borderColor: angleSelectionMode ? 'hsl(var(--primary))' : undefined, color: angleSelectionMode ? 'hsl(var(--primary))' : undefined }}>
+                                         }} disabled={!activeFrameImage || (!slot.crop && !slot.points.length) || slot.points.length >= requiredAnglePointCount} style={{ borderColor: angleSelectionMode ? 'hsl(var(--primary))' : undefined, color: angleSelectionMode ? 'hsl(var(--primary))' : undefined }}>
                                           <Crosshair size={14} /> {angleSelectionMode ? 'Cancel·lar selecció' : `Seleccionar ${requiredAnglePointCount} punts sobre la foto`}
                                         </button>
                                         <div className="angle-point-progress"><span>Punts seleccionats</span><strong>{slot.points.length} / {requiredAnglePointCount}</strong></div>

@@ -5124,40 +5124,54 @@ button {
 }
 
 .captured-frame-edit-controls {
-  display: grid;
-  grid-template-columns: minmax(190px, 1.25fr) repeat(3, minmax(115px, .75fr)) auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   gap: .8rem;
-  align-items: end;
+  align-items: center;
   padding: .85rem 1rem;
   border-top: 1px solid hsl(215 20% 30%);
   background: hsl(216 27% 14%);
 }
 
-.captured-frame-edit-controls > div {
+.captured-frame-edit-controls .crop-control-copy {
   display: grid;
   gap: .2rem;
+  max-width: 31rem;
 }
 
-.captured-frame-edit-controls > div strong {
+.captured-frame-edit-controls .crop-control-copy strong {
   max-width: 28rem;
   color: hsl(36 33% 94%);
   font-size: .78rem;
   line-height: 1.35;
 }
 
-.captured-frame-edit-controls label {
-  display: grid;
-  gap: .35rem;
+.captured-frame-edit-controls .crop-control-copy > span:last-child {
   color: hsl(215 14% 72%);
-  font-family: var(--app-font-mono);
-  font-size: .62rem;
-  text-transform: uppercase;
-  letter-spacing: .06em;
+  font-size: .73rem;
+  line-height: 1.45;
 }
 
-.captured-frame-edit-controls input[type="range"] {
-  width: 100%;
-  accent-color: hsl(var(--primary));
+.video-stage.is-cropping canvas {
+  touch-action: none;
+}
+
+.crop-stage-instruction {
+  position: absolute;
+  bottom: .85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  padding: .5rem .75rem;
+  border-radius: .35rem;
+  background: hsl(216 27% 14% / .9);
+  color: hsl(36 33% 94%);
+  font-size: .76rem;
+  text-align: center;
+  pointer-events: none;
 }
 
 .crop-actions {
@@ -5171,6 +5185,17 @@ button {
 .crop-actions .button-outline {
   min-height: 38px;
   white-space: nowrap;
+}
+
+.crop-actions .button-outline {
+  color: hsl(36 33% 94%);
+  border-color: hsl(36 33% 94% / .35);
+  background: hsl(216 27% 20%);
+}
+
+.crop-actions .button-outline:hover {
+  border-color: hsl(38 89% 61%);
+  background: hsl(216 27% 26%);
 }
 
 .active-card-container .video-panel,
