@@ -716,7 +716,7 @@ const techniqueSections: TechniqueSectionDef[] = [
     content: [
       { type: 'paragraph', text: "La caiguda al fossat és l’última part del triple salt i és important perquè la manera d’aterrar pot fer guanyar o perdre distància en el resultat final. Durant el tram final del vol, l’atleta ha de flexionar els malucs i projectar les dues cames cap endavant, mantenint-les elevades fins al moment del contacte amb la sorra. Els braços també juguen un paper important per conservar aquesta posició i a mantenir l’equilibri del cos mentre es prepara l’aterratge." },
       { type: 'paragraph', text: "El primer contacte amb la sorra es fa amb els talons i les cames estirades cap endavant. Just després, l’atleta flexiona els genolls i inclina el tronc cap endavant, de manera que el cos passi per sobre de la marca dels peus. D’aquesta manera, s’evita caure cap enrere i deixar una marca més pròxima a la taula de batuda, cosa que reduiria la distància registrada." },
-      { type: 'figure', src: "technique/landing.webp", caption: "Imatge 10: Caiguda del jump amb les cames i els braços projectats cap al davant. Font pròpia." }
+      { type: 'figure', src: "technique/landing-replacement.png", caption: "Imatge 10: Caiguda del jump amb les cames i els braços projectats cap al davant." }
     ]
   }
 ];
