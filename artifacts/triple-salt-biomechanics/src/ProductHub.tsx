@@ -70,10 +70,10 @@ type TrackEvaluation = {
   location: string | null;
   evaluationDate: string | null;
   createdAt: string;
-  criteria?: Array<{ key: string; question: string; level: AssessmentOption["level"]; criterion: string; score: number; principalError?: string; associatedErrors?: string[]; consequence?: string; improvement?: string }>;
+  criteria?: Array<{ key: string; question: string; level: string; criterion: string; score: number; principalError?: string; associatedErrors?: string[]; consequence?: string; improvement?: string }>;
   assessmentData?: {
     schemaVersion?: number;
-    criteria?: Array<{ key: string; question: string; level: AssessmentOption["level"]; criterion: string; score: number; principalError?: string; associatedErrors?: string[]; consequence?: string; improvement?: string }>;
+    criteria?: Array<{ key: string; question: string; level: string; criterion: string; score: number; principalError?: string; associatedErrors?: string[]; consequence?: string; improvement?: string }>;
   };
 };
 export type HomeAnalysisPayload = {
@@ -99,9 +99,9 @@ type AssessmentDiagnosis = {
   improvement: string;
 };
 type AssessmentOption = {
-  level: "Excel·lent" | "Notable" | "Satisfactori" | "Suspès";
+  level: "Execució impecable" | "Execució bona" | "Execució correcta" | "Execució incorrecta";
   description: string;
-  value: 10 | 8.5 | 7 | 0;
+  value: 10 | 8.5 | 6 | 0;
   tone: "excellent" | "notable" | "satisfactory" | "failed";
   diagnosis?: AssessmentDiagnosis;
 };
@@ -145,32 +145,32 @@ const assessmentGroups: AssessmentGroup[] = [
     subtitle: "Velocitat, progressió i control fins a la taula",
     question: "Com executa l’atleta la cursa d’aproximació fins a la taula de batuda?",
     options: [
-      { level: "Excel·lent", description: "Realitza una cursa ràpida, progressiva i controlada, amb trajectòria rectilínia, coordinació adequada i arribada a la taula sense desviar la mirada.", value: 10, tone: "excellent" },
+      { level: "Execució impecable", description: "Realitza una cursa ràpida, progressiva i controlada, mantenint una trajectòria rectilínia i horitzontal. Coordina adequadament braços i cames, manté el tronc progressivament vertical i arriba a la taula sense desviar la mirada cap al terra.", value: 10, tone: "excellent" },
       {
-        level: "Notable", description: "Realitza una cursa adequada i ràpida, però amb alguna irregularitat lleu en el ritme, la coordinació o els darrers passos.", value: 8.5, tone: "notable",
+        level: "Execució bona", description: "Realitza una cursa adequada i amb una velocitat elevada, però presenta alguna irregularitat lleu en el ritme, la coordinació o els darrers passos, sense afectar de manera significativa la batuda.", value: 8.5, tone: "notable",
         diagnosis: {
           principalError: "Lleugera irregularitat en la cursa d’aproximació.",
           associatedErrors: ["Lleugera reducció de la velocitat abans de la batuda.", "Petita alteració del ritme en els darrers passos.", "Lleugera tensió del tronc superior.", "Coordinació de braços i cames no gaire eficient."],
           consequence: "Pot produir una lleugera pèrdua de velocitat en arribar a la batuda i reduir l’eficàcia del hop, l’step i el jump.",
-          improvement: "Realitzar curses d’aproximació progressives mantenint la velocitat fins a la batuda. Fer repeticions amb ritme constant i coordinació de braços i cames.",
+          improvement: "Realitzar curses d’aproximació progressives, intentant mantenir la velocitat fins a la batuda. Fer repeticions centrades en mantenir un ritme constant i coordinar el moviment de braços i cames.",
         },
       },
       {
-        level: "Satisfactori", description: "Arriba a la taula amb una velocitat moderada, una acceleració poc progressiva o modificacions del ritme en els darrers passos.", value: 7, tone: "satisfactory",
+        level: "Execució correcta", description: "Arriba a la taula de batuda amb una velocitat moderada, una acceleració poc progressiva o modificacions del ritme en els darrers passos.", value: 6, tone: "satisfactory",
         diagnosis: {
           principalError: "Cursa d’aproximació poc eficient.",
           associatedErrors: ["Arribar massa lluny de la taula.", "Córrer amb el cos excessivament endavant.", "Córrer amb el cos excessivament enrere.", "Córrer amb una postura baixa o assentada.", "Arribar amb una velocitat insuficient.", "Tècnica de carrera rígida o descoordinada."],
           consequence: "Batuda forçada o poc eficient, menor força d’enlairament, recepció descoordinada i pèrdua progressiva de velocitat en el hop, l’step i el jump.",
-          improvement: "Fer curses progressives adoptant una posició més vertical quan ja s’ha aconseguit velocitat. Treballar curses curtes amb els malucs alts, el tronc equilibrat i una velocitat progressiva.",
+          improvement: "Fer curses d’aproximació i adoptar progressivament una posició del cos més vertical una vegada s’ha aconseguit velocitat. Realitzar també curses curtes centrant-se en mantenir els malucs alts, una posició equilibrada del tronc i una velocitat progressiva.",
         },
       },
       {
-        level: "Suspès", description: "Presenta una cursa poc adequada, amb una pèrdua considerable de velocitat, una frenada evident o poca coordinació.", value: 0, tone: "failed",
+        level: "Execució incorrecta", description: "Presenta una cursa poc adequada, amb una pèrdua considerable de velocitat, una frenada evident o poca coordinació.", value: 0, tone: "failed",
         diagnosis: {
           principalError: "Interrupció de la cursa.",
           associatedErrors: ["Frenada evident abans de la batuda.", "Arribar gairebé aturat.", "Mirar la taula durant els darrers passos.", "Cursa excessivament inclinada.", "Arribar massa ràpid i perdre el control de la batuda.", "Desviació lateral de la trajectòria."],
-          consequence: "La batuda queda fortament afectada i es redueixen la velocitat i la força disponibles per al hop. Això condiciona també l’step i el jump.",
-          improvement: "Reduir temporalment la cursa, treballar curses curtes i progressives, utilitzar una marca per automatitzar els darrers passos i practicar sobre una línia recta abans de tornar a la cursa completa.",
+          consequence: "La batuda es veu fortament afectada i es redueixen la velocitat i la força disponibles per al hop. Això condiciona també l’step i el jump.",
+          improvement: "Reduir temporalment la distància de la cursa d’aproximació i treballar curses curtes i progressives per evitar frenar abans de la batuda. Utilitzar una marca de referència per automatitzar els darrers passos i evitar mirar la taula. Fer curses sobre una línia marcada al terra per corregir les desviacions laterals i progressar posteriorment cap a la cursa completa.",
         },
       },
     ],
@@ -181,32 +181,32 @@ const assessmentGroups: AssessmentGroup[] = [
     subtitle: "Connexió entre hop, step i jump",
     question: "Com manté l’atleta la continuïtat entre salts?",
     options: [
-      { level: "Excel·lent", description: "Enllaça les tres fases de manera fluida, contínua i coordinada, mantenint la velocitat horitzontal i sense enfonsar-se entre salts.", value: 10, tone: "excellent" },
+      { level: "Execució impecable", description: "Enllaça les tres fases de manera fluida, contínua i coordinada, mantenint la velocitat horitzontal i sense enfonsar-se entre els salts. El so entre salts es presenta així: «ta-ta-ta-ta».", value: 10, tone: "excellent" },
       {
-        level: "Notable", description: "Manté una bona continuïtat, però presenta una lleu alteració del ritme o una petita pèrdua de velocitat en alguna transició.", value: 8.5, tone: "notable",
+        level: "Execució bona", description: "Manté una bona continuïtat entre les tres fases, tot i presentar una lleu alteració del ritme o una petita pèrdua de velocitat en alguna transició.", value: 8.5, tone: "notable",
         diagnosis: {
           principalError: "Lleugera pèrdua de continuïtat.",
           associatedErrors: ["Petita pèrdua de velocitat després d’un contacte.", "Lleugera descoordinació en una transició.", "Temps de contacte amb el terra lleugerament excessiu."],
           consequence: "Disminució moderada de la velocitat disponible per a la fase següent.",
-          improvement: "Realitzar seqüències curtes de hop-step i step-jump mantenint la velocitat després de cada contacte. Fer multisalts en moviment per reduir el temps de contacte.",
+          improvement: "Realitzar seqüències curtes de hop-step i step-jump, centrant-se en mantenir la velocitat després de cada contacte. Fer exercicis de multisalts en moviment per reduir el temps de contacte entre salts.",
         },
       },
       {
-        level: "Satisfactori", description: "Completa les tres fases, però presenta una disminució apreciable de velocitat o una transició poc fluida entre una o més fases.", value: 7, tone: "satisfactory",
+        level: "Execució correcta", description: "Completa les tres fases, però presenta una disminució apreciable de la velocitat o una transició poc fluida entre una o més fases.", value: 6, tone: "satisfactory",
         diagnosis: {
           principalError: "Pèrdua apreciable de continuïtat entre fases.",
           associatedErrors: ["Recepció pesada.", "Contacte amb el terra poc actiu.", "Enfonsament durant la recepció.", "Manca de coordinació en la transició.", "Pèrdua progressiva de velocitat."],
-          consequence: "El salt següent disposa de menys velocitat i capacitat d’impuls, amb una reducció de potència i distància final.",
-          improvement: "Practicar el hop, l’step i el jump amb recepcions actives. Fer recepcions sobre una cama amb el maluc elevat i integrar progressivament tota la seqüència.",
+          consequence: "El salt següent disposa de menys velocitat i capacitat d’impuls. Reducció de potència i distància final.",
+          improvement: "Practicar el hop amb recepcions actives, així com també l’step i el jump. Fer exercicis de recepció sobre una cama mantenint el maluc elevat i evitant l’enfonsament. Posteriorment, integrar progressivament la seqüència hop, step i jump.",
         },
       },
       {
-        level: "Suspès", description: "Perd considerablement la continuïtat, presenta pauses o frenades importants o no completa adequadament la seqüència.", value: 0, tone: "failed",
+        level: "Execució incorrecta", description: "Perd considerablement la continuïtat del moviment, presenta pauses o frenades importants entre les fases o no aconsegueix completar adequadament la seqüència.", value: 0, tone: "failed",
         diagnosis: {
           principalError: "Interrupció clara de la seqüència.",
           associatedErrors: ["Pèrdua important de velocitat entre salts.", "Recepció molt pesada.", "Enfonsament excessiu.", "Incapacitat per generar una nova batuda amb potència.", "Arribar gairebé aturat al jump."],
-          consequence: "Els salts posteriors es fan amb molta menys velocitat i força, reduint considerablement la distància final.",
-          improvement: "Descompondre el triple salt en hop-step i step-jump, treballar cada transició a baixa intensitat i augmentar progressivament la velocitat fins a completar la seqüència sense interrupcions.",
+          consequence: "Els salts posteriors es realitzen amb molta menys velocitat i força, reduint considerablement la distància final.",
+          improvement: "Descompondre el triple salt en seqüències més senzilles, com hop-step i step-jump, treballant cada transició per separat. Fer primer les seqüències a baixa intensitat, prioritzant la continuïtat i les recepcions actives, i augmentar progressivament la velocitat fins a poder realitzar el triple salt complet sense interrupcions.",
         },
       },
     ],
@@ -217,32 +217,32 @@ const assessmentGroups: AssessmentGroup[] = [
     subtitle: "Control postural durant les tres fases",
     question: "Com manté l’atleta el control postural durant l’execució del triple salt?",
     options: [
-      { level: "Excel·lent", description: "Manté una posició corporal estable i equilibrada, amb bona coordinació entre braços, tronc, malucs i cames i sense desviacions laterals significatives.", value: 10, tone: "excellent" },
+      { level: "Execució impecable", description: "Manté una posició corporal estable i equilibrada durant les tres fases, amb una coordinació adequada entre braços, tronc, malucs i cames i sense desviacions laterals significatives.", value: 10, tone: "excellent" },
       {
-        level: "Notable", description: "Manté un bon control corporal, tot i presentar petites compensacions del tronc o dels braços que no afecten significativament la continuïtat.", value: 8.5, tone: "notable",
+        level: "Execució bona", description: "Manté un bon control corporal, tot i presentar petites compensacions del tronc o dels braços que no afecten de manera significativa la continuïtat del moviment.", value: 8.5, tone: "notable",
         diagnosis: {
           principalError: "Petites descompensacions posturals.",
           associatedErrors: ["Lleugera inclinació del tronc.", "Petita descoordinació dels braços.", "Lleugera desviació de l’eix corporal."],
           consequence: "Disminució lleu de l’estabilitat i de l’eficiència de les transicions.",
-          improvement: "Realitzar hop i step a baixa velocitat mirant un punt fix o amb gravació en vídeo, mantenint el tronc estable i coordinant braços i cames.",
+          improvement: "Realitzar exercicis de hop i step a baixa velocitat mirant un punt fix endavant o amb gravació en vídeo, centrant-se en mantenir el tronc estable i coordinar el moviment dels braços amb les cames.",
         },
       },
       {
-        level: "Satisfactori", description: "Manté l’equilibri general, però presenta inclinacions o moviments compensatoris visibles que redueixen l’eficàcia.", value: 7, tone: "satisfactory",
+        level: "Execució correcta", description: "Manté l’equilibri general, però presenta inclinacions o moviments compensatoris visibles que redueixen l’eficàcia de l’execució.", value: 6, tone: "satisfactory",
         diagnosis: {
-          principalError: "Pèrdua apreciable del control corporal.",
+          principalError: "Pèrdua apreciable del control postural.",
           associatedErrors: ["Manca de verticalitat del tronc.", "Desplaçament del pes respecte de la cama de suport.", "Braços descompassats.", "Trajectòria lleugerament desviada.", "Tensió excessiva del tronc superior."],
           consequence: "L’atleta s’enlaira descompensat i disminueixen el control, la coordinació i la capacitat de generar força.",
-          improvement: "Fer segons de triple mantenint la mirada a l’horitzó i centrant-se a conservar el tronc vertical.",
+          improvement: "Per recuperar el control corporal, l’atleta ha de fer segons de triple mantenint la mirada a l’horitzó i centrant-se a mantenir el tronc vertical.",
         },
       },
       {
-        level: "Suspès", description: "Presenta una pèrdua significativa d’estabilitat, inclinacions excessives, desequilibris importants o coordinació deficient.", value: 0, tone: "failed",
+        level: "Execució incorrecta", description: "Presenta una pèrdua significativa de l’estabilitat, amb inclinacions excessives, desequilibris importants o una coordinació deficient que interfereix en l’execució.", value: 0, tone: "failed",
         diagnosis: {
           principalError: "Pèrdua greu de l’eix corporal.",
           associatedErrors: ["Desviació lateral important.", "Pèrdua del control del centre de gravetat.", "Salt completament descompensat.", "Caiguda lateral.", "Desequilibri greu durant una de les fases."],
-          consequence: "La força es dispersa lateralment en lloc de dirigir-se endavant, disminuint la distància i augmentant el risc d’una execució incorrecta.",
-          improvement: "Realitzar segons de triple sense enfonsar-se i mantenint una posició corporal recta. Treballar el control per fases abans d’integrar-ho tot.",
+          consequence: "La força es dispersa lateralment en lloc de dirigir-se cap endavant, disminuint la distància i augmentant el risc d’una execució incorrecta.",
+          improvement: "Realitzar segons de triple sense enfonsar-se i mantenint una posició corporal recta. Treballar el control de la posició per fases i, de mica en mica, fer-ho en conjunt.",
         },
       },
     ],
@@ -253,32 +253,32 @@ const assessmentGroups: AssessmentGroup[] = [
     subtitle: "Projecció final i contacte amb la sorra",
     question: "Com executa l’atleta la fase final i la caiguda al fossat de sorra?",
     options: [
-      { level: "Excel·lent", description: "Projecta les dues cames endavant, fa contactar primer els talons i coordina braços i tronc per maximitzar la distància.", value: 10, tone: "excellent" },
+      { level: "Execució impecable", description: "Projecta les dues cames cap endavant i aconsegueix que els talons contactin primer amb la sorra. Coordina l’acció dels braços i del tronc per maximitzar la distància assolida.", value: 10, tone: "excellent" },
       {
-        level: "Notable", description: "Fa una caiguda tècnicament correcta, però amb una petita pèrdua d’extensió de cames o de coordinació.", value: 8.5, tone: "notable",
+        level: "Execució bona", description: "Realitza una caiguda tècnicament correcta, però presenta una petita pèrdua d’extensió de les cames o de coordinació entre els braços i el tronc.", value: 8.5, tone: "notable",
         diagnosis: {
-          principalError: "Petita ineficiència en la projecció final.",
+          principalError: "Petita interferència en la projecció final.",
           associatedErrors: ["No projectar completament les cames.", "Lleugera falta de coordinació entre braços i cames.", "Separació poc òptima de les cames."],
           consequence: "Petita pèrdua de distància final.",
-          improvement: "Fer caigudes des de salts curts portant les dues cames endavant, repetint el gest progressivament i coordinant els braços amb la projecció de les cames.",
+          improvement: "Realitzar exercicis específics de caiguda al fossat des de salts de poca distància, centrant-se en portar les dues cames cap endavant. Repetir el gest de manera progressiva i coordinar el moviment dels braços amb la projecció de les cames.",
         },
       },
       {
-        level: "Satisfactori", description: "Fa una caiguda funcional, però la projecció de les cames o l’acció de braços i tronc és poc eficient.", value: 7, tone: "satisfactory",
+        level: "Execució correcta", description: "Realitza una caiguda funcional, però la projecció de les cames o l’acció dels braços i del tronc és poc eficient i redueix parcialment la distància assolida.", value: 6, tone: "satisfactory",
         diagnosis: {
           principalError: "Tècnica de caiguda poc eficient.",
           associatedErrors: ["Caiguda prematura.", "No portar suficientment les cames endavant.", "No portar el cos endavant després del contacte.", "Separar excessivament les cames.", "Caure amb els peus massa junts."],
           consequence: "Pèrdua directa de centímetres en la marca final.",
-          improvement: "Practicar caigudes des de salts curts o una petita alçada, treballant la projecció de les cames i el moviment del cos després del contacte.",
+          improvement: "Practicar caigudes al fossat des de salts curts o des d’una petita alçada, treballant específicament la projecció de les cames cap endavant i el moviment del cos després del contacte.",
         },
       },
       {
-        level: "Suspès", description: "Fa una caiguda deficient, amb projecció insuficient de les cames o el tronc excessivament enrere.", value: 0, tone: "failed",
+        level: "Execució incorrecta", description: "Realitza una caiguda deficient, amb una projecció insuficient de les cames o amb el tronc excessivament enrere, produint una pèrdua significativa de distància.", value: 0, tone: "failed",
         diagnosis: {
           principalError: "Caiguda incorrecta.",
           associatedErrors: ["Caure cap enrere.", "Recolzar les mans darrere del cos.", "Caure assegut.", "Caure lateralment.", "Contactar amb una part posterior del cos abans que amb els peus."],
           consequence: "Pèrdua significativa de distància final i, en alguns casos, una caiguda descontrolada.",
-          improvement: "Començar des de poca alçada i sense velocitat, practicant la projecció de les cames i el control del tronc. Progressar evitant mans, caigudes enrere o laterals.",
+          improvement: "Començar amb exercicis de caiguda des de poca alçada i sense velocitat, practicant la projecció de les cames i el control del tronc. Progressar cap a salts més grans, evitant el suport de les mans i la caiguda cap enrere o lateral, i assegurant que els peus siguin el primer contacte amb la sorra.",
         },
       },
     ],
@@ -289,37 +289,44 @@ const assessmentGroups: AssessmentGroup[] = [
     subtitle: "Contacte amb la taula i aprofitament de la distància",
     question: "On ha fet el primer salt respecte a la taula?",
     options: [
-      { level: "Excel·lent", description: "Ha trepitjat la fusta de la taula de ple, sense fer nul.", value: 10, tone: "excellent" },
+      { level: "Execució impecable", description: "Ha trepitjat la fusta de la taula de ple, sense fer nul.", value: 10, tone: "excellent" },
       {
-        level: "Notable", description: "Salt vàlid, però ha perdut aproximadament un pam de distància.", value: 8.5, tone: "notable",
+        level: "Execució bona", description: "Salt vàlid, però ha perdut un pam de distància.", value: 8.5, tone: "notable",
         diagnosis: {
           principalError: "Petit desajust en la batuda.",
           associatedErrors: ["Contacte lleugerament allunyat de la posició òptima.", "Petita alteració del ritme abans de la batuda.", "Impuls lleugerament poc eficient."],
           consequence: "Petita reducció de la força o de la velocitat disponible per al hop.",
-          improvement: "Realitzar curses curtes amb una marca de batuda, repetint el contacte a velocitat progressiva i automatitzant el ritme dels darrers passos.",
+          improvement: "Realitzar curses d’aproximació curtes amb una marca de batuda, repetint el contacte amb la taula a velocitat progressiva. Treballar també els darrers passos de la cursa per automatitzar el ritme abans de la batuda.",
         },
       },
       {
-        level: "Satisfactori", description: "Salt vàlid, però no ha trepitjat la taula de batuda.", value: 7, tone: "satisfactory",
+        level: "Execució correcta", description: "Salt vàlid, però no ha trepitjat la taula de batuda.", value: 6, tone: "satisfactory",
         diagnosis: {
           principalError: "Batuda poc eficient.",
           associatedErrors: ["Batuda massa baixa.", "Batuda massa alta i vertical.", "Contacte amb l’avantpeu.", "Arribar lluny de la taula.", "Batuda precipitada o forçada."],
           consequence: "Pèrdua de velocitat horitzontal, menor impuls i una execució menys eficient del hop.",
-          improvement: "Fer petits salts amb una trajectòria intermèdia i reduir temporalment la cursa per evitar una batuda precipitada, ajustant progressivament la distància d’arribada.",
+          improvement: "Per aconseguir una batuda més eficient, fer petits salts buscant una trajectòria intermèdia, ni massa alta ni massa baixa. Reduir temporalment la cursa d’aproximació per evitar una batuda precipitada i ajustar progressivament la distància d’arribada.",
         },
       },
       {
-        level: "Suspès", description: "Salt nul: ha trepitjat la línia vermella o plastilina, o ha saltat clarament per davant.", value: 0, tone: "failed",
+        level: "Execució incorrecta", description: "Salt nul: ha trepitjat la línia vermella o plastilina, o ha saltat clarament per davant.", value: 0, tone: "failed",
         diagnosis: {
           principalError: "Batuda greument incorrecta o nul·la.",
           associatedErrors: ["Salt nul.", "Batuda excessivament vertical.", "Contacte incorrecte amb la taula.", "Arribar gairebé aturat.", "Pèrdua total del control de la batuda."],
-          consequence: "El primer salt queda fortament reduït o no es pot executar correctament i això condiciona necessàriament l’step i el jump.",
-          improvement: "Treballar cursa i batuda de manera aïllada a baixa velocitat, començar amb una cursa curta, utilitzar referències visuals i augmentar la distància quan el contacte sigui vàlid i controlat.",
+          consequence: "El primer salt es veu fortament reduït o no es pot executar correctament i, per tant, condiciona necessàriament les dues fases posteriors.",
+          improvement: "Treballar la cursa i la batuda de manera aïllada temporalment a baixa velocitat per interioritzar els moviments. Començar amb una cursa curta per mantenir la velocitat, utilitzar referències visuals per evitar un salt massa vertical i augmentar la distància progressivament a mesura que s’aconsegueixi un contacte vàlid i controlat amb la taula.",
         },
       },
     ],
   },
 ];
+
+const legacyAssessmentLevelIndexes: Record<string, number> = {
+  "Excel·lent": 0,
+  "Notable": 1,
+  "Satisfactori": 2,
+  "Suspès": 3,
+};
 
 const warmupSections: WarmupSection[] = [
   {
@@ -1037,6 +1044,8 @@ function ProductHub({ analysisWorkspace }: Props) {
   };
 
   const selectedAssessment = assessmentGroups.map((group) => group.options[assessmentAnswers[group.key] ?? -1]);
+  const editingLegacyAssessment = selectedEvaluationId !== null && evaluations.some((evaluation) =>
+    evaluation.id === selectedEvaluationId && evaluationCriteria(evaluation).some((criterion) => criterion.score === 7));
   const assessmentComplete = selectedAssessment.every(Boolean);
   const assessmentAverage = assessmentComplete
     ? selectedAssessment.reduce((sum, option) => sum + option.value, 0) / selectedAssessment.length
@@ -1434,7 +1443,7 @@ function ProductHub({ analysisWorkspace }: Props) {
             <div className="athlete-history-grid">
               <article className="athlete-profile-card">
               <div className="profile-heading"><span className="athlete-avatar large">{`${selectedAthlete.firstName[0]}${selectedAthlete.lastName[0]}`}</span><div><span className="eyebrow">Fitxa d’atleta</span><h2>{selectedAthlete.firstName} {selectedAthlete.lastName}</h2></div></div>
-              <div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div><div><span>Registres tècnics</span><strong>{athleteEvaluations.length + athleteHomeAnalyses.length || "Encara no disponibles"}</strong></div></div>
+              <div className="profile-fields"><div><span>Millor marca registrada</span><strong>{athleteRecordedBest === null ? "Encara no disponible" : `${athleteRecordedBest.toFixed(2).replace(".", ",")} m`}</strong></div><div><span>Objectius</span><strong>{selectedAthlete.goals || "Encara no definits"}</strong></div><div><span>Informació tècnica</span><strong>{selectedAthlete.technicalNotes || "Preparada per afegir-hi contingut"}</strong></div></div>
               </article>
               <article className="history-competitions history-data-section">
               <div className="section-card-heading"><div><span className="eyebrow">Nova competició</span><h2>Competicions</h2></div><button className="button-outline" onClick={() => setPage("competició")}>Nova</button></div>
@@ -1474,7 +1483,8 @@ function ProductHub({ analysisWorkspace }: Props) {
                       setTrackDate(fullEvaluation.evaluationDate ?? new Date().toLocaleDateString("en-CA"));
                       const answers = Object.fromEntries(evaluationCriteria(fullEvaluation).map((criterion) => {
                         const group = assessmentGroups.find((item) => item.key === criterion.key);
-                        return [criterion.key, group?.options.findIndex((option) => option.level === criterion.level) ?? -1];
+                        const currentIndex = group?.options.findIndex((option) => option.level === criterion.level) ?? -1;
+                        return [criterion.key, currentIndex >= 0 ? currentIndex : (legacyAssessmentLevelIndexes[criterion.level] ?? (criterion.score === 7 ? 2 : -1))];
                       }).filter(([, index]) => Number(index) >= 0));
                       setAssessmentAnswers(answers);
                       setAssessmentSaved(false);
@@ -1545,6 +1555,7 @@ function ProductHub({ analysisWorkspace }: Props) {
           <label>Dia<input type="date" required value={trackDate} onChange={(event) => { setTrackDate(event.target.value); setAssessmentSaved(false); }} /></label>
           <label>Lloc<input required value={trackLocation} onChange={(event) => { setTrackLocation(event.target.value); setAssessmentSaved(false); }} placeholder="Pista, estadi o instal·lació" /></label>
         </section>
+        {editingLegacyAssessment && <p className="assessment-hint">Aquesta valoració es va guardar amb l’escala anterior. En tornar-la a guardar, les respostes de 7 punts passaran a valer 6; la valoració original no canvia fins que la desis.</p>}
         <div className="assessment-overview">
           <div>
             <span className="eyebrow">Escala de puntuació</span>
@@ -1552,10 +1563,10 @@ function ProductHub({ analysisWorkspace }: Props) {
             <p>No s’utilitzen punts intermedis: cada resposta aporta el valor màxim indicat.</p>
           </div>
           <div className="assessment-scale" aria-label="Escala de puntuació">
-            <span className="excellent"><strong>10</strong> Excel·lent</span>
-            <span className="notable"><strong>8,5</strong> Notable</span>
-            <span className="satisfactory"><strong>7</strong> Satisfactori</span>
-            <span className="failed"><strong>0</strong> Suspès</span>
+            <span className="excellent"><strong>10</strong> Execució impecable</span>
+            <span className="notable"><strong>8,5</strong> Execució bona</span>
+            <span className="satisfactory"><strong>6</strong> Execució correcta</span>
+            <span className="failed"><strong>0</strong> Execució incorrecta</span>
           </div>
           <div className="assessment-progress">
             <div><span>Progrés</span><strong>{selectedAssessment.filter(Boolean).length} / {assessmentGroups.length}</strong></div>

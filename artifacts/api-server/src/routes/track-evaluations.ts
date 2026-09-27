@@ -4,6 +4,7 @@ import { athletesTable, competitionsTable, db, trackEvaluationsTable } from "@wo
 import { requireAuth } from "../lib/auth";
 
 const router = Router();
+const validScores = new Set([0, 6, 8.5, 10]);
 
 router.get("/track-evaluations", requireAuth, async (request, response) => {
   const evaluations = await db.select().from(trackEvaluationsTable)
@@ -28,7 +29,6 @@ router.get("/track-evaluations/:id", requireAuth, async (request, response): Pro
 router.post("/track-evaluations", requireAuth, async (request, response) => {
   const body = request.body && typeof request.body === "object" ? request.body as Record<string, unknown> : {};
   const criteria = Array.isArray(body.criteria) ? body.criteria : [];
-  const validScores = new Set([0, 7, 8.5, 10]);
   const parsedCriteria = criteria.map((item) => {
     const criterion = item && typeof item === "object" ? item as Record<string, unknown> : {};
     return {
@@ -113,7 +113,6 @@ router.patch("/track-evaluations/:id", requireAuth, async (request, response): P
     : {};
   const rawCriteria = Array.isArray(body.criteria) ? body.criteria
     : Array.isArray(assessmentData.criteria) ? assessmentData.criteria : [];
-  const validScores = new Set([0, 7, 8.5, 10]);
   const parsedCriteria = rawCriteria.map((item) => {
     const criterion = item && typeof item === "object" ? item as Record<string, unknown> : {};
     return {

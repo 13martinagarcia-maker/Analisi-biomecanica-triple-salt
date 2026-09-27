@@ -1,2 +1,3 @@
 - [Legacy track evaluation metadata](track-evaluation-metadata.md) — old pista records may lack date/place; preserve them while requiring metadata for new saves.
+- [Track evaluation rubric revisions](track-evaluation-rubric.md) — preserve historical scores when the scoring rubric changes; explain any recalculation before a user resaves.
 - [Browser video test fixtures](browser-video-test-fixtures.md) — the automated Chromium browser rejects H.264 uploads; use VP8 WebM when testing video workflows.
