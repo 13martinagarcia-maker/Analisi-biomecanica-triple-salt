@@ -1,0 +1,272 @@
+Preguntes de puntuació dels salts de triple
+1. Cursa d’aproximació
+Com executa l’atleta la cursa d’aproximació fins a la taula de batuda?
+Execució impecable (10): Realitza una cursa ràpida, progressiva i controlada, mantenint una trajectòria rectilínia i horitzontal. Coordina adequadament braços i cames, manté el tronc progressivament vertical i arriba a la taula sense desviar la mirada cap al terra.
+Execució bona (8,5): Realitza una cursa adequada i amb una velocitat elevada, però presenta alguna irregularitat lleu en el ritme, la coordinació o els darrers passos, sense afectar de manera significativa la batuda.
+Execució correcta (6): Arriba a la taula de batuda amb una velocitat moderada, una acceleració poc progressiva o modificacions del ritme en els darrers passos.
+Execució incorrecta (0): Presenta una cursa poc adequada, amb una pèrdua considerable de velocitat, una frenada evident o poca coordinació.
+2. Ritme i continuïtat de les tres fases
+Com manté l’atleta la continuïtat entre salts?
+Execució impecable (10): Enllaça les tres fases de manera fluida, contínua i coordinada, mantenint la velocitat horitzontal i sense enfonsar-se entre els salts. El so entre salts es presenta així: “ta-ta-ta-ta”.
+Execució bona (8,5): Manté una bona continuïtat entre les tres fases, tot i presentar una lleu alteració del ritme o una petita pèrdua de velocitat en alguna transició.
+Execució correcta (6): Completa les tres fases, però presenta una disminució apreciable de la velocitat o una transició poc fluida entre una o més fases.
+Execució incorrecta (0): Perd considerablement la continuïtat del moviment, presenta pauses o frenades importants entre les fases o no aconsegueix completar adequadament la seqüència.
+3. Estabilitat i control corporal
+Com manté l’atleta el control postural durant l’execució del triple salt?
+Execució impecable (10): Manté una posició corporal estable i equilibrada durant les tres fases, amb una coordinació adequada entre braços, tronc, malucs i cames i sense desviacions laterals significatives.
+Execució bona (8,5): Manté un bon control corporal, tot i presentar petites compensacions del tronc o dels braços que no afecten de manera significativa la continuïtat del moviment.
+Execució correcta (6): Manté l’equilibri general, però presenta inclinacions o moviments compensatoris visibles que redueixen l’eficàcia de l’execució.
+Execució incorrecta (0): Presenta una pèrdua significativa de l’estabilitat, amb inclinacions excessives, desequilibris importants o una coordinació deficient que interfereix en l’execució.
+4. Caiguda al fossat
+Com executa l’atleta la fase final i la caiguda al fossat de sorra?
+Execució impecable (10): Projecta les dues cames cap endavant, i aconsegueix que els talons contactin primer amb la sorra. Coordina l’acció dels braços i del tronc per maximitzar la distància assolida.
+Execució bona (8,5): Realitza una caiguda tècnicament correcta, però presenta una petita pèrdua d’extensió de les cames o de coordinació entre els braços i el tronc.
+Execució correcta (6): Realitza una caiguda funcional, però la projecció de les cames o l’acció dels braços i del tronc és poc eficient i redueix parcialment la distància assolida.
+Execució incorrecta (0): Realitza una caiguda deficient, amb una projecció insuficient de les cames o amb el tronc excessivament enrere, produint una pèrdua significativa de distància.
+5. Batuda i validesa del salt
+On ha fet el primer salt respecte a la taula?
+Execució impecable 10): Ha trepitjat la fusta de la taula de ple, sense fer nul.
+Execució bona (8,5): Salt vàlid, però ha perdut un pam de la mà de distància.
+Execució correcta (6): Salt vàlid, però no ha trepitjat la taula de batuda.
+Execució incorrecta( 0): Salt nul (ha trepitjat la línia vermella/plastilina o ha saltat clarament per davant).
+Sistema d'identificació d'errors i propostes de millora del triple salt
+1. Cursa d’aproximació
+Execució bona (8,5)
+
+
+Error principal
+Lleugera irregularitat en la cursa d’aproximació
+Possibles errors tècnics associats
+lleugera reducció de la velocitat abans de la batuda
+petita alteració del ritme en els darrers passos
+lleugera tensió del tronc superior
+coordinació de braços i cames no gaire eficient
+Conseqüència
+Pot produir una lleugera pèrdua de velocitat en arribar a la batuda i reduir l’eficàcia del hop, l’step i el jump.
+Millora
+Realitzar curses d’aproximació progressives, intentant mantenir la velocitat fins a la batuda. Fer repeticions centrades en mantenir un ritme constant i coordinar el moviment de braços i cames.
+
+Execució correcta (6)
+
+
+Error principal
+Cursa d’aproximació poc eficient
+Possibles errors tècnics associats
+arribar massa lluny de la taula
+córrer amb el cos excessivament endavant
+córrer amb el cos excessivament enrere
+córrer amb una postura baixa o “assentada”
+arribar amb una velocitat insuficient
+tècnica de carrera rígida o descoordinada
+Conseqüència
+Batuda forçada o poc eficient, menor força d’enlairament, recepció descoordinada i pèrdua progressiva de velocitat en el hop, step i jump.
+Millora
+Fer curses d’aproximació i progressivament adoptar una posició del cos més vertical una vegada s’ha aconseguit velocitat. Realitzar també curses curtes centrant-se en mantenir els malucs alts, una posició equilibrada del tronc i una velocitat progressiva.
+
+
+Execució incorrecta (0)
+
+
+Error principal
+Interrupció de la cursa
+Possibles errors tècnics associats
+frenada evident abans de la batuda
+arribar gairebé aturat
+mirar la taula durant els darrers passos
+cursa excessivament inclinada
+arribar massa ràpid i perdre el control de la batuda
+desviació lateral de la trajectòria
+Conseqüència
+La batuda es veu fortament afectada i es redueixen la velocitat i la força disponibles per al hop. Això condiciona també el step i el jump
+Millora
+Reduir temporalment la distància de la cursa d’aproximació, treballar curses curtes i progressives per evitar frenar abans de la batuda. Utilitzar una marca de referència per automatitzar els darrers passos i evitar mirar la taula. Fer curses sobre una línia marcada al terra per corregir les desviacions laterals i progressar posteriorment cap a la cursa completa.
+
+2. Ritme i continuïtat dels tres salts
+Execució bona (8,5)
+
+
+Error principal
+Lleugera pèrdua de continuïtat
+Possibles errors tècnics associats
+petita pèrdua de velocitat després d’un contacte
+lleugera descoordinació en una transició
+temps de contacte amb el terra lleugerament excessiu
+Conseqüència
+Disminució moderada de la velocitat disponible per a la fase següent.
+Millora
+Realitzar seqüències curtes de hop-step i step-jump, centrant-se en mantenir la velocitat després de cada contacte. Fer exercicis de multisalts en moviment per reduir el temps de contacte entre salts.
+
+Execució correcta (6)
+
+
+Error principal
+Pèrdua apreciable de continuïtat entre fases
+Possibles errors tècnics associats
+recepció pesada
+contacte amb el terra poc actiu
+enfonsament durant la recepció
+manca de coordinació en la transició
+pèrdua progressiva de velocitat
+Conseqüència
+El salt següent disposa de menys velocitat i capacitat d’impuls. Reducció de potència i distància final.
+Millora
+Practicar el hop amb recepcions actives, així com també l’step i el jump. Fer exercicis de recepció sobre una cama mantenint el maluc elevat i evitant l’enfonsament. Posteriorment, integrar progressivament la seqüència hop, step i jump.
+
+Execució incorrecta (0)
+
+
+Error principal
+Interrupció clara de la seqüència
+Possibles errors tècnics associats
+pèrdua important de velocitat entre salts
+recepció molt pesada
+enfonsament excessiu
+incapacitat per generar una nova batuda amb potència
+arribar gairebé aturat al jump
+Conseqüència
+Els salts posteriors es realitzen amb molta menys velocitat i força, reduint considerablement la distància final.
+Millora
+Descompondre el triple salt en seqüències més senzilles, com hop-step i step-jump, treballant cada transició per separat. Fer primer les seqüències a baixa intensitat, prioritzant la continuïtat i les recepcions actives, i augmentar progressivament la velocitat fins a poder realitzar el triple salt complet sense interrupcions.
+
+3. Estabilitat i control corporal
+Execució bona (8,5)
+
+
+Error principal
+Petites descompensacions posturals
+Possibles errors tècnics associats
+lleugera inclinació del tronc
+petita descoordinació dels braços
+lleugera desviació de l’eix corporal
+Conseqüència
+Disminució lleu de l’estabilitat i de l’eficiència de les transicions.
+Millora
+Realitzar exercicis de hop i step a baixa velocitat mirant un punt fix endavant o amb gravació en vídeo, centrant-se en mantenir el tronc estable i coordinar el moviment dels braços amb les cames.
+
+Execució correcta (6)
+
+
+Error principal
+Pèrdua apreciable del control postural
+Possibles errors tècnics associats
+manca de verticalitat del tronc
+desplaçament del pes respecte de la cama de suport
+braços descompassats
+trajectòria lleugerament desviada
+tensió excessiva del tronc superior
+Conseqüència
+L’atleta s’enlaira descompensat i disminueixen el control, la coordinació i la capacitat de generar força.
+Millora
+Per recuperar el control corporal, l'atleta ha de fer segons de triple mantenint la mirada a l'horitzó i, centrant-se a mantenir el tronc vertical. 
+
+Execució incorrecta (0)
+
+
+Error principal
+Pèrdua greu de l’eix corporal
+Possibles errors tècnics associats
+desviació lateral important
+pèrdua del control del centre de gravetat
+salt completament descompensat
+caiguda lateral
+desequilibri greu durant una de les fases
+Conseqüència
+La força es dispersa lateralment en lloc de dirigir-se cap endavant, disminuint la distància i augmentant el risc d’una execució incorrecta.
+Millora
+Realitzar segons de triple sense enfonzar-se i mantenint una posició corporal recte. Treballar el control de la posició per fases i mica en mica fer-ho en conjunt. 
+
+4. Caiguda al fossat
+Execució bona (8,5)
+
+
+Error principal
+Petita interfèrencia en la projecció final
+Possibles errors tècnics associats
+no projectar completament les cames
+lleugera falta de coordinació entre braços i cames
+separació poc òptima de les cames
+Conseqüència
+Petita pèrdua de distància final.
+Millora
+Realitzar exercicis específics de caiguda al fossat des de salts de poca distància, centrant-se en portar les dues cames cap endavant. Repetir el gest de manera progressiva i coordinar el moviment dels braços amb la projecció de les cames.
+
+Execució correcta (6)
+
+
+Error principal
+Tècnica de caiguda poc eficient
+Possibles errors tècnics associats
+caiguda prematura
+no portar suficientment les cames endavant
+no portar el cos cap endavant després del contacte
+separar excessivament les cames
+caure amb els peus massa junts
+Conseqüència
+Pèrdua directa de centímetres en la marca final.
+Millora
+Practicar caigudes al fossat des de salts curts o des d’una petita alçada, treballant específicament la projecció de les cames cap endavant i el moviment del cos després del contacte.
+
+Execució incorrecta (0)
+
+
+Error principal
+Caiguda incorrecte
+Possibles errors tècnics associats
+caure cap enrere
+recolzar les mans darrere del cos
+caure assegut
+caure lateralment
+caure amb una part posterior del cos abans que els peus
+Conseqüència
+Pèrdua significativa de distància final i, en alguns casos, una caiguda descontrolada.
+Millora
+Començar amb exercicis de caiguda des de poca alçada i sense velocitat, practicant la projecció de les cames i el control del tronc. Progressar cap a salts més grans, evitant el suport de les mans, la caiguda cap enrere o lateral i assegurant que els peus siguin el primer contacte amb la sorra.
+
+5. Batuda i validesa
+Execució bona (8,5)
+
+
+Error principal
+Petit desajust en la batuda
+Possibles errors tècnics associats
+contacte lleugerament allunyat de la posició òptima
+petita alteració del ritme abans de la batuda
+impuls lleugerament poc eficient
+Conseqüència
+Petita reducció de la força o de la velocitat disponible per al hop.
+Millora
+Realitzar curses d’aproximació curtes amb una marca de batuda, repetint el contacte amb la taula a velocitat progressiva. Treballar també els darrers passos de la cursa per automatitzar el ritme abans de la batuda.
+
+Execució correcta (6)
+
+
+Error principal
+Batuda poc eficient
+Possibles errors tècnics associats
+batuda massa baixa
+batuda massa alta i vertical
+contacte amb l’avantpeu
+arribar lluny de la taula
+batuda precipitada o forçada
+Conseqüència
+Pèrdua de velocitat horitzontal, menor impuls i una execució menys eficient del hop.
+Millora
+Per aconseguir una batuda més eficient, l'atleta ha de fer petits salts buscant una trajectòria intermèdia (ni massa alta ni massa baixa). A més, cal reduir la cursa d'enfonsament temporalment per evitar una batuda precipitada i ajustar progressivament la distància d'arribada.
+
+Execució incorrecta (0)
+
+
+Error principal
+Batuda greument incorrecte o nul·la
+Possibles errors tècnics associats
+salt nul
+batuda excessivament vertical
+contacte incorrecte amb la taula
+arribar gairebé aturat
+pèrdua total del control de la batuda
+Conseqüència
+El primer salt es veu fortament reduït o no es pot executar correctament i, per tant, condiciona necessàriament les dues fases posteriors.
+Millora
+Treballar la cursa i la batuda de manera aïllada temporalment a baixa velocitat per interioritzar els moviments. Es recomana començar amb una cursa curta per mantenir la velocitat, utilitzar referències visuals per evitar un salt massa vertical i augmentar la distància progressivament a mesura que s'aconsegueixi un contacte vàlid i controlat amb la taula. 
+
+
