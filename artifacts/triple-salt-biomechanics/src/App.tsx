@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import referenceImage from '@assets/IMG-20260708-WA0000_1787472726299.jpg';
 import ProductHub, { type HomeAnalysisPayload } from './ProductHub';
+import BrandLogo from './components/BrandLogo';
 import {
   Activity,
   ArrowDownToLine,
@@ -2404,7 +2405,7 @@ export function AnalysisWorkspace({ athletes, selectedAthleteId, onAthleteChange
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="brand-mark">TS<br />01</div>
+          <BrandLogo />
           <div>
             <div className="font-display" style={{ fontSize: '1.1rem', lineHeight: 1 }}>A peu de pista</div>
             <div className="sidebar-label" style={{ padding: '.35rem 0 0', color: 'hsl(215 14% 67%)' }}>Anàlisi biomecànica</div>

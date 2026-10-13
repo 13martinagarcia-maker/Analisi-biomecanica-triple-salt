@@ -6369,6 +6369,22 @@ button {
   line-height: 1.5;
 }
 
+.brand-mark.brand-logo {
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  padding: 0;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.brand-lockup .brand-mark.brand-logo {
+  width: 5rem;
+  height: 5rem;
+}
+
 /* On large screens, cards alternate image position if desired. Let's keep it simple and elegant stacked for now. */
 @media (min-width: 1024px) {
   .technique-content {
